@@ -1,0 +1,27 @@
+{
+	"gripper": {
+		"x": 5,
+		"y": 5,
+		"gripped": "2"
+	},
+
+	"objs": {
+		"1": {
+			"obj_type": "I",
+			"x": 10,
+			"y": 8,
+			"width": 5,
+			"height": 5
+		},
+		"2": {
+			"obj_type": "F",
+			"x": 3,
+			"y": 3,
+			"width": 5,
+			"height": 5,
+			"color": "dark blue",
+			"mirrored": true,
+			"rotation": 90
+		}
+	} 
+}

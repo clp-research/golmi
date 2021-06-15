@@ -1,0 +1,28 @@
+
+/** Canvas layering style taking from 
+ * https://developer.ibm.com/technologies/web-development/tutorials/wa-canvashtml5layering/
+ */
+#viewport {
+    /**
+     * Position relative so that canvas elements
+     * inside of it will be relative to the parent
+     */
+    position: relative;
+}
+
+#viewport canvas {
+    /**
+     * Position absolute provides canvases to be able
+     * to be layered on top of each other
+     * Be sure to remember a z-index!
+     */
+    position: absolute;
+}
+
+canvas {
+    /**
+     * Set transparent to let any other canvases render through
+     */
+    background-color: transparent;
+    border:1px solid #000000;
+}
