@@ -4,36 +4,50 @@ import json
 class State:
 	def __init__(self, json_data=None):
 		self.objs = dict() # maps ids to Objs
-		# TODO: mutliple grippers?
-		self.gripper = Gripper(0,0)
+		self.grippers = dict()
 		if json_data: 
 			self.from_JSON(json_data)
 		
 	def get_objects(self):
-		return self.objs.values()
-	
+		return self.objs
 
 	def get_object_ids(self): 
 		return self.objs.keys()
 	
 	def get_obj_by_id(self, id): 
+		"""
+		@param id 	gripper id
+		"""
 		return self.objs[id]
+
+	def get_gripper_ids(self):
+		return self.grippers.keys()
+
+	def get_gripper_by_id(self, id):
+		return self.grippers[id]
 	
-	def get_gripper_coords(self):
-		return [self.gripper.x, self.gripper.y]
+	def get_gripper_coords(self, id):
+		"""
+		@param id 	gripper id
+		"""
+		return [self.grippers[id].x, self.grippers[id].y]
 
 	# returns None if no object is gripped
-	def get_gripped_obj(self): 
-		return self.gripper.gripped
+	def get_gripped_obj(self, id): 
+		"""
+		@param id 	gripper id 
+		"""
+		return self.grippers[id].gripped
 	
-	def move_gr(self, dx, dy):
+	def move_gr(self, id, dx, dy):
 		"""
 		Change gripper position by moving in direction (dx, dy).
+		@param id 	id of the gripper to move
 	 	@param dx 	x direction
 		@param dy 	y direction 
 		"""
-		self.gripper.x += dx
-		self.gripper.y += dy
+		self.grippers[id].x += dx
+		self.grippers[id].y += dy
 	
 	def move_obj(self, id, dx, dy):
 		"""
@@ -44,44 +58,48 @@ class State:
 		self.get_obj_by_id(id).x += dx
 		self.get_obj_by_id(id).y += dy
 	
-	def grip(self, id):
+	def grip(self, gr_id, obj_id):
 		"""
 		Attach a given object to the gripper.
 		@param id 	id of object to grip, must be in objects
 	 	"""
-		self.gripper.gripped = id
+		self.grippers[gr_id].gripped = obj_id
 	
-	def ungrip(self):
+	def ungrip(self, id):
 		"""
 		Detach the currently gripped object from the gripper.
 		"""
-		self.gripper.gripped = None
+		self.grippers[id].gripped = None
 	
 
 	# TODO: make sure pieces are on the board! (at least emit warning)
 	def from_JSON(self, json_data):
-		# as JSON string
-		json_data = json.loads(json_data)
+		if type(json_data) == str:
+			# a JSON string
+			json_data = json.loads(json_data)
+		# otherwise assume json_data is a dict 
 		try:
-			# construct gripper
-			self.gripper = Gripper(
-				json_data["gripper"]["x"],
-				json_data["gripper"]["y"])
-			# process optional info
-			if "gripped" in json_data["gripper"]:
-				self.gripper.gripped = json_data["gripper"]["gripped"]
-			if "width" in json_data["gripper"]:
-				self.gripper.width = json_data["gripper"]["width"]
-			elif "height" in json_data["gripper"]:
-				self.gripper.height = json_data["gripper"]["height"]
-			elif "color" in json_data["gripper"]:
-				self.gripper.color = json_data["gripper"]["color"]
+			# construct gripper(s)
+			self.grippers = dict()
+			for gr in json_data["grippers"]:
+				self.grippers[gr] = Gripper(
+					json_data["grippers"][gr]["x"],
+					json_data["grippers"][gr]["y"])
+				# process optional info
+				if "gripped" in json_data["grippers"][gr]:
+					self.grippers[gr].gripped = json_data["grippers"][gr]["gripped"]
+				if "width" in json_data["grippers"][gr]:
+					self.grippers[gr].width = json_data["grippers"][gr]["width"]
+				elif "height" in json_data["grippers"][gr]:
+					self.grippers[gr].height = json_data["grippers"][gr]["height"]
+				elif "color" in json_data["grippers"][gr]:
+					self.grippers[gr].color = json_data["grippers"][gr]["color"]
 			# delete old objects
 			self.objs = dict()
 			# construct objects
 			for obj in json_data["objs"]:
 				self.objs[obj] = Obj(
-					json_data["objs"][obj]["obj_type"],
+					json_data["objs"][obj]["type"],
 					json_data["objs"][obj]["x"],
 					json_data["objs"][obj]["y"],
 					json_data["objs"][obj]["width"],
@@ -94,6 +112,5 @@ class State:
 				if "color" in json_data["objs"][obj]:
 					self.objs[obj].color = json_data["objs"][obj]["color"]
 		except: 
-			print("error")
-			pass
-		#raise Exception!
+			raise SyntaxError("Error during state initialization: JSON data does not have the right format.\n" + \
+				"Please refer to the documentation.")

@@ -12,8 +12,8 @@
 	<meta name="description" content="Demo of a Pentomino interface build using the GOLM framework">
 	<meta name="author" content="clpresearch, Karla Friedrichs">
 
-	<link rel="stylesheet" href="../css/layer_style.css">
-	<link rel="stylesheet" href="../css/skeleton.css">
+	<link rel="stylesheet" href="./css/layer_style.css">
+	<link rel="stylesheet" href="./css/skeleton.css">
 </head>
 
 <body>
@@ -21,16 +21,18 @@
 		<button id="start">Start</button>
 		<button id="stop">Stop</button>
 	</div>
+	<!-- The "viewport" id and three stacked canvases of the same size are needed to 
+		properly render using the LayerView class -->
 	<div id="viewport" style="height: 600px; width: 600px; padding: 10px;">
 		<canvas id="background" width="600" height="600"></canvas>
 		<canvas id="objects" width="600" height="600"></canvas>
 		<canvas id="gripper" width="600" height="600"></canvas>
 	</div>
 
-	<script src="../js/jquery.min.js"></script>
-	<script src="../js/View.js"></script>
-	<script src="../js/LayerView.js"></script>
-	<script src="../js/demo.js"></script>
+	<script src="./js/jquery.min.js"></script>
+	<script src="./js/View.js"></script>
+	<script src="./js/LayerView.js"></script>
+	<script src="./js/pentoDemo.js"></script>
 </body>
 
 </html>

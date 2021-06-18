@@ -8,12 +8,14 @@ import requests
 HOST = "127.0.0.1"
 PORT = "5002"
 
-# --- define routes --- # 
-
 app = Flask(__name__)
 # enable cross-origin requests 
 # TODO: restrict sources
 CORS(app)
+
+view = ViewUpdateStorage()
+
+# --- define routes --- # 
 
 updateStorage = ViewUpdateStorage()
 
@@ -24,7 +26,7 @@ def update():
 		if (b"gripper" in request.data):
 			# -> forward to view
 			view.store_update("gripper")
-			#TODO what the fuck to return here?
+			#TODO what to return here?
 			return "0"
 		return "1"
 	elif request.method == "GET":

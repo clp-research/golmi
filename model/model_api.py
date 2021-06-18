@@ -7,6 +7,9 @@ import json
 
 # --- define globals --- #
 
+# TODO: /gripper/{id} (+ grip?)
+# TODO: /objects/{id}
+
 app = Flask(__name__)
 # enable cross-origin requests 
 # TODO: restrict sources
@@ -15,7 +18,7 @@ CORS(app)
 HOST = "127.0.0.1"
 PORT = "5000"
 # todo: endpoint to change config
-config = Config("../pentomino/pentomino_types.json")
+config = Config("resources/type_config/pentomino_types.json")
 model = Model(config)
 
 # --- define routes --- # 
@@ -23,13 +26,19 @@ model = Model(config)
 @app.route("/attach-view", methods=["POST"])
 #@cross_origin(origin='localhost')
 def attach_view():
-	json_data = json.loads(request.data)
+	if not request.data:
+		return "1", 400
+	else:
+		json_data = json.loads(request.data)
 	model.attach_view(json_data["url"])
 	return "0"
 
 @app.route("/detach-view", methods=["POST"])
 def detach_view():
-	json_data = json.loads(request.data)
+	if not request.data:
+		return "1", 400
+	else:
+		json_data = json.loads(request.data)
 	model.detach_view(json_data["url"])
 	return "0"
 
@@ -41,53 +50,112 @@ def config():
 			"height": model.get_height(),
 			"type_config": model.get_type_config()
 		}
-	else: 
+	elif request.method == "POST": 
 		print("POST at /config endpoint: not implemented")
 		return "1", 404
+	else: 
+		return "1", 405
 
-@app.route("/gripper/position", methods=["POST", "GET"])
-def gripper_position():
+
+@app.route("/gripper", methods=["POST", "GET"])
+def gripper():
 	if request.method == "GET":
-		x, y = model.get_gripper_coords()
-		return {"x": x, "y": y}
+		gr_ids = model.get_gripper_ids()
+		# construct the response: dictionary mapping ids to gripper details
+		response = dict()
+		for gr_id in gr_ids:
+			gr = model.get_gripper_by_id(gr_id)
+			response[gr_id] = _obj_to_dict(gr)
+		return response
 	elif request.method == "POST":
-		# TODO why does get_json() not return json data?
-		json_data = json.loads(request.json)
-		if type(json_data) == dict and "x" in json_data and "y" in json_data:
-			if "speed" in json_data:
-				model.move_gr(json_data["x"], json_data["y"], json_data["speed"])
-			else:
-				model.move_gr(json_data["x"], json_data["y"])
-			return "0"
-		elif type(json_data) == list and len(json_data) == 2:
-			model.move_gr(json_data[0], json_data[1])
-			return "0"
+		if not request.data:
+			return "1", 400
 		else:
-			return ("1", 400)
+			json_data = json.loads(request.data)
+		if type(json_data) == dict and "id" in json_data and "x" in json_data and "y" in json_data:
+			if "speed" in json_data:
+				model.move_gr(json_data["id"], json_data["x"], json_data["y"], json_data["speed"])
+			else:
+				model.move_gr(json_data["id"], json_data["x"], json_data["y"])
+			return "0"
+		else: 
+			return "1", 400
+	else: 
+		return "1", 405
 
 @app.route("/gripper/grip", methods=["POST", "GET"])
 def gripper_grip():
 	if request.method == "GET":
-		return {"id": model.get_gripped_obj()}
+		gr_ids = model.get_gripper_ids()
+		response = dict()
+		for gr_id in gr_ids:
+			# get the id of a gripped object, or None if no object is gripped
+			gripped_obj = model.get_gripped_obj(gr_id)
+			if gripped_obj:
+				response[gr_id] = {gripped_obj: _obj_to_dict(model.get_obj_by_id(gr_id))}
+			else:
+				response[gr_id] = None
+		return response
 	elif request.method == "POST":
-		model.grip()
+		# load request json, if present
+		if not request.data:
+			return "1", 400
+		else:
+			json_data = json.loads(request.data)
+
+		# assert the request hast the right parameters
+		if type(json_data) != dict or "id" not in json_data:
+			return "1", 400
+
+		model.grip(json_data["id"])
 		return "0"
+	else: 
+		return "1", 405
 
 @app.route("/objects", methods=["GET", "POST"])
 def objects():
 	if request.method == "GET":
-		# return all object ids
-		return {"ids": list(model.get_object_ids())}
+		obj_ids = model.get_object_ids()
+		# construct the response: dictionary mapping ids to object details
+		response = dict()
+		for obj_id in obj_ids:
+			obj = model.get_obj_by_id(obj_id)
+			response[obj_id] = _obj_to_dict(obj)
+		return response
 	elif request.method == "POST":
 		# add an object
 		print("POST at /objects: not implemented")
 		return "not implemented"
+	else: 
+		return "1", 405
 
-@app.route("/state", methods=["POST"])
+@app.route("/state", methods=["POST", "DELETE"])
 def state():
-	# load a new state
-	model.set_initial_state(request.json)
-	return "0"
+	if request.method == "POST":
+		# load a new state
+		model.set_initial_state(json.loads(request.data))
+		return "0"
+	elif request.method == "DELETE":
+		model.reset()
+		return "0"
+	else:
+		return "1", 405
+
+def _obj_to_dict(obj):
+	"""
+	Constructs a dictionary from an Obj instance.
+	@param obj 	instance of Obj or Obj child classes
+	"""
+	return {
+		"type": obj.type,
+		"x": obj.x,
+		"y": obj.y,
+		"width": obj.width,
+		"height": obj.height,
+		"rotation": obj.rotation,
+		"mirrored": obj.rotation,
+		"color": obj.color
+		}
 
 # --- tests --- #
 
@@ -96,42 +164,48 @@ def selftest():
 		# --- attaching and detaching views --- #
 		dummy_view = "127.0.0.1:666"
 		rv = c.post("/attach-view", data=json.dumps({"url":dummy_view}))
-		assert int(rv.data) == 0 and dummy_view in model.views
+		assert rv.status == "200 OK" and dummy_view in model.views
 		# delete view again or there view be errors in the following tests
 		# when the model tries to notify the dummy view
 		c.post("/detach-view", data=json.dumps({"url":dummy_view}))
 		assert dummy_view not in model.views
 
 		# --- loading a state --- #
-		f = open("../pentomino/pentomino_testgame.json", mode="r", encoding="utf-8")
+		f = open("resources/state/pentomino_testgame.json", mode="r", encoding="utf-8")
 		json_state = f.read()
 		f.close()
-		rv_state = c.post("/state", json=json_state)
+		rv_state = c.post("/state", data=json_state)
 		test_state = json.loads(json_state)
 
 		# --- gripper position --- #
-		rv2 = c.get("/gripper/position")
-		gripper_coords = rv2.get_json()
-		assert gripper_coords["x"] == test_state["gripper"]["x"] and \
-			gripper_coords["y"] == test_state["gripper"]["y"]
+		rv2 = c.get("/gripper")
+		gripper = rv2.get_json()
+		assert gripper["1"]["x"] == test_state["grippers"]["1"]["x"] and \
+			gripper["1"]["y"] == test_state["grippers"]["1"]["y"]
 		# move gripper with default step size
-		rv_move_gripper = c.post("/gripper/position", json=json.dumps({"x":3, "y":0}))
-		assert int(rv_move_gripper.data) == 0
-		assert model.get_gripper_coords()[0] > gripper_coords["x"] and \
-			model.get_gripper_coords()[1] == gripper_coords["y"]
+		rv_move_gripper = c.post("/gripper", data=json.dumps({"id":"1", "x":3, "y":0}))
+		assert rv_move_gripper.status == "200 OK"
+		assert model.get_gripper_coords("1")[0] > gripper["1"]["x"] and \
+			model.get_gripper_coords("1")[1] == gripper["1"]["y"]
 		# move gripper with custom step size
-		rv_move_gripper2 = c.post("/gripper/position", json=json.dumps({"x":0, "y":3, "speed":1}))
-		assert int(rv_move_gripper2.data) == 0
-		assert model.get_gripper_coords()[1] == gripper_coords["y"] + 3
+		rv_move_gripper2 = c.post("/gripper", data=json.dumps({"id":"1", "x":0, "y":3, "speed":1}))
+		assert rv_move_gripper2.status == "200 OK"
+		assert model.get_gripper_coords("1")[1] == gripper["1"]["y"] + 3
 		# --- gripping --- #
 		rv4 = c.get("/gripper/grip")
-		assert rv4.get_json()["id"] == test_state["gripper"]["gripped"]
-		rv5 = c.post("/gripper/grip")
-		assert int(rv5.data) == 0
+		assert test_state["grippers"]["1"]["gripped"] in rv4.get_json()["1"].keys()
+		rv5_bad_request = c.post("/gripper/grip")
+		assert rv5_bad_request.status == "400 BAD REQUEST"
+		rv5 = c.post("/gripper/grip", data=json.dumps({"id":"1"}))
+		assert rv5.status == "200 OK"
 
 		# --- objects --- #
 		rv6 = c.get("/objects")
-		assert rv6.get_json()["ids"] == list(test_state["objs"].keys())
+		assert rv6.get_json().keys() == test_state["objs"].keys()
+
+		# --- deleting the state --- #
+		rv_reset = c.delete("/state")
+		assert rv_reset.status == "200 OK" and len(model.get_objects()) == 0
 
 
 if __name__ == "__main__":

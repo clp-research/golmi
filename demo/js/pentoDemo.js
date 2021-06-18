@@ -6,13 +6,42 @@ $(document).ready(function () {
 	const CONTROLLER_API	= "127.0.0.1:5001";
 	const VIEW_API			= "127.0.0.1:5002";
 
+	const TESTGAME = {
+		"grippers": {
+			"1": {
+				"x": 5,
+				"y": 5,
+				"gripped": "2"
+			}
+		},
+		"objs": {
+			"1": {
+				"type": "I",
+				"x": 10,
+				"y": 8,
+				"width": 5,
+				"height": 5
+			},
+			"2": {
+				"type": "F",
+				"x": 3,
+				"y": 3,
+				"width": 5,
+				"height": 5,
+				"color": "darkblue",
+				"mirrored": true,
+				"rotation": 90
+			}
+		} 
+	};
+
 	// Set up the MVC APIs
 	// Connect View and Model API (so model can notify the view)
 	let subscribeViewToModel = new Request(`http://${MODEL_API}/attach-view`, {method:"POST", body:`{"url": "${VIEW_API}"}`});
 	fetch(subscribeViewToModel)
 	.then(r => {
 		if (!r.ok) {
-			console.log("Error connecting view and model API. Printing response...");
+			console.log("Error connecting view and model API. Printing response...", r);
 		}
 	});
 	// Connect Controller to Model API (so controller can post to the model)
@@ -20,12 +49,21 @@ $(document).ready(function () {
 	fetch(subscribeModelToController)
 	.then(r => {
 		if (!r.ok) {
-			console.log("Error connecting view and model API. Printing response...");
-			console.log(r);
+			console.log("Error connecting view and model API. Printing response...", r);
 		}
 	});
 
-	// get references to the three canvas layers
+	// Load a game
+	let loadGameReq = new Request(`http://${MODEL_API}/state`, {method:"POST", body:JSON.stringify(TESTGAME)});
+	fetch(loadGameReq)
+	.then(r => {
+		if (!r.ok) {
+			console.log("Error loading a game state. Printing response...", r);
+		}
+	});
+
+
+	// Get references to the three canvas layers
 	let bgLayer		= document.getElementById("background");
 	let objLayer	= document.getElementById("objects");
 	let grLayer		= document.getElementById("gripper");
@@ -36,5 +74,6 @@ $(document).ready(function () {
 	// Set up buttons
 	$("#start").click(() => document.layerView.startDrawing());
 	$("#stop").click(() => document.layerView.stopDrawing());
+
 	
 }); // on document ready end
