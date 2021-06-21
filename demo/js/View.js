@@ -145,12 +145,13 @@ $(document).ready(function () {
 			// a recursive setTimeout is used instead of setInterval to assure the execution is completed
 			// before the next request is due
 			this.loopId = setTimeout(async function() {
-		    	// Fetch updates that have been posted the the View API
-				let updates = await thisInstance._getUpdates();
+		    	let refreshImmediately = true;
+				let updates;
 				// if there are updates, draw and check for further updates immediately
-				while (updates) {
-					thisInstance._processUpdates(updates);
+				while (refreshImmediately) {
+		    		// Fetch updates that have been posted the the View API
 					updates = await thisInstance._getUpdates();
+					refreshImmediately = await thisInstance._processUpdates(updates);
 				}
 		    	// Once there are no more updates, wait before making the next request
 		    	thisInstance.updateLoop(delay);
@@ -187,11 +188,8 @@ $(document).ready(function () {
 			// query the view for new updates to apply
 			let updateReq = new Request(`http://${this.viewAPI}/updates`, {method:"GET"});
 			let response = await fetch(updateReq);
-			if (response.status == 204) { // No updates
-				return null
-			} else if (response.ok) { // Parse the response as json and save the config values
+			if (response.ok) { // Parse the response as json and save the config values
 				let json_data = await response.json();
-				// check if empty object
 				return json_data;
 			} else { // Something went wrong - emit an error message
 				console.log("Error: Could not fetch updates from the view API");
@@ -199,8 +197,32 @@ $(document).ready(function () {
 			}
 		}
 
-		_processUpdates() {
-			console.log("_processUpdates at View: not implemented");
+		/**
+		 * Process an update object, calling the appropriate redrawing functions.
+		 * @param {object containing the keys "grippers", "objs", "config"} update_obj
+		 */
+		async _processUpdates(updates) {
+			// keep track of whether any update was made
+			let update_applied = false;
+			// if the config has changed, redraw everything
+			if (updates["config"]) {
+				await this._loadConfig();
+				this.redraw();
+				update_applied = true;
+			} else {
+				// there is only 3 layers here and the background does not need to be updated.
+				// if any object was changed, redraw the object layer
+				if (updates["objs"] && updates["objs"].length > 0) {
+					this.redrawObj();
+					update_applied = true;
+				}
+				// if any gripper was changed, redraw the gripper layer
+				if (updates["grippers"] && updates["grippers"].length > 0) {
+					this.redrawGr();
+					update_applied = true;
+				}
+			}
+			return update_applied;
 		}
 
 	}; // class View end

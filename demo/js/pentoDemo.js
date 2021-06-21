@@ -28,7 +28,7 @@ $(document).ready(function () {
 				"y": 3,
 				"width": 5,
 				"height": 5,
-				"color": "darkblue",
+				"color": "yellow",
 				"mirrored": true,
 				"rotation": 90
 			}
@@ -44,14 +44,6 @@ $(document).ready(function () {
 			console.log("Error connecting view and model API. Printing response...", r);
 		}
 	});
-	// Connect Controller to Model API (so controller can post to the model)
-	let subscribeModelToController = new Request(`http://${CONTROLLER_API}/attach-model`, {method:"POST", body:`{"url": "${MODEL_API}"}`});
-	fetch(subscribeModelToController)
-	.then(r => {
-		if (!r.ok) {
-			console.log("Error connecting view and model API. Printing response...", r);
-		}
-	});
 
 	// Load a game
 	let loadGameReq = new Request(`http://${MODEL_API}/state`, {method:"POST", body:JSON.stringify(TESTGAME)});
@@ -59,6 +51,16 @@ $(document).ready(function () {
 	.then(r => {
 		if (!r.ok) {
 			console.log("Error loading a game state. Printing response...", r);
+		}
+	});
+
+	// Connect Controller to Model API (so controller can post to the model)
+	// Attach the controller to gripper "1"
+	let subscribeModelToController = new Request(`http://${CONTROLLER_API}/attach-model`, {method:"POST", body:`{"url": "${MODEL_API}", "gripper": "1"}`});
+	fetch(subscribeModelToController)
+	.then(r => {
+		if (!r.ok) {
+			console.log("Error connecting view and model API. Printing response...", r);
 		}
 	});
 

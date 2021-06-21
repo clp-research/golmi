@@ -1,9 +1,9 @@
 import requests
 import json
 
-class KeyController():
+class GripperKeyController():
 	def __init__(self):
-		self.models = list() # controlled models
+		self.models = list() # contains tuples (controlled model, associated gripper)
 		# dictionary mapping key codes to a tuple (function to call, list of arguments to pass)
 		self.key_assignment = {
 			13: (self.grip, []),
@@ -13,29 +13,50 @@ class KeyController():
 			39: (self.move, [1, 0]),
 			40: (self.move, [0, 1])}
 
-	def attach_model(self, model):
+	def attach_model(self, model, gripper):
 		"""
 		Adds a model to the list of controlled models. Avoids duplicate subscription.
 		@param model 	str, URL of model to attach. Format: "HOST:PORT" 
-		@ṛeturn bool. True if model was successfully added, False if the URL was no string or already registered.
+		@param gripper	id of the gripper to control
+		@ṛeturn bool. True if model was successfully added, False if the URL was no string.
 		"""
-		if type(model) != str or model in self.models:
+
+		### Strict version: check whether model is available and has the corresponding gripper.
+		### Took this out because is makes the set up more complicated
+		# if type(model) != str or (model, gripper) in self.models:
+		# 	return False
+		# # check if the model has a gripper with the corresponding index
+		# try:
+		# 	gr_response = requests.get("http://{}/gripper".format(model))
+		# 	if gripper not in gr_response.json():
+		# 		return False
+		# except:
+		# 	return False 
+		if type(model) != str:
 			return False
-		self.models.append(model)
+		if (model, gripper) not in self.models:
+			self.models.append((model, gripper))
 		return True
 
 
-	def detach_model(self, model):
+	def detach_model(self, model, gripper=None):
 		"""
 		Removes a model from the list of controlled models.
 		@param model 	str, URL of model to detach. Format: "HOST:PORT"
 		@return bool. True if model was found and removed, False if model was not in the list.
 		"""
-		if model in self.models:
-			self.models.remove(model)
-			return True
-		else: 
-			return False
+		if gripper:
+			# remember whether the pair was found - if not, return False 
+			found = (model, gripper) in self.models
+			if found:
+				self.models.remove((model, gripper))
+		else:
+			found = False
+			for i in range(len(self.models)):
+				if self.models[i][0] == model:
+					self.models.pop(i)
+					found = True
+		return found
 
 	def key_pressed(self, key_code):
 		"""
@@ -50,24 +71,22 @@ class KeyController():
 		else:
 			return False
 
-	# TODO pass gripper id
 	def grip(self):
 		"""
 		Notifies all subscribed models that a "grip" should be attempted.
 		Makes a POST-request to the /gripper/grip endpoint.
 		"""
-		for model in self.models:
-			requests.post("http://{}/gripper/grip".format(model))
+		for (model, gripper) in self.models:
+			requests.post("http://{}/gripper/grip".format(model), data=json.dumps({"id": gripper}))
 
-	# TODO pass gripper id
 	def move(self, dx, dy):
 		"""
 		Notifies all subscribed models to attempt moving the gripper.
 		@param dx 	int or float, number of units to move in x direction. Negative values translate to leftwards movement.
 		@param dy 	int or float, number of units to move in y direction. Negative values translate to upwards movement.
 		"""
-		for model in self.models:
-			requests.post("http://{}/gripper/position".format(model), json=json.dumps({"x": dx, "y": dy}))
+		for (model, gripper) in self.models:
+			requests.post("http://{}/gripper".format(model), data=json.dumps({"id": gripper, "x": dx, "y": dy}))
 
 	def _is_assigned(self, key_code):
 		"""

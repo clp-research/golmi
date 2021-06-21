@@ -1,5 +1,6 @@
 from state import State
 import requests
+import json
 from math import floor
 
 class Model:
@@ -45,17 +46,21 @@ class Model:
 		return self.config.type_config
 
 	#  --- Events --- #
-	# todo
-	def get_gripper_updated_event(self): 
-		return "gripper updated"
+	def get_gripper_updated_event(self, id): 
+		return {"grippers": [id]}
 
 	def get_new_state_loaded_event(self): 
-		return "new state loaded"
+		# update all grippers and objects. Config does not need to be reloaded.
+		return {"grippers": list(self.get_gripper_ids()), "objs": list(self.get_object_ids())}
 	
 	def get_obj_updated_event(self, id): 
-		return "object updated: {}".format(id)
+		return {"objs": [id]}
 
-		# --- Configuration functions --- #
+	# currently unused
+	def get_config_changed_event(self):
+		return {"config": True}
+
+	# --- Configuration functions --- #
 
 	def attach_view(self, view):
 		"""
@@ -97,13 +102,13 @@ class Model:
 		self.state = State()
 		self._notify_views(self.get_new_state_loaded_event())
 
-	def _notify_views(self, event):
+	def _notify_views(self, updates):
 		"""
 		Notify all listening views of model events (usually data updates)
-		@param event 	Event message. Sent to each of the model's views
+		@param updates 	dictionary of updates. Sent to each of the model's views
 		"""
 		for view in self.views:
-			requests.post("http://{}/updates".format(view), data=event)
+			requests.post("http://{}/updates".format(view), data=json.dumps(updates))
 
 	# --- Gripper manipulation --- #
 
@@ -120,11 +125,11 @@ class Model:
 			self._notify_views(self.get_obj_updated_event(old_gripped))
 		else: 
 			# Check if gripper hovers over some object
-			new_gripped = self._get_grippable()
+			new_gripped = self._get_grippable(id)
 			# changes to object and gripper
-			if new_gripped: self.state.grip(id, newGripped)
+			if new_gripped: self.state.grip(id, new_gripped)
 		# notify view of gripper change. A newly gripped object is implicitly updated.
-		self._notify_views(self.get_gripper_updated_event())
+		self._notify_views(self.get_gripper_updated_event(id))
 
 	def move_gr(self, id, x_steps, y_steps, step_size=None):
 		"""
@@ -149,13 +154,13 @@ class Model:
 				self.state.move_gr(id, dx, dy)
 				self.state.move_obj(self.get_gripped_obj(id), dx, dy)
 				# notify the views. A gripped object is implicitly redrawn. 
-				self._notify_views(self.get_gripper_updated_event())
+				self._notify_views(self.get_gripper_updated_event(id))
 
 		# if no object is gripped, only move the gripper
 		elif self._is_in_limits(gripper_x + dx, gripper_y + dy):
 			self.state.move_gr(id, dx, dy)
 			# notify the views. A gripped object is implicitly redrawn. 
-			self._notify_views(self.get_gripper_updated_event())
+			self._notify_views(self.get_gripper_updated_event(id))
 		
 	def _get_grippable(self, gr_id):
 		"""

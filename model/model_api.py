@@ -92,7 +92,7 @@ def gripper_grip():
 			# get the id of a gripped object, or None if no object is gripped
 			gripped_obj = model.get_gripped_obj(gr_id)
 			if gripped_obj:
-				response[gr_id] = {gripped_obj: _obj_to_dict(model.get_obj_by_id(gr_id))}
+				response[gr_id] = {gripped_obj: _obj_to_dict(model.get_obj_by_id(gripped_obj))}
 			else:
 				response[gr_id] = None
 		return response

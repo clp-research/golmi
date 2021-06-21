@@ -33,10 +33,6 @@ $(document).ready(function () {
 
 		// --- drawing functions --- //
 
-		// sleep(ms) {
-		// 	return new Promise(resolve => setTimeout(resolve, ms));
-		// }
-
 		/**
 		 *  Remove any old drawings.
 		 */
@@ -97,7 +93,9 @@ $(document).ready(function () {
 				// response maps gripper ids to a map {obj-id -> obj-details}
 				let gripperToObjMaps = await response.json();
 				for (let objMap of Object.values(gripperToObjMaps)) {
-					grippedIds = grippedIds.concat(Object.keys(objMap));
+					if (objMap) {
+						grippedIds = grippedIds.concat(Object.keys(objMap));
+					}
 				}
 			} else { // Something went wrong - emit an error message
 				console.log("Error: Could not fetch gripped object from the model API");
@@ -197,42 +195,42 @@ $(document).ready(function () {
 			let grippedObjs;
 			if (response.ok) { // Parse the response as json
 				grippedObjs = await response.json();
-				grippedObjs
 			} else { // Something went wrong - emit an error message
 				console.log("Error: Could not fetch gripped object from the model API");
 			}
 
-			// // set up
-			// let ctx = this.grCanvas.getContext("2d");
-			// let gripper= this.model.gripper;
-			// // modify style depending on whether an object is gripped
-			// let grSize = this.model.grippedObj ? 0.2 : 0.5;
-			// this.canvas_ref.drawLine({
-			// 	layer: false,
-			// 	strokeStyle: "red",
-			// 	strokeWidth: 2,
-			// 	x1: this._toPxl(gripper.x-grSize), y1: this._toPxl(gripper.y-grSize),
-			// 	x2: this._toPxl(gripper.x+grSize), y2: this._toPxl(gripper.y+grSize)
-			// });
-			// this.canvas_ref.drawLine({
-			// 	layer: false,
-			// 	strokeStyle: "red",
-			// 	strokeWidth: 2,
-			// 	x1: this._toPxl(gripper.x-grSize), y1: this._toPxl(gripper.y+grSize),
-			// 	x2: this._toPxl(gripper.x+grSize), y2: this._toPxl(gripper.y-grSize)
-			// });
+			// set up
+			let ctx = this.grCanvas.getContext("2d");
+			for (let [grId, gripper] of Object.entries(grippers)) {
+				// draw any gripped object first (i.e. 'below' the gripper)
+				if (grippedObjs[grId]) {
+					for (let grippedObj of Object.values(grippedObjs[grId])) {
+						let blockMatrix = this.typeConfig[grippedObj.type];
+						let params = {
+							x: grippedObj.x,
+							y: grippedObj.y,
+							color: grippedObj.color,
+							highlight: "grey" // apply highlight to a gripped object
+						}
+						this._drawBlockObj(ctx, blockMatrix, params);
+					}
+				}
 
-			// let grippedObj = this.model.grippedObj;
-			// if (!grippedObj) {
-			// 	super.draw();
-			// } else {
-			// 	this.drawBg();
-			// 	// draw all objects except the gripped one
-			// 	this.model.objectIds.forEach((id) => { if (id != grippedObj) { this.drawObj(id); } });
-			// 	// draw gripped object on top and finally the gripper
-			// 	this.drawObj(grippedObj);
-			// 	this.drawGr();
-			// }
+				// modify style depending on whether an object is gripped
+				let grSize = grippedObjs[grId] ? 0.2 : 0.5;
+					
+				// draw the gripper itself
+				// --- config ---
+				ctx.lineStyle = "red";
+				ctx.strokeStyle = 2;
+				// draw. The gripper is a simple cross
+				ctx.beginPath();
+				ctx.moveTo(this._toPxl(gripper.x-grSize), this._toPxl(gripper.y-grSize));
+				ctx.lineTo(this._toPxl(gripper.x+grSize), this._toPxl(gripper.y+grSize));
+				ctx.moveTo(this._toPxl(gripper.x-grSize), this._toPxl(gripper.y+grSize));
+				ctx.lineTo(this._toPxl(gripper.x+grSize), this._toPxl(gripper.y-grSize));
+				ctx.stroke();
+			}
 		}
 
 		/**
@@ -285,12 +283,12 @@ $(document).ready(function () {
 
 		_drawBorder(ctx, x1, y1, x2, y2, highlight=false, borderColor="black", borderWidth=2) {
 			// --- config ---
+			// TODO: fix highlights
+			// shadowBlur is set to 0 if highlight is false, effectively making it invisible
+			ctx.shadowBlur = highlight ? 5 : 0;
+			ctx.shadowColor = highlight;
 			ctx.lineStyle = borderColor;
 			ctx.lineWidth = borderWidth;
-			// TODO: HIGHLIGHTS
-			// shadowBlur is set to 0 if highlight is false, effectively making it invisible
-			ctx.shadowBlur = highlight ? 10 : 0;
-			ctx.shadowColor = highlight;
 
 			ctx.beginPath();
 			ctx.moveTo(this._toPxl(x1), this._toPxl(y1));

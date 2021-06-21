@@ -18,6 +18,7 @@ The folder `demo` holds a simple demo of a browser interface showing a board wit
 How to start the demo:
 
 1. Make sure the 3 server components are running. If running them locally, simple run `python3 model/model_api.py`, `python3 view/view_api.py` and `python3 controller/key_controller_api.py` in three different terminal tabs. If the components are running elsewhere, you need to update the URLs in `demo/js/pentoDemo.js`.
+Note: Currently, unit tests are run at every startup. For these to work, the model API needs to be started **first**! The unit tests will be made optional via command line arguments soon.
 2. Open `demo/pentoDemo.html` in a browser. 
 3. Press the 'Start' button to begin rendering. You can move the gripper around using the arrow keys and grip using Space or Enter. Use 'Stop' to stop rendering and freeze the current state.
 
