@@ -74,8 +74,15 @@ $(document).ready(function () {
 	this.layerView = new document.LayerView(VIEW_API, MODEL_API, CONTROLLER_API, bgLayer, objLayer, grLayer);
 
 	// Set up buttons
-	$("#start").click(() => document.layerView.startDrawing());
-	$("#stop").click(() => document.layerView.stopDrawing());
-
+	$("#start").click(() => {
+		document.layerView.startDrawing();
+		// disable this button, otherwise it is now in focus and Space/Enter will trigger the click again
+		$("#start").prop("disabled", true);
+	});
+	$("#stop").click(() => {
+		document.layerView.stopDrawing();
+		// reactive the start button
+		$("#start").prop("disabled", false);
+	});
 	
 }); // on document ready end

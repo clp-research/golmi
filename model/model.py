@@ -128,7 +128,9 @@ class Model:
 			new_gripped = self._get_grippable(id)
 			# changes to object and gripper
 			if new_gripped: self.state.grip(id, new_gripped)
-		# notify view of gripper change. A newly gripped object is implicitly updated.
+			# notify views of the now attached object
+			self._notify_views(self.get_obj_updated_event(new_gripped))
+		# notify view of gripper change.
 		self._notify_views(self.get_gripper_updated_event(id))
 
 	def move_gr(self, id, x_steps, y_steps, step_size=None):

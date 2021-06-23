@@ -140,7 +140,7 @@ $(document).ready(function () {
 		 * Draws a grid black on white as the background.
 		 */
 		drawBg() {
-			// set up
+			// set updates
 			let ctx = this.bgCanvas.getContext("2d");
 			ctx.fillStyle = "white";
 			ctx.lineStyle = "black";
@@ -212,7 +212,7 @@ $(document).ready(function () {
 							color: grippedObj.color,
 							highlight: "grey" // apply highlight to a gripped object
 						}
-						this._drawBlockObj(ctx, blockMatrix, params);
+						this._drawBlockObj(this.grCanvas.getContext("2d"), blockMatrix, params);
 					}
 				}
 
@@ -222,7 +222,7 @@ $(document).ready(function () {
 				// draw the gripper itself
 				// --- config ---
 				ctx.lineStyle = "red";
-				ctx.strokeStyle = 2;
+				ctx.lineWidth = 2;
 				// draw. The gripper is a simple cross
 				ctx.beginPath();
 				ctx.moveTo(this._toPxl(gripper.x-grSize), this._toPxl(gripper.y-grSize));
