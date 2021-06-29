@@ -3,23 +3,19 @@ $(document).ready(function () {
 	/**
 	 * @param {URL of the View API} viewAPI
 	 * @param {URL of the Model API} modelAPI
-	 * @param {URL of the Controller API} controllerAPI
 	 * @param {reference to the canvas DOM element to draw the background to} bgCanvas
 	 * @param {reference to the canvas DOM element to draw the static objects to} objCanvas
 	 * @param {reference to the canvas DOM element to draw grippers and gripped objects to} grCanvas
 	 */
 	this.LayerView = class LayerView extends document.View {
-		constructor(viewAPI, modelAPI, controllerAPI, bgCanvas, objCanvas, grCanvas) {
-			super(viewAPI, modelAPI, controllerAPI);
+		constructor(viewAPI, modelAPI, bgCanvas, objCanvas, grCanvas) {
+			super(viewAPI, modelAPI);
 			// Three overlapping canvas
 			this.bgCanvas	= bgCanvas;
 			this.objCanvas	= objCanvas;
 			this.grCanvas	= grCanvas;
 			// Empty the canvas
 			this.clear();
-
-			// Set up key listeners
-			this._initKeyListener();
 		}
 
 		// Canvas width in pixels. Assumes all 3 canvas are the same size
@@ -298,26 +294,6 @@ $(document).ready(function () {
 
 		_toPxl(coord) {
 			return coord * this.blockSize;
-		}
-
-
-		// --- User events ---
-
-		/**
-		 * Register the key listeners to allow gripper manipulation.
-		 * Notifies the associated controller of key events.
-		 */
-		_initKeyListener() { 
-			$(document).keydown( e => {
-				let notifyController = new Request(`http://${this.controllerAPI}/key-pressed/${e.keyCode}`, {method:"POST"});
-				fetch(notifyController)
-				.then( r => {
-					if (!r.ok) {
-						// TODO: inform user about controls ?
-						console.log("Unassigned key pressed.");
-					}
-				});
-			});
 		}
 
 	}; // class LayerView end

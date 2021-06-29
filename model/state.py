@@ -18,13 +18,19 @@ class State:
 		"""
 		@param id 	gripper id
 		"""
-		return self.objs[id]
+		if id in self.objs:
+			return self.objs[id]
+		else:
+			return None
 
 	def get_gripper_ids(self):
 		return self.grippers.keys()
 
 	def get_gripper_by_id(self, id):
-		return self.grippers[id]
+		if id in self.grippers:
+			return self.grippers[id]
+		else:
+			return None
 	
 	def get_gripper_coords(self, id):
 		"""

@@ -86,7 +86,7 @@ class GripperKeyController():
 		@param dy 	int or float, number of units to move in y direction. Negative values translate to upwards movement.
 		"""
 		for (model, gripper) in self.models:
-			requests.post("http://{}/gripper".format(model), data=json.dumps({"id": gripper, "x": dx, "y": dy}))
+			requests.post("http://{}/gripper".format(model), data=json.dumps({"id": gripper, "dx": dx, "dy": dy}))
 
 	def _is_assigned(self, key_code):
 		"""

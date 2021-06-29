@@ -1,9 +1,11 @@
 $(document).ready(function () {
 
+	// Set to false to skip unit tests
+	document.SELFTEST = true;
+
 	// Define the API URLs
 
 	const MODEL_API			= "127.0.0.1:5000";
-	const CONTROLLER_API	= "127.0.0.1:5001";
 	const VIEW_API			= "127.0.0.1:5002";
 
 	const TESTGAME = {
@@ -54,16 +56,11 @@ $(document).ready(function () {
 		}
 	});
 
+	// Create a controller
+	this.controller = new document.GripperKeyController();
 	// Connect Controller to Model API (so controller can post to the model)
 	// Attach the controller to gripper "1"
-	let subscribeModelToController = new Request(`http://${CONTROLLER_API}/attach-model`, {method:"POST", body:`{"url": "${MODEL_API}", "gripper": "1"}`});
-	fetch(subscribeModelToController)
-	.then(r => {
-		if (!r.ok) {
-			console.log("Error connecting view and model API. Printing response...", r);
-		}
-	});
-
+	this.controller.attachModel(MODEL_API, "1");
 
 	// Get references to the three canvas layers
 	let bgLayer		= document.getElementById("background");
@@ -71,18 +68,29 @@ $(document).ready(function () {
 	let grLayer		= document.getElementById("gripper");
 
 	// Set up the view js, this also sets up key listeners
-	this.layerView = new document.LayerView(VIEW_API, MODEL_API, CONTROLLER_API, bgLayer, objLayer, grLayer);
+	this.layerView = new document.LayerView(VIEW_API, MODEL_API, bgLayer, objLayer, grLayer);
 
 	// Set up buttons
 	$("#start").click(() => {
+		// reset the controller in case any key is currently pressed
+		document.controller.resetKeys()
 		document.layerView.startDrawing();
 		// disable this button, otherwise it is now in focus and Space/Enter will trigger the click again
 		$("#start").prop("disabled", true);
 	});
 	$("#stop").click(() => {
 		document.layerView.stopDrawing();
+		// reset the controller in case any key is currently pressed
+		document.controller.resetKeys()
 		// reactive the start button
 		$("#start").prop("disabled", false);
 	});
+
+	// --- unit tests ---
+	if (document.SELFTEST) {
+		//let testController = this.GripperKeyController();
+		console.log("Unit tests passed");
+		
+	}
 	
 }); // on document ready end

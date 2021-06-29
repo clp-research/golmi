@@ -72,11 +72,15 @@ def gripper():
 			return "1", 400
 		else:
 			json_data = json.loads(request.data)
-		if type(json_data) == dict and "id" in json_data and "x" in json_data and "y" in json_data:
+		if type(json_data) == dict and "id" in json_data and "dx" in json_data and "dy" in json_data:
+			# Make sure the gripper exists
+			if not model.get_gripper_by_id(str(json_data["id"])):
+				return "1", 404
+
 			if "speed" in json_data:
-				model.move_gr(json_data["id"], json_data["x"], json_data["y"], json_data["speed"])
+				model.move_gr(str(json_data["id"]), json_data["dx"], json_data["dy"], json_data["speed"])
 			else:
-				model.move_gr(json_data["id"], json_data["x"], json_data["y"])
+				model.move_gr(str(json_data["id"]), json_data["dx"], json_data["dy"])
 			return "0"
 		else: 
 			return "1", 400
@@ -103,11 +107,15 @@ def gripper_grip():
 		else:
 			json_data = json.loads(request.data)
 
-		# assert the request hast the right parameters
+		# assert the request has the right parameters
 		if type(json_data) != dict or "id" not in json_data:
 			return "1", 400
 
-		model.grip(json_data["id"])
+		# assert the gripper exists
+		if not model.get_gripper_by_id(str(json_data["id"])):
+			return "1", 404
+
+		model.grip(str(json_data["id"]))
 		return "0"
 	else: 
 		return "1", 405
@@ -183,12 +191,12 @@ def selftest():
 		assert gripper["1"]["x"] == test_state["grippers"]["1"]["x"] and \
 			gripper["1"]["y"] == test_state["grippers"]["1"]["y"]
 		# move gripper with default step size
-		rv_move_gripper = c.post("/gripper", data=json.dumps({"id":"1", "x":3, "y":0}))
+		rv_move_gripper = c.post("/gripper", data=json.dumps({"id":"1", "dx":3, "dy":0}))
 		assert rv_move_gripper.status == "200 OK"
 		assert model.get_gripper_coords("1")[0] > gripper["1"]["x"] and \
 			model.get_gripper_coords("1")[1] == gripper["1"]["y"]
 		# move gripper with custom step size
-		rv_move_gripper2 = c.post("/gripper", data=json.dumps({"id":"1", "x":0, "y":3, "speed":1}))
+		rv_move_gripper2 = c.post("/gripper", data=json.dumps({"id":"1", "dx":0, "dy":3, "speed":1}))
 		assert rv_move_gripper2.status == "200 OK"
 		assert model.get_gripper_coords("1")[1] == gripper["1"]["y"] + 3
 		# --- gripping --- #

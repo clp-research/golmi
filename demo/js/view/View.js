@@ -4,11 +4,10 @@ $(document).ready(function () {
 	 *
 	 */
 	this.View = class View {
-		constructor(viewAPI, modelAPI, controllerAPI) {
+		constructor(viewAPI, modelAPI) {
 			this.viewAPI = viewAPI;
 			// tie the view to some game model
-			this.modelAPI = modelAPI; 
-			this.controllerAPI = controllerAPI;
+			this.modelAPI = modelAPI;
 
 			// Configuration. Is assigned at startDrawing()
 			this.blockSize;		// block width/height in pixels

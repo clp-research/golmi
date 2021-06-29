@@ -123,15 +123,18 @@ class Model:
 			# state takes care of detaching object and gripper
 			self.state.ungrip(id)
 			self._notify_views(self.get_obj_updated_event(old_gripped))
+			# notify view of gripper change.
+			self._notify_views(self.get_gripper_updated_event(id))
 		else: 
 			# Check if gripper hovers over some object
 			new_gripped = self._get_grippable(id)
 			# changes to object and gripper
-			if new_gripped: self.state.grip(id, new_gripped)
-			# notify views of the now attached object
-			self._notify_views(self.get_obj_updated_event(new_gripped))
-		# notify view of gripper change.
-		self._notify_views(self.get_gripper_updated_event(id))
+			if new_gripped: 
+				self.state.grip(id, new_gripped)
+				# notify views of the now attached object
+				self._notify_views(self.get_obj_updated_event(new_gripped))
+				# notify view of gripper change.
+				self._notify_views(self.get_gripper_updated_event(id))
 
 	def move_gr(self, id, x_steps, y_steps, step_size=None):
 		"""
@@ -174,14 +177,17 @@ class Model:
 		x, y = self.get_gripper_coords(gr_id)
 		for obj_id in self.get_object_ids(): 
 			obj = self.get_obj_by_id(obj_id)
-			# (gridX, gridY) is the position on the type grid the gripper would be on.
-			# if the gripper is outside the grid (i.e. coordinate is < 0 or >= size), the if-condition
-			# below evaluates to false. Thus, whether the gripper is on the grid and whether a block is
-			# present at the grid position is checked at once.
+			# (gridX, gridY) is the position on the type grid the gripper would be on
 			grid_x = floor(x-obj.x)
 			grid_y = floor(y-obj.y)
-			if self.get_type_config()[obj.type][grid_y] and self.get_type_config()[obj.type][grid_y][grid_x]: 
-				return obj_id
+			# get the object type matrix
+			type_matrix = self.get_type_config()[obj.type]
+
+			# check whether the gripper is on the object matrix
+			if grid_x >= 0 and grid_y >= 0 and grid_y < len(type_matrix) and grid_x < len(type_matrix[0]):
+				# check whether a block is present at the grid position
+				if type_matrix[grid_y] and type_matrix[grid_y][grid_x]: 
+					return obj_id
 		return None
 		
 	def _is_in_limits(self, x, y):
