@@ -1,4 +1,5 @@
 from state import State
+from timed_loop import TimedLoop
 import requests
 import json
 from math import floor
@@ -8,6 +9,10 @@ class Model:
 		self.views = list()
 		self.state = State()
 		self.config = config
+
+		# handles for loops will be saved in here to start / stop periodic actions
+		# the nested dicts map gripper ids to the loop handles
+		self.loops = {"move": dict(), "rotate": dict(), "flip": dict(), "rotate": dict()}
 
 	# --- getter --- #
 
@@ -136,6 +141,25 @@ class Model:
 				# notify view of gripper change.
 				self._notify_views(self.get_gripper_updated_event(id))
 
+	def start_moving_gr(self, id, x_steps, y_steps, step_size=None):
+		"""
+		Start calling the function move_gr periodically until stop_moving_gr is called.
+		@param id 	gripper id
+		@param x_steps	steps to move in x direction. Step size is defined by model configuration
+		@param y_steps	steps to move in y direction. Step size is defined by model configuration
+		@param step_size 	Optional: size of step unit in blocks. Default: use move_step of config
+		"""
+		# cancel any ongoing movement
+		self.stop_moving_gr(id)
+		self.start_loop("move", id, self.move_gr, id, x_steps, y_steps, step_size)
+
+	def stop_moving_gr(self, id):
+		"""
+		Stop calling move_gr periodically.
+		@param id 	gripper_id
+		"""
+		self.stop_loop("move", id)
+
 	def move_gr(self, id, x_steps, y_steps, step_size=None):
 		"""
 		If allowed, move the gripper x_steps steps in x direction and y_steps steps in y direction.
@@ -211,6 +235,15 @@ class Model:
 		@param y 	y coordinate to check
 		"""
 		return (y >= 0 and y <= self.get_height())
+
+	# --- Loop functionality ---
+
+	def start_loop(self, action_type, gripper, fn, *args, **kwargs):
+		self.loops[action_type][gripper] = TimedLoop(self.config.action_interval, fn, *args, **kwargs)
+
+	def stop_loop(self, action_type, gripper):
+		if gripper in self.loops[action_type]: 
+			self.loops[action_type][gripper].cancel()
 
 if __name__ == "__main__":
 	# Unit tests

@@ -11,8 +11,8 @@ $(document).ready(function () {
 	const TESTGAME = {
 		"grippers": {
 			"1": {
-				"x": 5,
-				"y": 5,
+				"x": 5.5,
+				"y": 5.5,
 				"gripped": "2"
 			}
 		},

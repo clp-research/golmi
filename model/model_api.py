@@ -4,6 +4,7 @@ from model import Model
 from config import Config
 import requests
 import json
+from time import sleep
 
 # --- define globals --- #
 
@@ -57,7 +58,7 @@ def config():
 		return "1", 405
 
 
-@app.route("/gripper", methods=["POST", "GET"])
+@app.route("/gripper", methods=["GET"])
 def gripper():
 	if request.method == "GET":
 		gr_ids = model.get_gripper_ids()
@@ -67,7 +68,12 @@ def gripper():
 			gr = model.get_gripper_by_id(gr_id)
 			response[gr_id] = _obj_to_dict(gr)
 		return response
-	elif request.method == "POST":
+	else: 
+		return "1", 405
+
+@app.route("/gripper/position", methods=["POST", "DELETE"])
+def gripper_position():
+	if request.method == "POST":
 		if not request.data:
 			return "1", 400
 		else:
@@ -78,14 +84,25 @@ def gripper():
 				return "1", 404
 
 			if "speed" in json_data:
-				model.move_gr(str(json_data["id"]), json_data["dx"], json_data["dy"], json_data["speed"])
+				model.start_moving_gr(str(json_data["id"]), json_data["dx"], json_data["dy"], json_data["speed"])
 			else:
-				model.move_gr(str(json_data["id"]), json_data["dx"], json_data["dy"])
+				model.start_moving_gr(str(json_data["id"]), json_data["dx"], json_data["dy"])
 			return "0"
 		else: 
 			return "1", 400
-	else: 
-		return "1", 405
+	elif request.method == "DELETE":
+		if not request.data:
+			return "1", 400
+		else:
+			json_data = json.loads(request.data)
+		if type(json_data) == dict and "id" in json_data:
+			# Make sure the gripper exists
+			if not model.get_gripper_by_id(str(json_data["id"])):
+				return "1", 404
+			model.stop_moving_gr(str(json_data["id"]))
+			return "0"
+		else: 
+			return "1", 400 
 
 @app.route("/gripper/grip", methods=["POST", "GET"])
 def gripper_grip():
@@ -191,14 +208,17 @@ def selftest():
 		assert gripper["1"]["x"] == test_state["grippers"]["1"]["x"] and \
 			gripper["1"]["y"] == test_state["grippers"]["1"]["y"]
 		# move gripper with default step size
-		rv_move_gripper = c.post("/gripper", data=json.dumps({"id":"1", "dx":3, "dy":0}))
+		rv_move_gripper = c.post("/gripper/position", data=json.dumps({"id":"1", "dx":3, "dy":0}))
 		assert rv_move_gripper.status == "200 OK"
 		assert model.get_gripper_coords("1")[0] > gripper["1"]["x"] and \
 			model.get_gripper_coords("1")[1] == gripper["1"]["y"]
 		# move gripper with custom step size
-		rv_move_gripper2 = c.post("/gripper", data=json.dumps({"id":"1", "dx":0, "dy":3, "speed":1}))
+		rv_move_gripper2 = c.post("/gripper/position", data=json.dumps({"id":"1", "dx":0, "dy":3, "speed":1}))
 		assert rv_move_gripper2.status == "200 OK"
 		assert model.get_gripper_coords("1")[1] == gripper["1"]["y"] + 3
+		rv_stop_gripper = c.delete("/gripper/position", data=json.dumps({"id": "1"}))
+		assert rv_stop_gripper.status == "200 OK"
+		# stop moving the gripper
 		# --- gripping --- #
 		rv4 = c.get("/gripper/grip")
 		assert test_state["grippers"]["1"]["gripped"] in rv4.get_json()["1"].keys()

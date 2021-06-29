@@ -116,7 +116,7 @@ $(document).ready(function () {
  		 */
 		_moveGr(dx, dy) {
 			for (let modelGripper of this.models) {
-				let moveReq = new Request(`http://${modelGripper[0]}/gripper`, {method:"POST", body:`{"id": ${modelGripper[1]}, "dx": ${dx}, "dy": ${dy}}`});
+				let moveReq = new Request(`http://${modelGripper[0]}/gripper/position`, {method:"POST", body:`{"id": ${modelGripper[1]}, "dx": ${dx}, "dy": ${dy}, "speed": 1}`});
 				fetch(moveReq)
 				.then(r => {
 					if (!r.ok) {
@@ -128,7 +128,16 @@ $(document).ready(function () {
 		}
 
 		stopMove(thisArg) {
-			console.log("stopMove");
+			for (let modelGripper of thisArg.models) {
+				let stopReq = new Request(`http://${modelGripper[0]}/gripper/position`, {method:"DELETE", body:`{"id": ${modelGripper[1]}}`});
+				fetch(stopReq)
+				.then(r => {
+					if (!r.ok) {
+						let info = r.status == 404 ? ": gripper with this id does not exist" : "";
+						console.log(`Error stopping gripper #${modelGripper[1]} at ${modelGripper[0]}` + info);
+					}
+				});
+			}
 		}
 
 		/**
