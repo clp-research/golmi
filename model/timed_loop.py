@@ -22,10 +22,3 @@ class TimedLoop:
 
     def cancel(self):
         self.stopEvent.set()
-
-# # # start action every 0.6s
-# inter = TimedLoop(0.6,action, 5, "a", test="big")
-
-# # # will stop interval in 5s
-# t = threading.Timer(5, inter.cancel)
-# t.start()

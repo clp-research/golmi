@@ -67,20 +67,19 @@ $(document).ready(function () {
 		 * @param {reference to GripperKeyController instance (this)} thisArg
 		 */
 		grip(thisArg) {
+			// send a request to each subscribed model
 			for (let modelGripper of thisArg.models) {
 				let gripReq = new Request(`http://${modelGripper[0]}/gripper/grip`, {method:"POST", body:`{"id": ${modelGripper[1]}}`});
-				fetch(gripReq)
-				.then(r => {
-					if (!r.ok) {
-						let info = r.status == 404 ? ": gripper with this id does not exist" : "";
-						console.log(`Error gripping with gripper #${modelGripper[1]} at ${modelGripper[0]}` + info);
-					}
-				});
+				thisArg._sendRequest(gripReq, `Error starting to grip: gripper #${modelGripper[1]} at ${modelGripper[0]}`);
 			}
 		}
 
 		stopGrip(thisArg) {
-			console.log("stopGrip");
+			// send a request to each subscribed model
+			for (let modelGripper of thisArg.models) {
+				let stopReq = new Request(`http://${modelGripper[0]}/gripper/grip`, {method:"DELETE", body:`{"id": ${modelGripper[1]}}`});
+				thisArg._sendRequest(stopReq, `Error stopping to grip: gripper #${modelGripper[1]} at ${modelGripper[0]}`);
+			}
 		}
 
 		/**
@@ -117,26 +116,14 @@ $(document).ready(function () {
 		_moveGr(dx, dy) {
 			for (let modelGripper of this.models) {
 				let moveReq = new Request(`http://${modelGripper[0]}/gripper/position`, {method:"POST", body:`{"id": ${modelGripper[1]}, "dx": ${dx}, "dy": ${dy}, "speed": 1}`});
-				fetch(moveReq)
-				.then(r => {
-					if (!r.ok) {
-						let info = r.status == 404 ? ": gripper with this id does not exist" : "";
-						console.log(`Error moving gripper #${modelGripper[1]} at ${modelGripper[0]}` + info);
-					}
-				});
+				this._sendRequest(moveReq, `Error moving gripper #${modelGripper[1]} at ${modelGripper[0]}`);
 			}
 		}
 
 		stopMove(thisArg) {
 			for (let modelGripper of thisArg.models) {
-				let stopReq = new Request(`http://${modelGripper[0]}/gripper/position`, {method:"DELETE", body:`{"id": ${modelGripper[1]}}`});
-				fetch(stopReq)
-				.then(r => {
-					if (!r.ok) {
-						let info = r.status == 404 ? ": gripper with this id does not exist" : "";
-						console.log(`Error stopping gripper #${modelGripper[1]} at ${modelGripper[0]}` + info);
-					}
-				});
+				let moveReq = new Request(`http://${modelGripper[0]}/gripper/position`, {method:"DELETE", body:`{"id": ${modelGripper[1]}}`});
+				thisArg._sendRequest(moveReq, `Error stopping gripper #${modelGripper[1]} at ${modelGripper[0]}`);
 			}
 		}
 
@@ -190,6 +177,23 @@ $(document).ready(function () {
 
 		stopFlip(thisArg) {
 			console.log("stopFlip")
+		}
+
+		/**
+		 * Helper function for sending and processing a single request
+		 * @param {Request object, containing method and optional body} request
+		 * @param {error message to log to the console if something goes wrong} errMsg
+		 */
+		_sendRequest(request, errMsg) {
+			// send a request to each subscribed model, log to console if something goes wrong:
+			fetch(request)
+			.then(r => {
+				// log to console if something goes wrong:
+				if (!r.ok) {
+					let info = r.status == 404 ? ": gripper with this id does not exist" : "";
+					console.log(`${errMsg}${info}`);
+				}
+			});
 		}
 
 		// --- Reacting to user events ---

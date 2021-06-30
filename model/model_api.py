@@ -104,7 +104,7 @@ def gripper_position():
 		else: 
 			return "1", 400 
 
-@app.route("/gripper/grip", methods=["POST", "GET"])
+@app.route("/gripper/grip", methods=["POST", "GET", "DELETE"])
 def gripper_grip():
 	if request.method == "GET":
 		gr_ids = model.get_gripper_ids()
@@ -132,7 +132,24 @@ def gripper_grip():
 		if not model.get_gripper_by_id(str(json_data["id"])):
 			return "1", 404
 
-		model.grip(str(json_data["id"]))
+		model.start_gripping(str(json_data["id"]))
+		return "0"
+	elif request.method == "DELETE":
+		# load request json, if present
+		if not request.data:
+			return "1", 400
+		else:
+			json_data = json.loads(request.data)
+
+		# assert the request has the right parameters
+		if type(json_data) != dict or "id" not in json_data:
+			return "1", 400
+
+		# assert the gripper exists
+		if not model.get_gripper_by_id(str(json_data["id"])):
+			return "1", 404
+
+		model.stop_gripping(str(json_data["id"]))
 		return "0"
 	else: 
 		return "1", 405
@@ -215,17 +232,21 @@ def selftest():
 		# move gripper with custom step size
 		rv_move_gripper2 = c.post("/gripper/position", data=json.dumps({"id":"1", "dx":0, "dy":3, "speed":1}))
 		assert rv_move_gripper2.status == "200 OK"
-		assert model.get_gripper_coords("1")[1] == gripper["1"]["y"] + 3
+		assert float(model.get_gripper_coords("1")[1]) == float(gripper["1"]["y"] + 3)
 		rv_stop_gripper = c.delete("/gripper/position", data=json.dumps({"id": "1"}))
 		assert rv_stop_gripper.status == "200 OK"
 		# stop moving the gripper
 		# --- gripping --- #
 		rv4 = c.get("/gripper/grip")
 		assert test_state["grippers"]["1"]["gripped"] in rv4.get_json()["1"].keys()
+		# bad request: missing gripper id
 		rv5_bad_request = c.post("/gripper/grip")
 		assert rv5_bad_request.status == "400 BAD REQUEST"
-		rv5 = c.post("/gripper/grip", data=json.dumps({"id":"1"}))
-		assert rv5.status == "200 OK"
+		rv5_start_gripping = c.post("/gripper/grip", data=json.dumps({"id":"1"}))
+		assert rv5_start_gripping.status == "200 OK"
+		# stop gripping
+		rv5_stop_gripping = c.delete("/gripper/grip", data=json.dumps({"id":"1"}))
+		assert rv5_stop_gripping.status == "200 OK"
 
 		# --- objects --- #
 		rv6 = c.get("/objects")

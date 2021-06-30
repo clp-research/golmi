@@ -12,7 +12,7 @@ class Model:
 
 		# handles for loops will be saved in here to start / stop periodic actions
 		# the nested dicts map gripper ids to the loop handles
-		self.loops = {"move": dict(), "rotate": dict(), "flip": dict(), "rotate": dict()}
+		self.loops = {"move": dict(), "grip": dict(), "flip": dict(), "rotate": dict()}
 
 	# --- getter --- #
 
@@ -116,6 +116,22 @@ class Model:
 			requests.post("http://{}/updates".format(view), data=json.dumps(updates))
 
 	# --- Gripper manipulation --- #
+
+	def start_gripping(self, id):
+		"""
+		Start calling the function grip periodically until stop_gripping is called, essentially 
+		repeatedly gripping / ungripping with a specified gripper.
+		@param id 	gripper id
+		"""
+		self.stop_gripping(id)
+		self.start_loop("grip", id, self.grip, id)
+
+	def stop_gripping(self, id):
+		"""
+		Stop periodically gripping.
+		@param id 	gripper id
+		"""
+		self.stop_loop("grip", id)
 
 	def grip(self, id):
 		"""

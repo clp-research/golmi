@@ -36,14 +36,20 @@ class State:
 		"""
 		@param id 	gripper id
 		"""
-		return [self.grippers[id].x, self.grippers[id].y]
+		if id in self.grippers:
+			return [self.grippers[id].x, self.grippers[id].y]
+		else:
+			return list()
 
 	# returns None if no object is gripped
 	def get_gripped_obj(self, id): 
 		"""
 		@param id 	gripper id 
 		"""
-		return self.grippers[id].gripped
+		if id in self.grippers:
+			return self.grippers[id].gripped
+		else:
+			return None
 	
 	def move_gr(self, id, dx, dy):
 		"""
