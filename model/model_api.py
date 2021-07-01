@@ -5,6 +5,12 @@ from config import Config
 import requests
 import json
 from time import sleep
+import argparse
+
+# GOLMI's model API
+# author: clpresearch, Karla Friedrichs
+# usage: python3 model_api.py [-h] [--host HOST] [--port PORT] [--test]
+# Runs on host 127.0.0.1 and port 5000 per default
 
 # --- define globals --- #
 
@@ -16,8 +22,6 @@ app = Flask(__name__)
 # TODO: restrict sources
 CORS(app)
 
-HOST = "127.0.0.1"
-PORT = "5000"
 # todo: endpoint to change config
 config = Config("resources/type_config/pentomino_types.json")
 model = Model(config)
@@ -256,7 +260,15 @@ def selftest():
 		rv_reset = c.delete("/state")
 		assert rv_reset.status == "200 OK" and len(model.get_objects()) == 0
 
+# --- command line arguments ---
+parser = argparse.ArgumentParser(description="Run GOLMI's model API.")
+parser.add_argument("--host", type=str, default="127.0.0.1", help="Adress to run the API on. Default: localhost.")
+parser.add_argument("--port", type=str, default="5000", help="Port to run the API on. Default: 5000.")
+parser.add_argument("--test", action="store_true", help="Pass this argument to perform some tests before the API is run.")
 
 if __name__ == "__main__":
-	selftest()
-	app.run(host=HOST, port=PORT)
+	args = parser.parse_args()
+	if args.test:
+		selftest()
+		print("All tests passed.")
+	app.run(host=args.host, port=args.port)

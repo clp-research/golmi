@@ -3,12 +3,14 @@ from flask_cors import CORS
 from view_update_storage import ViewUpdateStorage
 import requests
 import json
+import argparse
+
+# GOLMI's view API
+# author: clpresearch, Karla Friedrichs
+# usage: python3 view_api.py [-h] [--host HOST] [--port PORT] [--test]
+# Runs on host "127.0.0.1" and port "5002" per default
 
 # --- define globals --- #
-
-HOST = "127.0.0.1"
-PORT = "5002"
-
 app = Flask(__name__)
 # enable cross-origin requests 
 # TODO: restrict sources
@@ -66,6 +68,16 @@ def selftest():
 		assert json.loads(get_updates.data) == {"grippers": ["4", "2"], "objs": ["1", "2"], "config": True}
 		# make sure the updates were deleted
 		assert update_storage.get_updates() == {"grippers": list(), "objs": list(), "config": False}
+
+# --- command line arguments ---
+parser = argparse.ArgumentParser(description="Run GOLMI's view API.")
+parser.add_argument("--host", type=str, default="127.0.0.1", help="Adress to run the API on. Default: localhost.")
+parser.add_argument("--port", type=str, default="5002", help="Port to run the API on. Default: 5002.")
+parser.add_argument("--test", action="store_true", help="Pass this argument to perform some tests before the API is run.")
+
 if __name__ == "__main__":
-	selftest()
-	app.run(host=HOST, port=PORT)
+	args = parser.parse_args()
+	if args.test:
+		selftest()
+		print("All tests passed.")
+	app.run(host=args.host, port=args.port)

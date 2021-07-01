@@ -52,7 +52,7 @@ $(document).ready(function () {
 	fetch(loadGameReq)
 	.then(r => {
 		if (!r.ok) {
-			console.log("Error loading a game state. Printing response...", r);
+			console.log("Error loading a state. Printing response...", r);
 		}
 	});
 

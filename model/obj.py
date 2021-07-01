@@ -1,5 +1,5 @@
 class Obj:
-	def __init__(self, obj_type, x, y, width, height, rotation=0, mirrored=False, color="lightblue"): 
+	def __init__(self, obj_type, x, y, width, height, rotation=0, mirrored=False, color="blue"): 
 		self.type		= obj_type
 		self.x			= x
 		self.y			= y

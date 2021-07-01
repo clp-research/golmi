@@ -30,17 +30,14 @@ class Config:
 			self.type_config = type_config
 		
 		self.colors = [
-						"light red", 
-						"beige", 
+						"red", 
+						"orange", 
 						"yellow", 
-						"light green",
-						"dark green",
-						"pink",
+						"green",
+						"blue",
 						"purple",
-						"light blue",
-						"dark blue",
-						"turquoise",
-						"orange"
+						"saddlebrown", 
+						"grey,"
 						]
 	
 
