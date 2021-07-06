@@ -50,11 +50,7 @@ def detach_view():
 @app.route("/config", methods=["GET", "POST"])
 def config():
 	if request.method == "GET":
-		return {
-			"width": model.get_width(),
-			"height": model.get_height(),
-			"type_config": model.get_type_config()
-		}
+		return model.get_config()
 	elif request.method == "POST": 
 		print("POST at /config endpoint: not implemented")
 		return "1", 404
@@ -65,13 +61,7 @@ def config():
 @app.route("/gripper", methods=["GET"])
 def gripper():
 	if request.method == "GET":
-		gr_ids = model.get_gripper_ids()
-		# construct the response: dictionary mapping ids to gripper details
-		response = dict()
-		for gr_id in gr_ids:
-			gr = model.get_gripper_by_id(gr_id)
-			response[gr_id] = _obj_to_dict(gr)
-		return response
+		return model.get_grippers()
 	else: 
 		return "1", 405
 
@@ -111,16 +101,8 @@ def gripper_position():
 @app.route("/gripper/grip", methods=["POST", "GET", "DELETE"])
 def gripper_grip():
 	if request.method == "GET":
-		gr_ids = model.get_gripper_ids()
-		response = dict()
-		for gr_id in gr_ids:
-			# get the id of a gripped object, or None if no object is gripped
-			gripped_obj = model.get_gripped_obj(gr_id)
-			if gripped_obj:
-				response[gr_id] = {gripped_obj: _obj_to_dict(model.get_obj_by_id(gripped_obj))}
-			else:
-				response[gr_id] = None
-		return response
+		grippers = model.get_grippers()
+		return {gr_id: gr["gripped"] for gr_id, gr in grippers.items()}
 	elif request.method == "POST":
 		# load request json, if present
 		if not request.data:
@@ -161,13 +143,7 @@ def gripper_grip():
 @app.route("/objects", methods=["GET", "POST"])
 def objects():
 	if request.method == "GET":
-		obj_ids = model.get_object_ids()
-		# construct the response: dictionary mapping ids to object details
-		response = dict()
-		for obj_id in obj_ids:
-			obj = model.get_obj_by_id(obj_id)
-			response[obj_id] = _obj_to_dict(obj)
-		return response
+		return model.get_objects()
 	elif request.method == "POST":
 		# add an object
 		print("POST at /objects: not implemented")
@@ -186,23 +162,7 @@ def state():
 		return "0"
 	else:
 		return "1", 405
-
-def _obj_to_dict(obj):
-	"""
-	Constructs a dictionary from an Obj instance.
-	@param obj 	instance of Obj or Obj child classes
-	"""
-	return {
-		"type": obj.type,
-		"x": obj.x,
-		"y": obj.y,
-		"width": obj.width,
-		"height": obj.height,
-		"rotation": obj.rotation,
-		"mirrored": obj.rotation,
-		"color": obj.color
-		}
-
+ 
 # --- tests --- #
 
 def selftest():

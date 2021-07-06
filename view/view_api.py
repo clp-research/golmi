@@ -8,7 +8,7 @@ import argparse
 # GOLMI's view API
 # author: clpresearch, Karla Friedrichs
 # usage: python3 view_api.py [-h] [--host HOST] [--port PORT] [--test]
-# Runs on host "127.0.0.1" and port "5002" per default
+# Runs on host 127.0.0.1 and port 5002 per default
 
 # --- define globals --- #
 app = Flask(__name__)

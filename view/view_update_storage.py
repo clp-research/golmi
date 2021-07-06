@@ -1,6 +1,6 @@
 class ViewUpdateStorage: 
 	def __init__(self):
-		self.pending_updates = {"grippers": list(), "objs": list(), "config":False}
+		self.pending_updates = {"grippers": dict(), "objs": dict(), "config": None}
 
 	def get_updates(self):
 		"""
@@ -13,25 +13,26 @@ class ViewUpdateStorage:
 		"""
 		Store a posted update into the internal data structures. 
 		Unknown keys are silently ignored.
-		@param update_dict	dictionary containing updates to perform: maps categories "grippers", "objs" to lists containing ids 
+		@param update_dict	dictionary containing updates to perform: maps categories "grippers", "objs", "config" to dicts
 		@return True if storing was successful
 		"""
-		if "grippers" in update_dict:
-			for gripper in update_dict["grippers"]:
-				if gripper not in self.pending_updates["grippers"]:
-					self.pending_updates["grippers"].append(gripper)
-		if "objs" in update_dict:
-			for obj in update_dict["objs"]:
-				if obj not in self.pending_updates["objs"]:
-					self.pending_updates["objs"].append(obj)
-		if "config" in update_dict:
-			# changed configuration is indicated by the presence of the config key
-			self.pending_updates["config"] = True
-		return True
+		try: 
+			if "grippers" in update_dict:
+				for gr_id, gr_dict in update_dict["grippers"].items():
+					# old update might be overwritten here
+					self.pending_updates["grippers"][gr_id] = gr_dict
+			if "objs" in update_dict:
+				for obj_id, obj_dict in update_dict["objs"].items():
+					self.pending_updates["objs"][obj_id] = obj_dict
+			if "config" in update_dict:
+				self.pending_updates["config"] = update_dict["config"]
+			return True
+		except:
+			return False
 		
 
 	def clear(self):
 		"""
 		Delete all stored updates.
 		"""
-		self.pending_updates = {"grippers": list(), "objs": list(), "config": False}
+		self.pending_updates = {"grippers": dict(), "objs": dict(), "config": False}

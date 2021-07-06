@@ -55,3 +55,13 @@ class Config:
 		types = json.loads(file.read())
 		file.close()
 		return types
+
+	def to_dict(self):
+		"""
+		Constructs a dictionary from this instance.
+		"""
+		return {
+			"width": self.width,
+			"height": self.height,
+			"type_config": self.type_config
+			}

@@ -98,8 +98,9 @@ $(document).ready(function () {
 
 		/**
 		 * Draw the (static) objects.
+		 * @param {optional: object data, e.g. obtained from the view API. default: null} preloadedObjs
 		 */
-		drawObj() {
+		async drawObj(preloadedObjs=null) {
 			console.log(`drawObj(${id}) at View: not implemented`);
 		}
 
@@ -107,16 +108,18 @@ $(document).ready(function () {
 		 * Redraw the (static) objects.
 		 * In contrast to drawObj(), this function assumes the objects have been drawn in the past
 		 * and the old drawing needs to be removed first.
+		 * @param {optional: object data, e.g. obtained from the view API. default: null} preloadedObjs
 		 */
-		redrawObj() {
+		redrawObj(preloadedObjs=null) {
 			console.log(`redrawObj(${id}) at View: not implemented`);
 		}
 
 		/**
 		 * Draw the gripper object (and, depending on the implementation, the gripped object too)
 		 * The Gripper is used to navigate on the canvas and move objects.
+		 * @param {gripper data, e.g. obtained from the view API} preloadedGrippers
 		 */
-		drawGr() {
+		async drawGr(preloadedGrippers=null) {
 			console.log("drawGr() at View: not implemented");
 		}
 
@@ -124,8 +127,9 @@ $(document).ready(function () {
 		 * Redraw the gripper object (and, depending on the implementation, the gripped object too).
 		 * In contrast to drawGripper(), this function assumes the gripper has been drawn in the past
 		 * and the old drawing needs to be removed first.
+		 * @param {gripper data, e.g. obtained from the view API} preloadedGrippers
 		 */
-		redrawGr() {
+		redrawGr(preloadedGrippers=null) {
 			console.log("redrawGr() at View: not implemented");
 		}
 		
@@ -158,24 +162,32 @@ $(document).ready(function () {
 		}
 
 		/**
-		 * Load the configuration from the model. The values are saved since the configuration is
+		 * Loads a configuration received from the model. The values are saved since the configuration is
 		 * not expected to change frequently. 
+		 * If no configuration is passed, it is requested from the model.
 		 * Implemented as an async function to make sure the configuration is complete before 
 		 * subsequent steps (i.e. drawing) are made.
+		 * @param {optional: config object, e.g. obtained from the view API. default: null} preloadedConfig
 		 */
-		async _loadConfig() {
-			// get the configuration from the model
-			let configReq = new Request(`http://${this.modelAPI}/config`, {method:"GET"});
-			let response = await fetch(configReq);
-			if (response.ok) { // Parse the response as json and save the config values
-				let json_data = await response.json();
-				this.blockSize = (this.canvasWidth / json_data.width);
-				this.cols = json_data.width;
-				this.rows = json_data.height;
-				this.typeConfig = json_data.type_config;
-			} else { // Something went wrong - emit an error message
-				console.log("Error: Could not fetch configuration from the model API");
+		async _loadConfig(preloadedConfig=null) {
+			let config; 
+			if (!preloadedConfig) {
+				// get the configuration from the model
+				let configReq = new Request(`http://${this.modelAPI}/config`, {method:"GET"});
+				let response = await fetch(configReq);
+				if (response.ok) { // Parse the response as json and save the config values
+					config = await response.json();
+				} else { // Something went wrong - emit an error message
+					console.log("Error: Could not fetch configuration from the model API");
+				}
+			} else {
+				config = preloadedConfig;
 			}
+			// Save all relevant values
+			this.blockSize = (this.canvasWidth / config.width);
+			this.cols = config.width;
+			this.rows = config.height;
+			this.typeConfig = config.type_config;
 		}
 
 		/**
@@ -188,8 +200,8 @@ $(document).ready(function () {
 			let updateReq = new Request(`http://${this.viewAPI}/updates`, {method:"GET"});
 			let response = await fetch(updateReq);
 			if (response.ok) { // Parse the response as json and save the config values
-				let json_data = await response.json();
-				return json_data;
+				let jsonData = await response.json();
+				return jsonData;
 			} else { // Something went wrong - emit an error message
 				console.log("Error: Could not fetch updates from the view API");
 				return null
@@ -199,25 +211,26 @@ $(document).ready(function () {
 		/**
 		 * Process an update object, calling the appropriate redrawing functions.
 		 * @param {object containing the keys "grippers", "objs", "config"} update_obj
+		 * @return Boolean: true if updates were made, false otherwise
 		 */
 		async _processUpdates(updates) {
 			// keep track of whether any update was made
 			let update_applied = false;
 			// if the config has changed, redraw everything
 			if (updates["config"]) {
-				await this._loadConfig();
+				await this._loadConfig(updates["config"]);
 				this.redraw();
 				update_applied = true;
 			} else {
+				// if any gripper was changed, redraw the gripper layer
+				if (updates["grippers"] && updates["grippers"].length > 0) {
+					this.redrawGr(updates["grippers"]);
+					update_applied = true;
+				}
 				// there is only 3 layers here and the background does not need to be updated.
 				// if any object was changed, redraw the object layer
 				if (updates["objs"] && updates["objs"].length > 0) {
-					this.redrawObj();
-					update_applied = true;
-				}
-				// if any gripper was changed, redraw the gripper layer
-				if (updates["grippers"] && updates["grippers"].length > 0) {
-					this.redrawGr();
+					this.redrawObj(updates["objs"]);
 					update_applied = true;
 				}
 			}

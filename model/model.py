@@ -25,6 +25,9 @@ class Model:
 	def get_obj_by_id(self, id):
 		return self.state.get_obj_by_id(id)
 
+	def get_grippers(self):
+		return self.state.get_grippers()
+
 	def get_gripper_ids(self):
 		return self.state.get_gripper_ids()
 
@@ -40,6 +43,8 @@ class Model:
 		"""
 		return self.state.get_gripper_coords(id)
 
+	def get_config(self):
+		return self.config.to_dict()
 
 	def get_width(self):
 		return self.config.width
@@ -52,14 +57,14 @@ class Model:
 
 	#  --- Events --- #
 	def get_gripper_updated_event(self, id): 
-		return {"grippers": [id]}
+		return {"grippers": self.get_grippers()}
 
 	def get_new_state_loaded_event(self): 
 		# update all grippers and objects. Config does not need to be reloaded.
-		return {"grippers": list(self.get_gripper_ids()), "objs": list(self.get_object_ids())}
+		return {"grippers": self.get_grippers(), "objs": self.get_objects()}
 	
 	def get_obj_updated_event(self, id): 
-		return {"objs": [id]}
+		return {"objs": self.get_objects()}
 
 	# currently unused
 	def get_config_changed_event(self):

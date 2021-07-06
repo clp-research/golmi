@@ -26,3 +26,18 @@ class Obj:
 
 	def get_bottom_edge(self): 
 		return self.y + self.height
+
+	def to_dict(self):
+		"""
+		Constructs a dictionary from this instance.
+		"""
+		return {
+			"type": self.type,
+			"x": self.x,
+			"y": self.y,
+			"width": self.width,
+			"height": self.height,
+			"rotation": self.rotation,
+			"mirrored": self.rotation,
+			"color": self.color
+			}

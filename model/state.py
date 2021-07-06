@@ -9,7 +9,10 @@ class State:
 			self.from_JSON(json_data)
 		
 	def get_objects(self):
-		return self.objs
+		"""
+		@return Dictionary mapping object ids to object dictionaries
+		"""
+		return {obj_id: obj.to_dict() for obj_id, obj in self.objs.items()}
 
 	def get_object_ids(self): 
 		return self.objs.keys()
@@ -22,6 +25,22 @@ class State:
 			return self.objs[id]
 		else:
 			return None
+
+	def get_grippers(self):
+		"""
+		In contrast to get_objects, each gripper dict has the entry "gripped", which itself
+		is None or a dictionary mapping the gripped object to an object dictionary.
+		@return Dictionary mapping gripper ids to gripper dictionaries.
+		"""
+		gr_dict = dict()
+		for gr_id, gr in self.grippers.items():
+			gr_dict[gr_id] = gr.to_dict()
+			# if some object is gripped, add all the info on that object too
+			if gr.gripped:
+				gr_dict[gr_id]["gripped"] = {gr.gripped: self.get_obj_by_id(gr.gripped).to_dict()}
+			else:
+				gr_dict[gr_id]["gripped"] = None
+		return gr_dict
 
 	def get_gripper_ids(self):
 		return self.grippers.keys()
