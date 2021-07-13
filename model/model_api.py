@@ -28,24 +28,20 @@ model = Model(config)
 
 # --- define routes --- # 
 
-@app.route("/attach-view", methods=["POST"])
+@app.route("/attach-view", methods=["POST", "DELETE"])
 #@cross_origin(origin='localhost')
 def attach_view():
 	if not request.data:
 		return "1", 400
-	else:
+	elif request.method == "POST":
 		json_data = json.loads(request.data)
-	model.attach_view(json_data["url"])
-	return "0"
-
-@app.route("/detach-view", methods=["POST"])
-def detach_view():
-	if not request.data:
-		return "1", 400
-	else:
+		model.attach_view(json_data["url"])
+		return "0"
+	elif request.method == "DELETE":
 		json_data = json.loads(request.data)
-	model.detach_view(json_data["url"])
-	return "0"
+		return "0" if model.detach_view(json_data["url"]) else ("1", 400)
+	else:
+		return "1", 405
 
 @app.route("/config", methods=["GET", "POST"])
 def config():
@@ -173,7 +169,7 @@ def selftest():
 		assert rv.status == "200 OK" and dummy_view in model.views
 		# delete view again or there view be errors in the following tests
 		# when the model tries to notify the dummy view
-		c.post("/detach-view", data=json.dumps({"url":dummy_view}))
+		c.delete("/attach-view", data=json.dumps({"url":dummy_view}))
 		assert dummy_view not in model.views
 
 		# --- loading a state --- #

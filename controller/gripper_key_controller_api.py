@@ -27,38 +27,35 @@ PORT = "5001"
 
 # --- define routes --- # 
 
-@app.route("/attach-model", methods=["POST"])
+@app.route("/attach-model", methods=["POST", "DELETE"])
 def attach_model():
 	if not request.data:
 		return "1", 400
 	else:
 		json_data = json.loads(request.data)
-	if type(json_data) == dict and "url" in json_data and "gripper" in json_data:
-		return "0" if key_controller.attach_model(json_data["url"], json_data["gripper"]) else ("1", 400)
-	return "1", 400
-
-@app.route("/detach-model", methods=["POST"])
-def detach_model():
-	if not request.data:
+	
+	if request.method == "POST":
+		if type(json_data) == dict and "url" in json_data and "gripper" in json_data:
+			return "0" if key_controller.attach_model(json_data["url"], json_data["gripper"]) else ("1", 400)
 		return "1", 400
+	elif request.method == "DELETE":
+		if type(json_data) != dict or "url" not in json_data:
+			return "1", 400
+		# unsubscribe only a specific gripper-model combination
+		elif "gripper" in json_data:
+			return "0" if key_controller.detach_model(json_data["url"], json_data["gripper"]) else ("1", 400)
+		# unsubscribe all grippers of a model
+		else:
+			return "0" if key_controller.detach_model(json_data["url"]) else ("1", 400)
 	else:
-		json_data = json.loads(request.data)
-	# invalid request
-	if type(json_data) != dict or "url" not in json_data:
-		return "1", 400
-	# unsubscribe only a specific gripper-model combination
-	elif "gripper" in json_data:
-		return "0" if key_controller.detach_model(json_data["url"], json_data["gripper"]) else ("1", 400)
-	# unsubscribe all grippers of a model
-	else:
-		return "0" if key_controller.detach_model(json_data["url"]) else ("1", 400)
+		return "1", 405
 
 @app.route("/key-pressed/<int:key_code>", methods=["POST"])
 def key_pressed(key_code):
 	# attempt to process the key. False is returned if no function is assigned.
 	if key_controller.key_pressed(key_code):
 		return "0"
-	return ("1", 404)
+	return "1", 404
 
 def selftest():
 	with app.test_client() as c:
@@ -89,10 +86,10 @@ def selftest():
 		assert r_keypress_move.status == "200 OK"
 
 		# unsubscribe a model
-		r_unsubscribe_model = c.post("/detach-model", data=json.dumps({"url": dummy_model}))
+		r_unsubscribe_model = c.delete("/attach-model", data=json.dumps({"url": dummy_model}))
 		assert r_unsubscribe_model.status == "200 OK"
 		# attempt to unsubscribe a non-subscribed model
-		r_unsubscribe_model2 = c.post("/detach-model", data=json.dumps({"url": dummy_model}))
+		r_unsubscribe_model2 = c.delete("/attach-model", data=json.dumps({"url": dummy_model}))
 		assert r_unsubscribe_model2.status == "400 BAD REQUEST"
 
 		# clean up 

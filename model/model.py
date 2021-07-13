@@ -4,6 +4,8 @@ import requests
 import json
 from math import floor
 
+# TODO: no object collision
+
 class Model:
 	def __init__(self, config):
 		self.views = list()
@@ -77,17 +79,22 @@ class Model:
 		Link a new view. Each view is notified of model changes via events.
 		@param view 	URL of view API
 		"""
-		self.views.append(view)
+		if view not in self.views:
+			self.views.append(view)
 
 	def detach_view(self, view):
 		"""
 		Removes a view from the list of listeners.
 		@param view 	registered URL of view to remove
+		@return true if the view was found and removed, false if the view was not subscribed
 		"""
 		# use while loop to deal with possible duplicate registration
+		found = False
 		while view in self.views:
 			self.views.remove(view)
-
+			found = True
+		return True
+		
 	def clear_views(self):
 		"""
 		Removes all view listeners.
