@@ -168,9 +168,11 @@ Each client-side interface has its own view API, and it now needs to periodicall
 
 Depending on the set-up, changes to the model might be initiated from different sources: it could be a single player pressing keys in their interface, someone giving spoken instructions to an NLU system or a artificial agent following some algorithm. 
 
-Each of these situations might require different controls, making the need for special controllers. In this repository, two types of controllers are provided, both processing key strokes: First, the Controller API receives requests specifying key events and triggers the appropriate functions at the model API. While this approach is faithful to the MVC architecture, it also brings additional network traffic and slows down the interactions. 
+Each of these situations might require different controls, making the need for special controllers. In this repository, two types of controllers are provided, both processing key strokes: 
 
-The second approach therefore is to let the controller reside at the client's machine. Instead of sending key events to the controller API, a local controller directly interprets the key codes and makes requests to the model API.
+First, the controller API receives requests specifying key events and triggers the appropriate functions at the model API. While this approach is faithful to the MVC architecture, it also brings additional network traffic and slows down the interactions. A small demo of what requests to send the controller API from the client-side interface can be found in ```demo/js/controller/APIKeyController.js```
+
+The second approach therefore is to let the controller reside at the client's machine. Instead of sending key events to the controller API, a local controller directly interprets the key codes and makes requests to the model API. This variant is included in the ```demo/pentoDemo.html``` interface. The relevant controller class is defined in ```demo/js/controller/LocalKeyController.js```
 
 ## Misc.
 

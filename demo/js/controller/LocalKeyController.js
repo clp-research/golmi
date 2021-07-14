@@ -3,14 +3,14 @@ $(document).ready(function () {
 	/**
 	 * @param {Array of [modelURL, gripperId], optional} modelAPIs
 	 */
-	this.GripperKeyController = class GripperKeyController {
+	this.LocalKeyController = class LocalKeyController {
 		constructor(modelAPIs=null) {
 			// array of model URLs to notify
 			this.models = modelAPIs ? modelAPIs : new Array();
 			
 			// assign functions to key codes: [function for keydown, function for keyup, down?] 
 			this.keyAssignment = {
-				13: [this.grip, null, false],				// Enter
+				13: [this.grip, this.stopGrip, false],						// Enter
 				32: [this.grip, this.stopGrip, false],				// Space
 				37: [this.moveLeft, this.stopMove, false],			// arrow left
 				38: [this.moveUp, this.stopMove, false],			// arrow up
@@ -64,7 +64,7 @@ $(document).ready(function () {
 		/**
 		 * Notifies all subscribed models that a "grip" should be attempted.
 		 * Makes a POST request to the /gripper/grip endpoint.
-		 * @param {reference to GripperKeyController instance (this)} thisArg
+		 * @param {reference to LocalKeyController instance (this)} thisArg
 		 */
 		grip(thisArg) {
 			// send a request to each subscribed model
@@ -84,13 +84,13 @@ $(document).ready(function () {
 
 		/**
 		 * Notify models to move the gripper 1 block to the left.
-		 * @param {reference to GripperKeyController instance (this)} thisArg
+		 * @param {reference to LocalKeyController instance (this)} thisArg
 		 */
 		moveLeft(thisArg) { thisArg._moveGr(-1, 0); }
 
 		/**
 		 * Notify models to move the gripper 1 block up.
-		 * @param {reference to GripperKeyController instance (this)} thisArg
+		 * @param {reference to LocalKeyController instance (this)} thisArg
 		 */
 		moveUp(thisArg) {
 			thisArg._moveGr(0, -1); 
@@ -98,13 +98,13 @@ $(document).ready(function () {
 		
 		/**
 		 * Notify models to move the gripper 1 block to the right.
-		 * @param {reference to GripperKeyController instance (this)} thisArg
+		 * @param {reference to LocalKeyController instance (this)} thisArg
 		 */
 		moveRight(thisArg) { thisArg._moveGr(1, 0); }
 
 		/**
 		 * Notify models to move the gripper 1 block down.
-		 * @param {reference to GripperKeyController instance (this)} thisArg
+		 * @param {reference to LocalKeyController instance (this)} thisArg
 		 */
 		moveDown(thisArg) { thisArg._moveGr(0, 1); }
 
@@ -129,13 +129,13 @@ $(document).ready(function () {
 
 		/**
 		 * 
-		 * @param {reference to GripperKeyController instance (this)} thisArg
+		 * @param {reference to LocalKeyController instance (this)} thisArg
 		 */
 		rotateLeft(thisArg) { thisArg._rotate(-1); }
 
 		/**
 		 * 
-		 * @param {reference to GripperKeyController instance (this)} thisArg
+		 * @param {reference to LocalKeyController instance (this)} thisArg
 		 */
 		rotateRight(thisArg) { thisArg._rotate(1); }
 
@@ -155,13 +155,13 @@ $(document).ready(function () {
 
 		/**
 		 * 
-		 * @param {reference to GripperKeyController instance (this)} thisArg
+		 * @param {reference to LocalKeyController instance (this)} thisArg
 		 */
 		flipHorizontally(thisArg) { thisArg._flip(0); }
 
 		/**
 		 * 
-		 * @param {reference to GripperKeyController instance (this)} thisArg
+		 * @param {reference to LocalKeyController instance (this)} thisArg
 		 */
 		flipVertically(thisArg) { thisArg._flip(1); }
 
@@ -264,6 +264,6 @@ $(document).ready(function () {
 			return this.keyAssignment[keyCode][2];
 		}
 
-	}; // class LayerView end
+	}; // class LocalKeyController end
 
 }); // on document ready end

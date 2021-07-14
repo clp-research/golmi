@@ -4,14 +4,19 @@ import json
 class GripperKeyController():
 	def __init__(self):
 		self.models = list() # contains tuples (controlled model, associated gripper)
-		# dictionary mapping key codes to a tuple (function to call, list of arguments to pass)
+		# assign functions to key codes: [function for keydown, args for keydown, function for keyup, args for keyup, down?] 
 		self.key_assignment = {
-			13: (self.grip, []),
-			32: (self.grip, []),
-			37: (self.move, [-1, 0]),
-			38: (self.move, [0, -1]),
-			39: (self.move, [1, 0]),
-			40: (self.move, [0, 1])}
+			13: [self.grip, [], None, [], False],					# Enter
+			32: [self.grip, [], None, [], False],					# Space
+			37: [self.move, [-1, 0], self.stop_move, [], False],	# arrow left
+			38: [self.move, [0, -1], self.stop_move, [], False],	# arrow up
+			39: [self.move, [1, 0], self.stop_move, [], False],		# arrow right
+			40: [self.move, [0, 1], self.stop_move, [], False],		# arrow down
+			65: [self.rotate, [-1], self.stop_rotate, [], False],	# a
+			68: [self.rotate, [1], self.stop_rotate, [], False],	# d
+			83: [self.flip, [], None, [], False],					# s
+			87: [self.flip, [], None, [], False]					# w
+		}
 
 	def attach_model(self, model, gripper):
 		"""
@@ -63,13 +68,32 @@ class GripperKeyController():
 		Dispatches any function assigned to the given key code.
 		@param key_code 	int, code of key that was pressed
 		""" 
-		if self._is_assigned(key_code):
-			# get function and arguments to call
-			fn, args = self.key_assignment[key_code] 
-			fn(*args)
+		if self._is_assigned_down(key_code):
+			if not self._is_down(key_code):
+				# get function and arguments to call
+				fn, args, _, _, _ = self.key_assignment[key_code] 
+				fn(*args)
+				# set key status to down, if relevant
+				self._set_down(key_code)
 			return True
 		else:
 			return False
+
+	def key_released(self, key_code):
+		"""
+		Dispatches any function assigned to releasing the given key.
+		This serves for continuous actions such as moving and rotating
+		@param key_code 	int, code of key that was released
+		"""
+		# following the internal logic, key can only be down if an up function is assigned, so
+		# we can skip this check here
+		if self._is_down(key_code):
+			# get function and arguments to call
+			_, _, fn, args, _ = self.key_assignment[key_code] 
+			fn(*args)
+			# set key status to up
+			self._set_up(key_code)
+			return True
 
 	def grip(self):
 		"""
@@ -86,12 +110,53 @@ class GripperKeyController():
 		@param dy 	int or float, number of units to move in y direction. Negative values translate to upwards movement.
 		"""
 		for (model, gripper) in self.models:
-			requests.post("http://{}/gripper".format(model), data=json.dumps({"id": gripper, "dx": dx, "dy": dy}))
+			requests.post("http://{}/gripper/position".format(model), data=json.dumps({"id": gripper, "dx": dx, "dy": dy}))
 
-	def _is_assigned(self, key_code):
+	def stop_move(self):
+		for (model, gripper) in self.models:
+			requests.delete("http://{}/gripper/position".format(model), data=json.dumps({"id": gripper}))
+
+	def rotate(self, direction):
+		print("not implemented")
+
+	def stop_rotate(self):
+		print("not implemented")
+
+	def flip(self):
+		print("not implemented")
+
+	def _is_assigned_down(self, key_code):
 		"""
-		Check whether a function is assigned to a given key code.
+		Check whether a function is assigned to pressing a given key.
 		@param key_code 	int, code of the key in question
-		@return bool, True signifying a function is assigned to the given key code
+		@return bool, True signifying a function is assigned to a key down event of the given key code
 		"""
-		return key_code in self.key_assignment
+		return key_code in self.key_assignment and self.key_assignment[key_code][0] != None
+
+	def _is_assigned_up(self, key_code):
+		"""
+		Check whether a function is assigned to releasing a given key.
+		@param key_code 	int, code of the key in question
+		@return bool, True signifying a function is assigned to a key up event of the given key code
+		"""
+		return key_code in self.key_assignment and self.key_assignment[key_code][2] != None
+
+	def _is_down(self, key_code):
+		"""
+		Check whether a key is currently in "down" status, i.e. pressed.
+		"""
+		return key_code in self.key_assignment and self.key_assignment[key_code][4]
+
+	def _set_down(self, key_code):
+		"""
+		Change the status of a key to "down".
+		"""
+		if self._is_assigned_up(key_code):
+			self.key_assignment[key_code][4] = True
+
+	def _set_up(self, key_code):
+		"""
+		Change the status of a key to "up".
+		"""
+		if key_code in self.key_assignment:
+			self.key_assignment[key_code][4] = False

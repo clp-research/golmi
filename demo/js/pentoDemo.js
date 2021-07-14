@@ -57,7 +57,7 @@ $(document).ready(function () {
 	});
 
 	// Create a controller
-	this.controller = new document.GripperKeyController();
+	this.controller = new document.LocalKeyController();
 	// Connect Controller to Model API (so controller can post to the model)
 	// Attach the controller to gripper "1"
 	this.controller.attachModel(MODEL_API, "1");
@@ -88,7 +88,7 @@ $(document).ready(function () {
 
 	// --- unit tests ---
 	if (document.SELFTEST) {
-		//let testController = this.GripperKeyController();
+		//let testController = this.LocalKeyController();
 		console.log("Unit tests passed");
 		
 	}

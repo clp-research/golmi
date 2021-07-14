@@ -50,12 +50,18 @@ def attach_model():
 	else:
 		return "1", 405
 
-@app.route("/key-pressed/<int:key_code>", methods=["POST"])
+@app.route("/key-pressed/<int:key_code>", methods=["POST", "DELETE"])
 def key_pressed(key_code):
 	# attempt to process the key. False is returned if no function is assigned.
-	if key_controller.key_pressed(key_code):
-		return "0"
-	return "1", 404
+	if request.method == "POST":
+		if key_controller.key_pressed(key_code):
+			return "0"
+		return "1", 404
+	elif request.method == "DELETE":
+		if key_controller.key_released(key_code):
+			return "0"
+		return "1", 404
+	return "1", 405
 
 def selftest():
 	with app.test_client() as c:
@@ -77,13 +83,18 @@ def selftest():
 		# no duplicate subscription
 		assert len(key_controller.models) == 1 
 
-		# test keypress
+		# test key press and key release
 		r_unassigned_keypress = c.post("/key-pressed/1")
 		assert r_unassigned_keypress.status == "404 NOT FOUND"
 		r_keypress_grip = c.post("/key-pressed/32")
 		assert r_keypress_grip.status == "200 OK"
+		r_keyrelease_grip = c.delete("/key-pressed/32")
+		assert r_keyrelease_grip.status == "200 OK"
+
 		r_keypress_move = c.post("/key-pressed/37")
 		assert r_keypress_move.status == "200 OK"
+		r_keyrelease_move = c.delete("/key-pressed/37")
+		assert r_keyrelease_move.status == "200 OK"
 
 		# unsubscribe a model
 		r_unsubscribe_model = c.delete("/attach-model", data=json.dumps({"url": dummy_model}))
