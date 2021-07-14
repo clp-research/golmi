@@ -1,11 +1,4 @@
 $(document).ready(function () {
-	
-	// how to know what objects are gripped:
-	// -> ask model when redrawing ( list option at model API?)
-	// -> save it. have obj: gr_id -> [gripped]. Has to be updated if grip/ungrip occurs ...
-	// but then when grip/ungrip occurs gripper is sent! so we have that info.
-	// but gripper has to be drawn last? or not??
-	// -> extra view-storage category : "gripped_objs?
 
 	/**
 	 * @param {URL of the View API} viewAPI
@@ -158,9 +151,9 @@ $(document).ready(function () {
 				let blockMatrix = this.typeConfig[obj.type];
 				
 				// perform manipulations (rotate, mirror)
-				//if (obj.rotation != 0) {
-				//	blockMatrix = document.rotateByRearrange(blockMatrix, obj.rotation);
-				//}
+				if (obj.rotation != 0) {
+					blockMatrix = this._rotateByRearrange(blockMatrix, obj.rotation);
+				}
 				// call drawing helper functions with additional infos (gripped, color)
 				let ctx = this.objCanvas.getContext("2d");
 				//TODO: size
@@ -219,6 +212,10 @@ $(document).ready(function () {
 					for (const [grippedId, grippedObj] of Object.entries(gripper.gripped)) {
 						drawnObjects.push(grippedId);
 						let blockMatrix = this.typeConfig[grippedObj.type];
+						// perform manipulations (rotate, mirror)
+						if (grippedObj.rotation != 0) {
+							blockMatrix = this._rotateByRearrange(blockMatrix, grippedObj.rotation);
+						}
 						let params = {
 							x: grippedObj.x,
 							y: grippedObj.y,
@@ -314,6 +311,40 @@ $(document).ready(function () {
 
 		_toPxl(coord) {
 			return coord * this.blockSize;
+		}
+
+		_rotateByRearrange(bMatrix, rotation) {
+			// nothing to do if rotation is 0
+			if (rotation == 0 || rotation == 360) { return bMatrix; }
+
+			// can only process multiples of 90, so round to the next step here
+			let approxRotation = Math.round(rotation/90) * 90;
+			// start building a new, rotated matrix
+			let newMatrix = new Array();
+			let height = bMatrix.length;
+			let width = bMatrix[0].length;
+			for (let row = 0; row < height; row++) {
+				// new empty row
+				newMatrix.push(new Array());
+				for (let col = 0; col < width; col++) {
+					// fill out the new matrix by copying values of the old matrix
+					// dummy:
+					switch (approxRotation) {
+						case 90:
+							newMatrix[row].push(bMatrix[(width-1)-col][row]);
+							break;
+						case 180:
+							newMatrix[row].push(bMatrix[(height-1)-row][(width-1)-col]);
+							break;
+						case 270:
+							newMatrix[row].push(bMatrix[col][(height-1)-row]);
+							break;
+						default:
+							console.log(`Error: Invalid turning angle at _rotateByRearrange(): ${approxRotation}`);
+					}
+				}
+			}
+			return newMatrix;
 		}
 
 		// --- Updating functions ---

@@ -73,8 +73,8 @@ def gripper_position():
 			if not model.get_gripper_by_id(str(json_data["id"])):
 				return "1", 404
 
-			if "speed" in json_data:
-				model.start_moving_gr(str(json_data["id"]), json_data["dx"], json_data["dy"], json_data["speed"])
+			if "step_size" in json_data:
+				model.start_moving_gr(str(json_data["id"]), json_data["dx"], json_data["dy"], json_data["step_size"])
 			else:
 				model.start_moving_gr(str(json_data["id"]), json_data["dx"], json_data["dy"])
 			return "0"
@@ -93,6 +93,35 @@ def gripper_position():
 			return "0"
 		else: 
 			return "1", 400 
+
+@app.route("/gripper/rotate", methods=["POST", "DELETE"])
+def gripper_rotate():
+	"""
+	Rotate the gripped object.
+	"""
+	if not request.data:
+		return "1", 400
+	else:
+		json_data = json.loads(request.data)
+	# assert the request has the right parameters
+	if type(json_data) != dict or "id" not in json_data:
+		return "1", 400
+	# assert the gripper exists
+	if not model.get_gripper_by_id(str(json_data["id"])):
+			return "1", 404
+	# rotate the gripped object
+	if request.method == "POST":
+		if "direction" not in json_data:
+			return "1", 400
+		if "step_size" in json_data:
+			model.start_rotating(str(json_data["id"]), float(json_data["direction"]), float(json_data["step_size"]))
+		else:
+			model.start_rotating(str(json_data["id"]), float(json_data["direction"]))
+		return "0", 200
+	elif request.method == "DELETE":
+		model.stop_rotating(str(json_data["id"]))
+		return "0", 200
+
 
 @app.route("/gripper/grip", methods=["POST", "GET", "DELETE"])
 def gripper_grip():
@@ -190,20 +219,30 @@ def selftest():
 		assert model.get_gripper_coords("1")[0] > gripper["1"]["x"] and \
 			model.get_gripper_coords("1")[1] == gripper["1"]["y"]
 		# move gripper with custom step size
-		rv_move_gripper2 = c.post("/gripper/position", data=json.dumps({"id":"1", "dx":0, "dy":3, "speed":1}))
+		rv_move_gripper2 = c.post("/gripper/position", data=json.dumps({"id":"1", "dx":0, "dy":3, "step_size":1}))
 		assert rv_move_gripper2.status == "200 OK"
 		assert float(model.get_gripper_coords("1")[1]) == float(gripper["1"]["y"] + 3)
+		# stop moving the gripper
 		rv_stop_gripper = c.delete("/gripper/position", data=json.dumps({"id": "1"}))
 		assert rv_stop_gripper.status == "200 OK"
-		# stop moving the gripper
+
+		# --- rotating the gripped object --- #
+		rv_rotate = c.post("/gripper/rotate", data=json.dumps({"id": "1", "direction": 1, "step_size": 45}))
+		# even if no object is gripped, should return OK
+		assert rv_rotate.status == "200 OK"
+		rv_stop_rotate = c.delete("/gripper/rotate", data=json.dumps({"id": "1"}))
+		assert rv_rotate.status == "200 OK"
+
 		# --- gripping --- #
 		rv4 = c.get("/gripper/grip")
 		assert test_state["grippers"]["1"]["gripped"] in rv4.get_json()["1"].keys()
 		# bad request: missing gripper id
 		rv5_bad_request = c.post("/gripper/grip")
+		# valid request
 		assert rv5_bad_request.status == "400 BAD REQUEST"
 		rv5_start_gripping = c.post("/gripper/grip", data=json.dumps({"id":"1"}))
 		assert rv5_start_gripping.status == "200 OK"
+
 		# stop gripping
 		rv5_stop_gripping = c.delete("/gripper/grip", data=json.dumps({"id":"1"}))
 		assert rv5_stop_gripping.status == "200 OK"

@@ -5,6 +5,8 @@ import json
 from math import floor
 
 # TODO: no object collision
+# BUG: gripping does not take account of rotating! "RotateAtRearrange" needs to happen here 
+# in the model and blockMatrix is returned by Model API!
 
 class Model:
 	def __init__(self, config):
@@ -59,6 +61,7 @@ class Model:
 
 	#  --- Events --- #
 	def get_gripper_updated_event(self, id): 
+		#TODO: only gripper with id!
 		return {"grippers": self.get_grippers()}
 
 	def get_new_state_loaded_event(self): 
@@ -184,9 +187,27 @@ class Model:
 	def stop_moving_gr(self, id):
 		"""
 		Stop calling move_gr periodically.
-		@param id 	gripper_id
+		@param id 	gripper id
 		"""
 		self.stop_loop("move", id)
+
+	def start_rotating(self, id, direction, step_size=None):
+		"""
+		Start calling the function rotate periodically until stop_rotating is called.
+		@param id 	id of the gripper whose gripped object should be rotated
+		@param direction	-1 for leftwards rotation, 1 for rightwards rotation
+		@param step_size	Optional: angle to rotate per step. Default: use rotation_step of config
+		"""
+		# cancel any ongoing movement
+		self.stop_rotating(id)
+		self.start_loop("rotate", id, self.rotate, id, direction, step_size)
+
+	def stop_rotating(self, id):
+		"""
+		Stop calling rotate periodically.
+		@param id 	gripper id
+		"""
+		self.stop_loop("rotate", id)
 
 	def move_gr(self, id, x_steps, y_steps, step_size=None):
 		"""
@@ -202,8 +223,9 @@ class Model:
 		dx = x_steps*step_size # distance in x direction to move
 		dy = y_steps*step_size # distance in y direction to move
 		gripper_x, gripper_y = self.get_gripper_coords(id)
-		if self.get_gripped_obj(id):
-			gr_obj = self.get_obj_by_id(self.get_gripped_obj(id))
+		gr_obj = self.get_gripped_obj(id)
+		if gr_obj:
+			gr_obj = self.get_obj_by_id(gr_obj)
 			# if an object is gripped, both the gripper and the object have to stay inside the board
 			if self._is_in_limits(gripper_x + dx, gripper_y + dy) and \
 			   self._is_in_limits(gr_obj.get_center_x() + dx, gr_obj.get_center_y() + dy):
@@ -218,6 +240,22 @@ class Model:
 			self.state.move_gr(id, dx, dy)
 			# notify the views. A gripped object is implicitly redrawn. 
 			self._notify_views(self.get_gripper_updated_event(id))
+
+	def rotate(self, id, direction, step_size=None):
+		"""
+		If the gripper 'id' currently grips some object, rotate this object one step.
+		@param id 	id of the gripper whose gripped object should be rotated
+		@param direction	-1 for leftwards rotation, 1 for rightwards rotation
+		@param step_size	Optional: angle to rotate per step. Default: use rotation_step of config
+		"""
+		# check if an object is gripped
+		gr_obj = self.get_gripped_obj(id) 
+		if gr_obj:
+			# if not step_size was given, use the default from the configuration
+			if not step_size: step_size = self.config.rotation_step
+			self.state.rotate_obj(gr_obj, direction * step_size)
+		# notify the views. The gripped object is implicitly redrawn. 
+		self._notify_views(self.get_gripper_updated_event(id))
 		
 	def _get_grippable(self, gr_id):
 		"""

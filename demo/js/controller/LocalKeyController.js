@@ -122,8 +122,8 @@ $(document).ready(function () {
 
 		stopMove(thisArg) {
 			for (let modelGripper of thisArg.models) {
-				let moveReq = new Request(`http://${modelGripper[0]}/gripper/position`, {method:"DELETE", body:`{"id": ${modelGripper[1]}}`});
-				thisArg._sendRequest(moveReq, `Error stopping gripper #${modelGripper[1]} at ${modelGripper[0]}`);
+				let stopReq = new Request(`http://${modelGripper[0]}/gripper/position`, {method:"DELETE", body:`{"id": ${modelGripper[1]}}`});
+				thisArg._sendRequest(stopReq, `Error stopping gripper #${modelGripper[1]} at ${modelGripper[0]}`);
 			}
 		}
 
@@ -145,12 +145,16 @@ $(document).ready(function () {
 		 */
 		_rotate(direction) {
 			for (let modelGripper of this.models) {
-				console.log("rotate", direction, modelGripper[0], modelGripper[1])
+				let rotateReq = new Request(`http://${modelGripper[0]}/gripper/rotate`, {method:"POST", body:`{"id": ${modelGripper[1]}, "direction": ${direction}}`});
+				this._sendRequest(rotateReq, `Error rotating object gripped by gripper #${modelGripper[1]} at ${modelGripper[0]}`);
 			}
 		}
 
 		stopRotate(thisArg) {
-			console.log("stopRotate");
+			for (let modelGripper of thisArg.models) {
+				let stopReq = new Request(`http://${modelGripper[0]}/gripper/rotate`, {method:"DELETE", body:`{"id": ${modelGripper[1]}}`});
+				thisArg._sendRequest(stopReq, `Error stopping rotation of gripper #${modelGripper[1]} at ${modelGripper[0]}`);
+			}
 		}
 
 		/**

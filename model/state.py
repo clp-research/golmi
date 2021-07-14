@@ -39,7 +39,7 @@ class State:
 			if gr.gripped:
 				gr_dict[gr_id]["gripped"] = {gr.gripped: self.get_obj_by_id(gr.gripped).to_dict()}
 			else:
-				gr_dict[gr_id]["gripped"] = None
+				gr_dict[gr_id]		["gripped"] = None
 		return gr_dict
 
 	def get_gripper_ids(self):
@@ -83,22 +83,34 @@ class State:
 	def move_obj(self, id, dx, dy):
 		"""
 	 	Change an object's position by moving in direction (dx, dy).
+	 	@param id 	object id
 	 	@param dx 	x direction
 	 	@param dy 	y direction
 		"""
 		self.get_obj_by_id(id).x += dx
 		self.get_obj_by_id(id).y += dy
+
+	def rotate_obj(self, id, d_angle):
+		"""
+		Change an object's rotation by d_angle.
+		@param id  	object id
+		@param d_angle	current angle is changed by d_angle
+		"""
+		if d_angle != 0:
+			self.get_obj_by_id(id).rotation = (self.get_obj_by_id(id).rotation + d_angle) % 360
 	
 	def grip(self, gr_id, obj_id):
 		"""
 		Attach a given object to the gripper.
-		@param id 	id of object to grip, must be in objects
+		@param gr_id 	id of the gripper that grips obj_id
+		@param obj_id 	id of object to grip, must be in objects
 	 	"""
 		self.grippers[gr_id].gripped = obj_id
 	
 	def ungrip(self, id):
 		"""
 		Detach the currently gripped object from the gripper.
+		@param id 	id of the gripper that ungrips
 		"""
 		self.grippers[id].gripped = None
 	

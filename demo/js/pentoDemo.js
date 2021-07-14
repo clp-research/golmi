@@ -32,7 +32,7 @@ $(document).ready(function () {
 				"height": 5,
 				"color": "yellow",
 				"mirrored": true,
-				"rotation": 90
+				"rotation": 0
 			}
 		} 
 	};
