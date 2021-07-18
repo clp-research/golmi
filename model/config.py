@@ -4,7 +4,7 @@ import json
 #Class to store settings such as board width, allowable actions, etc.
 class Config:
 	def __init__(self, type_config, width=20, height=20, snap_to_grid=False,
-	             actions=['move', 'rotate'], move_step=0.5, rotation_step=90, action_interval=0.5):
+	             actions=["move", "rotate"], move_step=0.5, rotation_step=90, action_interval=0.5):
 		"""
 		Constructor.
 		@param type_config	json file or object mapping types to 0/1 matrices indicating type shapes
@@ -63,5 +63,8 @@ class Config:
 		return {
 			"width": self.width,
 			"height": self.height,
-			"type_config": self.type_config
+			"actions": self.actions,
+			"rotation_step": self.rotation_step,
+			"type_config": self.type_config,
+			"colors": self.colors
 			}

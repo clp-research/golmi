@@ -87,7 +87,16 @@ This example controller receives key events and requests gripper changes in atta
 
 **/config**
 * POST: *not yet implemented.* Endpoint to send a configuration in JSON format to the model
-* GET: Fetch the model's configuration. This currently only returns entries considered 'relevant' to views, while entries modifying the model logic are omitted. However, the endpoint could easily be modified to send the full configuration. The keys 'width', 'height' and 'type_config' are returned. 'width' is the number of blocks in horizontal dimension of the game environment / board. 'height' is the number of block in vertical dimension. 'type_config' is a map that defines available object types (e.g. the twelve letters for Pentomino) to block matrices defining an objects shape. The matrices contain 0s and 1s, where a 1 signifies the presence of a block.
+* GET: Fetch the model's configuration. This currently returns the keys 'width', 'height', 'actions', 'rotation_step', 'colors' and 'type_config'. The following table summarizes the configuration parameters:
+
+| parameter | type | description | example |
+| --- | --- | --- | --- |
+|width|int| number of blocks in horizontal dimension of the game environment / board | 20 | 
+|height|int| number of blocks in vertical dimension | 20 | 
+|actions|array / list of str|types of manipulation allowed by the model| \["move", "rotate", "flip"\]| 
+|rotation_step|int|angle change for a single rotation action|90| 
+|colors|array / list of str|available object colors| \["red", "black", "blue"\] |
+|type_config| map: str -> list of lists / array of arrays|map that defines available object types (e.g. the twelve letters for Pentomino) to block matrices defining an object's shape. The matrices contain 0s and 1s, where a 1 signifies the presence of a block| {	"F": [ [0,0,0,0,0], [0,1,1,0,0], [0,0,1,1,0], [0,0,1,0,0], [0,0,0,0,0] ], "I": [ [0,0,1,0,0], [0,0,1,0,0], [0,0,1,0,0], [0,0,1,0,0], [0,0,1,0,0]]}
 
 **/state**
 * POST: Initialize a new model state. One of more grippers and one or more objects can be defined. The model will attempt to parse the data, overwrites its internal state and notifies any listening view. *Request format:* The keys 'objs' and 'grippers' must be defined and assigned a (possibly empty) map. Both the object and gripper map match object ids to object info. Obligatory and optional keys for object and gripper entries are summarized in the table below. *Example:* ```{

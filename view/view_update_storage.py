@@ -1,6 +1,6 @@
 class ViewUpdateStorage: 
 	def __init__(self):
-		self.pending_updates = {"grippers": dict(), "objs": dict(), "config": None}
+		self.pending_updates = {"grippers": dict(), "objs": dict(), "config": False}
 
 	def get_updates(self):
 		"""

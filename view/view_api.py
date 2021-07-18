@@ -47,27 +47,31 @@ def selftest():
 		clear_storage = c.delete("/updates")
 		assert clear_storage.status == "200 OK"
 
-		# post an update
-		post_new_update = c.post("/updates", data=json.dumps({"grippers": ["4", "2"], "objs": ["1"]}))
+		# post an update of the gripper 1
+		example_update1 = {"grippers": {"1": {"type": "gripper", "x": 1, "y": 1, "width": 1, "height": 1, "rotation": 0, "mirrored": 0, "color": "blue", "gripped": None}}}
+		post_new_update = c.post("/updates", data=json.dumps(example_update1))
 		assert post_new_update.status == "200 OK"
 	    # Make sure the updates are correctly stored
-		assert update_storage.get_updates()["grippers"] == ["4", "2"] and \
-			update_storage.get_updates()["objs"] == ["1"] and \
-			update_storage.get_updates()["config"] == False
+		assert update_storage.get_updates()["grippers"] == example_update1["grippers"] and \
+			update_storage.get_updates()["objs"] == dict() and \
+			update_storage.get_updates()["config"] == False, update_storage.get_updates()
+
 		# post another update and make sure the old updates are still there
-		post_new_update2 = c.post("/updates", data=json.dumps({"objs": ["1", "2"], "config": True}))
+		# this update contains one object and a configuration update
+		example_update2 = {"objs": {"1": {"type": "I", "x": 12, "y": 12, "width": 5, "height": 5, "rotation": 0, "mirrored": 0, "color": "black"}}, "config": True}
+		post_new_update2 = c.post("/updates", data=json.dumps(example_update2))
 		assert post_new_update2.status == "200 OK"
 	    # Make sure the updates are correctly stored
-		assert update_storage.get_updates()["grippers"] == ["4", "2"] and \
-			update_storage.get_updates()["objs"] == ["1", "2"] and \
-			update_storage.get_updates()["config"] == True
+		assert update_storage.get_updates()["grippers"] == example_update1["grippers"] and \
+			update_storage.get_updates()["objs"] == example_update2["objs"] and \
+			update_storage.get_updates()["config"] == True, update_storage.get_updates()
 
 		# get pending updates
 		get_updates = c.get("/updates")
 		assert get_updates.status == "200 OK"
-		assert json.loads(get_updates.data) == {"grippers": ["4", "2"], "objs": ["1", "2"], "config": True}
+		assert json.loads(get_updates.data) == {"grippers": example_update1["grippers"], "objs": example_update2["objs"], "config": True}
 		# make sure the updates were deleted
-		assert update_storage.get_updates() == {"grippers": list(), "objs": list(), "config": False}
+		assert update_storage.get_updates() == {"grippers": dict(), "objs": dict(), "config": False}
 
 # --- command line arguments ---
 parser = argparse.ArgumentParser(description="Run GOLMI's view API.")

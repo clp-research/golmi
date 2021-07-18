@@ -139,7 +139,7 @@ $(document).ready(function () {
 		 * Repeatedly query the view API for updates. 
 		 * If updates are found, process them and make another request immediately for smooth
 		 * animations. Otherwise, wait $delay ms for next request.
-		 * The implementation makes sets the timer AFTER fetching and processing updates to 
+		 * The implementation sets the timer AFTER fetching and processing updates to 
 		 * avoid requests queueing up.
 		 * @param {delay between update requests in ms} delay
 		 */
@@ -204,7 +204,7 @@ $(document).ready(function () {
 				return jsonData;
 			} else { // Something went wrong - emit an error message
 				console.log("Error: Could not fetch updates from the view API");
-				return null
+				return null;
 			}
 		}
 
