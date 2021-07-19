@@ -1,12 +1,7 @@
-from gripper import Gripper
-from obj import Obj
-import json
 class State:
-	def __init__(self, json_data=None):
+	def __init__(self):
 		self.objs = dict() # maps ids to Objs
 		self.grippers = dict()
-		if json_data: 
-			self.from_JSON(json_data)
 		
 	def get_objects(self):
 		"""
@@ -39,7 +34,7 @@ class State:
 			if gr.gripped:
 				gr_dict[gr_id]["gripped"] = {gr.gripped: self.get_obj_by_id(gr.gripped).to_dict()}
 			else:
-				gr_dict[gr_id]		["gripped"] = None
+				gr_dict[gr_id]["gripped"] = None
 		return gr_dict
 
 	def get_gripper_ids(self):
@@ -92,12 +87,24 @@ class State:
 
 	def rotate_obj(self, id, d_angle):
 		"""
-		Change an object's rotation by d_angle.
+		Change an object's goal_rotation by d_angle.
 		@param id  	object id
 		@param d_angle	current angle is changed by d_angle
 		"""
 		if d_angle != 0:
-			self.get_obj_by_id(id).rotation = (self.get_obj_by_id(id).rotation + d_angle) % 360
+			obj = self.get_obj_by_id(id)
+			obj.rotation = (obj.rotation + d_angle) % 360
+			# update block matrix
+			obj.block_matrix = self._rotate_block_matrix(obj.block_matrix, d_angle)
+
+	def flip_obj(self, id):
+		"""
+		Mirror an object.
+		@param id 	object_id
+		"""
+		# change 'mirrored' attribute
+		self.get_obj_by_id(id).mirrored = not self.get_obj_by_id(id).mirrored
+		# TODO: flip the block matrix
 	
 	def grip(self, gr_id, obj_id):
 		"""
@@ -113,47 +120,38 @@ class State:
 		@param id 	id of the gripper that ungrips
 		"""
 		self.grippers[id].gripped = None
-	
 
-	# TODO: make sure pieces are on the board! (at least emit warning)
-	def from_JSON(self, json_data):
-		if type(json_data) == str:
-			# a JSON string
-			json_data = json.loads(json_data)
-		# otherwise assume json_data is a dict 
-		try:
-			# construct gripper(s)
-			self.grippers = dict()
-			for gr in json_data["grippers"]:
-				self.grippers[gr] = Gripper(
-					json_data["grippers"][gr]["x"],
-					json_data["grippers"][gr]["y"])
-				# process optional info
-				if "gripped" in json_data["grippers"][gr]:
-					self.grippers[gr].gripped = json_data["grippers"][gr]["gripped"]
-				if "width" in json_data["grippers"][gr]:
-					self.grippers[gr].width = json_data["grippers"][gr]["width"]
-				elif "height" in json_data["grippers"][gr]:
-					self.grippers[gr].height = json_data["grippers"][gr]["height"]
-				elif "color" in json_data["grippers"][gr]:
-					self.grippers[gr].color = json_data["grippers"][gr]["color"]
-			# delete old objects
-			self.objs = dict()
-			# construct objects
-			for obj in json_data["objs"]:
-				self.objs[obj] = Obj(
-					json_data["objs"][obj]["type"],
-					json_data["objs"][obj]["x"],
-					json_data["objs"][obj]["y"],
-					json_data["objs"][obj]["width"],
-					json_data["objs"][obj]["height"])
-				# process optional info
-				if "rotation" in json_data["objs"][obj]:
-					self.objs[obj].rotation = json_data["objs"][obj]["rotation"] 
-				if "mirrored" in json_data["objs"][obj]: 
-					self.objs[obj].mirrored = json_data["objs"][obj]["mirrored"]
-				if "color" in json_data["objs"][obj]:
-					self.objs[obj].color = json_data["objs"][obj]["color"]
-		except: 
-			raise SyntaxError("Error during state initialization: JSON data does not have the right format.\n" + \
-				"Please refer to the documentation.")
+	# NOT goal rotation but d_angle!
+	def _rotate_block_matrix(self, old_matrix, d_angle):
+		"""
+		Rearrange blocks of a 0/1 block matrix to apply some rotation.
+		@param old_matrix 	block matrix describing the starting position of all blocks
+		@param d_angle 	float or int, angle to apply. Can be negative for leftwards rotation.
+		@return the new block matrix with changed block position
+		"""
+		# normalize the angle (moves all values in the range [0-360[ )
+		d_angle = d_angle % 360
+		# can only process multiples of 90, so round to the next step here
+		approx_angle = round(d_angle/90) * 90
+		# nothing to do if rotation is 0
+		if approx_angle == 0: return old_matrix
+		# start building a new, rotated matrix
+		new_matrix = list()
+		height = len(old_matrix)
+		assert height > 0, "Error: Empty block matrix passed to _rotate_block_matrix() at class State"
+		width = len(old_matrix[0])
+		assert width > 0, "Error: Block matrix with empty rows passed to _rotate_block_matrix() at class State"
+		for row in range(height):
+			# new empty row
+			new_matrix.append(list())
+			for col in range(width):
+				# fill out the new matrix by copying values of the old matrix
+				if approx_angle == 90:
+					new_matrix[row].append(old_matrix[(width-1)-col][row])
+				elif approx_angle == 180:
+					new_matrix[row].append(old_matrix[(height-1)-row][(width-1)-col])
+				elif approx_angle == 270:
+					new_matrix[row].append(old_matrix[col][(height-1)-row])
+				else:
+					print("Error: Invalid turning angle at _rotateByRearrange(): " + approx_angle)
+		return new_matrix

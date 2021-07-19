@@ -147,13 +147,8 @@ $(document).ready(function () {
 				// skip any gripped object here
 				if (grippedIds.includes(id)) { continue; }
 
-				// get info on how to draw type from config
-				let blockMatrix = this.typeConfig[obj.type];
+				let blockMatrix = obj.block_matrix;
 				
-				// perform manipulations (rotate, mirror)
-				if (obj.rotation != 0) {
-					blockMatrix = this._rotateByRearrange(blockMatrix, obj.rotation);
-				}
 				// call drawing helper functions with additional infos (gripped, color)
 				let ctx = this.objCanvas.getContext("2d");
 				//TODO: size
@@ -211,11 +206,8 @@ $(document).ready(function () {
 				if (gripper.gripped) {
 					for (const [grippedId, grippedObj] of Object.entries(gripper.gripped)) {
 						drawnObjects.push(grippedId);
-						let blockMatrix = this.typeConfig[grippedObj.type];
-						// perform manipulations (rotate, mirror)
-						if (grippedObj.rotation != 0) {
-							blockMatrix = this._rotateByRearrange(blockMatrix, grippedObj.rotation);
-						}
+						let blockMatrix = grippedObj.block_matrix;
+						
 						let params = {
 							x: grippedObj.x,
 							y: grippedObj.y,
@@ -311,40 +303,6 @@ $(document).ready(function () {
 
 		_toPxl(coord) {
 			return coord * this.blockSize;
-		}
-
-		_rotateByRearrange(bMatrix, rotation) {
-			// nothing to do if rotation is 0
-			if (rotation == 0 || rotation == 360) { return bMatrix; }
-
-			// can only process multiples of 90, so round to the next step here
-			let approxRotation = Math.round(rotation/90) * 90;
-			// start building a new, rotated matrix
-			let newMatrix = new Array();
-			let height = bMatrix.length;
-			let width = bMatrix[0].length;
-			for (let row = 0; row < height; row++) {
-				// new empty row
-				newMatrix.push(new Array());
-				for (let col = 0; col < width; col++) {
-					// fill out the new matrix by copying values of the old matrix
-					// dummy:
-					switch (approxRotation) {
-						case 90:
-							newMatrix[row].push(bMatrix[(width-1)-col][row]);
-							break;
-						case 180:
-							newMatrix[row].push(bMatrix[(height-1)-row][(width-1)-col]);
-							break;
-						case 270:
-							newMatrix[row].push(bMatrix[col][(height-1)-row]);
-							break;
-						default:
-							console.log(`Error: Invalid turning angle at _rotateByRearrange(): ${approxRotation}`);
-					}
-				}
-			}
-			return newMatrix;
 		}
 
 		// --- Updating functions ---

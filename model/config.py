@@ -37,7 +37,7 @@ class Config:
 						"blue",
 						"purple",
 						"saddlebrown", 
-						"grey,"
+						"grey"
 						]
 	
 

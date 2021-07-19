@@ -1,12 +1,12 @@
 from state import State
+from gripper import Gripper
+from obj import Obj
 from timed_loop import TimedLoop
 import requests
 import json
 from math import floor
 
 # TODO: no object collision
-# BUG: gripping does not take account of rotating! "RotateAtRearrange" needs to happen here 
-# in the model and blockMatrix is returned by Model API!
 
 class Model:
 	def __init__(self, config):
@@ -59,7 +59,8 @@ class Model:
 	def get_type_config(self):
 		return self.config.type_config
 
-	#  --- Events --- #
+	#  --- events --- #
+
 	def get_gripper_updated_event(self, id): 
 		#TODO: only gripper with id!
 		return {"grippers": self.get_grippers()}
@@ -75,7 +76,7 @@ class Model:
 	def get_config_changed_event(self):
 		return {"config": True}
 
-	# --- Configuration functions --- #
+	# --- Communicating with views --- # 
 
 	def attach_view(self, view):
 		"""
@@ -104,13 +105,25 @@ class Model:
 		"""
 		self.views.clear()
 
+	def _notify_views(self, updates):
+		"""
+		Notify all listening views of model events (usually data updates)
+		@param updates 	dictionary of updates. Sent to each of the model's views
+		"""
+		for view in self.views:
+			requests.post("http://{}/updates".format(view), data=json.dumps(updates))
+
+	# --- Set up and configuration --- #
+
 	def set_initial_state(self, state):
 		"""
 		Initialize the model's (game) state.
 		@param state	State object or dict or JSON file
 		"""
+		# state is a JSON string or parsed JSON dictionary
 		if type(state) == str or type(state) == dict:
-			self.state.from_JSON(state)
+			self._state_from_JSON(state)
+		# state is a State instance
 		else:
 			self.state = state
 		self._notify_views(self.get_new_state_loaded_event())
@@ -122,13 +135,51 @@ class Model:
 		self.state = State()
 		self._notify_views(self.get_new_state_loaded_event())
 
-	def _notify_views(self, updates):
-		"""
-		Notify all listening views of model events (usually data updates)
-		@param updates 	dictionary of updates. Sent to each of the model's views
-		"""
-		for view in self.views:
-			requests.post("http://{}/updates".format(view), data=json.dumps(updates))
+	# TODO: make sure pieces are on the board! (at least emit warning)
+	def _state_from_JSON(self, json_data):
+		if type(json_data) == str:
+			# a JSON string
+			json_data = json.loads(json_data)
+		# otherwise assume json_data is a dict 
+		try:
+			# initialize an empty state
+			self.state = State()
+			for gr in json_data["grippers"]:
+				self.state.grippers[gr] = Gripper(
+					json_data["grippers"][gr]["x"],
+					json_data["grippers"][gr]["y"])
+				# process optional info
+				if "gripped" in json_data["grippers"][gr]:
+					self.state.grippers[gr].gripped = json_data["grippers"][gr]["gripped"]
+				if "width" in json_data["grippers"][gr]:
+					self.state.grippers[gr].width = json_data["grippers"][gr]["width"]
+				elif "height" in json_data["grippers"][gr]:
+					self.state.grippers[gr].height = json_data["grippers"][gr]["height"]
+				elif "color" in json_data["grippers"][gr]:
+					self.state.grippers[gr].color = json_data["grippers"][gr]["color"]
+			
+			# construct objects
+			for obj in json_data["objs"]:
+				self.state.objs[obj] = Obj(
+					json_data["objs"][obj]["type"],
+					json_data["objs"][obj]["x"],
+					json_data["objs"][obj]["y"],
+					json_data["objs"][obj]["width"],
+					json_data["objs"][obj]["height"],
+					self.get_type_config()[json_data["objs"][obj]["type"]] # block matrix for given type
+				)
+				# process optional info
+				if "rotation" in json_data["objs"][obj]:
+					# rotate the object
+					self.state.rotate_obj(obj, json_data["objs"][obj]["rotation"])
+				if "mirrored" in json_data["objs"][obj] and json_data["objs"][obj]["mirrored"]:
+					# flip the object if "mirrored" is true in the JSON
+					self.state.flip_obj(obj)
+				if "color" in json_data["objs"][obj]:
+					self.state.objs[obj].color = json_data["objs"][obj]["color"]
+		except: 
+			raise SyntaxError("Error during state initialization: JSON data does not have the right format.\n" + \
+				"Please refer to the documentation.")
 
 	# --- Gripper manipulation --- #
 
@@ -270,8 +321,8 @@ class Model:
 			# (gridX, gridY) is the position on the type grid the gripper would be on
 			grid_x = floor(x-obj.x)
 			grid_y = floor(y-obj.y)
-			# get the object type matrix
-			type_matrix = self.get_type_config()[obj.type]
+			# get the object block matrix - rotation and flip are already applied to the matrix
+			type_matrix = obj.block_matrix
 
 			# check whether the gripper is on the object matrix
 			if grid_x >= 0 and grid_y >= 0 and grid_y < len(type_matrix) and grid_x < len(type_matrix[0]):

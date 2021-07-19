@@ -1,13 +1,14 @@
 class Obj:
-	def __init__(self, obj_type, x, y, width, height, rotation=0, mirrored=False, color="blue"): 
-		self.type		= obj_type
-		self.x			= x
-		self.y			= y
-		self.width		= width
-		self.height		= height
-		self.rotation	= rotation
-		self.mirrored	= mirrored
-		self.color		= color
+	def __init__(self, obj_type, x, y, width, height, block_matrix, rotation=0, mirrored=False, color="blue"): 
+		self.type			= obj_type
+		self.x				= x
+		self.y				= y
+		self.width			= width
+		self.height			= height
+		self.rotation		= rotation
+		self.mirrored		= mirrored
+		self.color			= color
+		self.block_matrix 	= block_matrix
 
 	def get_center_x(self):
 		return self.x + (self.width/2)
@@ -38,6 +39,7 @@ class Obj:
 			"width": self.width,
 			"height": self.height,
 			"rotation": self.rotation,
-			"mirrored": self.rotation,
-			"color": self.color
+			"mirrored": self.mirrored,
+			"color": self.color,
+			"block_matrix": self.block_matrix
 			}
