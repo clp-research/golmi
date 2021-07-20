@@ -110,20 +110,30 @@ class GripperKeyController():
 		@param dy 	int or float, number of units to move in y direction. Negative values translate to upwards movement.
 		"""
 		for (model, gripper) in self.models:
-			requests.post("http://{}/gripper/position".format(model), data=json.dumps({"id": gripper, "dx": dx, "dy": dy}))
+			requests.post("http://{}/gripper/position".format(model), data=json.dumps({"id": gripper, "dx": dx, "dy": dy, "loop": True}))
 
 	def stop_move(self):
 		for (model, gripper) in self.models:
 			requests.delete("http://{}/gripper/position".format(model), data=json.dumps({"id": gripper}))
 
 	def rotate(self, direction):
-		print("not implemented")
+		"""
+		Notifies all subscribed models to attempt rotating any object gripped by the gripper.
+		@param direction 	-1 for leftwards rotation, 1 for rightwards rotation.
+		"""
+		for (model, gripper) in self.models:
+			requests.post("http://{}/gripper/rotate".format(model), data=json.dumps({"id": gripper, "direction": direction, "loop": True}))
 
 	def stop_rotate(self):
-		print("not implemented")
+		for (model, gripper) in self.models:
+			requests.delete("http://{}/gripper/rotate".format(model), data=json.dumps({"id": gripper}))
 
 	def flip(self):
-		print("not implemented")
+		"""
+		Notifies all subscribed models to attempt flipping any object gripped by the gripper once.
+		"""
+		for (model, gripper) in self.models:
+			requests.post("http://{}/gripper/flip".format(model), data=json.dumps({"id": gripper}))
 
 	def _is_assigned_down(self, key_code):
 		"""

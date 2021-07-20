@@ -103,8 +103,10 @@ class State:
 		@param id 	object_id
 		"""
 		# change 'mirrored' attribute
-		self.get_obj_by_id(id).mirrored = not self.get_obj_by_id(id).mirrored
-		# TODO: flip the block matrix
+		obj = self.get_obj_by_id(id)
+		obj.mirrored = not obj.mirrored
+		# update the block matrix (function _flip_block_matrix flips in-place)
+		self._flip_block_matrix(obj.block_matrix)
 	
 	def grip(self, gr_id, obj_id):
 		"""
@@ -121,11 +123,10 @@ class State:
 		"""
 		self.grippers[id].gripped = None
 
-	# NOT goal rotation but d_angle!
 	def _rotate_block_matrix(self, old_matrix, d_angle):
 		"""
 		Rearrange blocks of a 0/1 block matrix to apply some rotation.
-		@param old_matrix 	block matrix describing the starting position of all blocks
+		@param old_matrix 	block matrix describing the current block positions
 		@param d_angle 	float or int, angle to apply. Can be negative for leftwards rotation.
 		@return the new block matrix with changed block position
 		"""
@@ -155,3 +156,11 @@ class State:
 				else:
 					print("Error: Invalid turning angle at _rotateByRearrange(): " + approx_angle)
 		return new_matrix
+
+	def _flip_block_matrix(self, old_matrix):
+		"""
+		Flips blocks using a horizontal axis of reflection. *IN PLACE*
+		@param old_matrix 	block matrix describing the current block positions
+		"""
+		# simply reverse the order of rows
+		old_matrix.reverse()

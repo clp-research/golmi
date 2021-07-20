@@ -89,12 +89,22 @@ def selftest():
 		r_keypress_grip = c.post("/key-pressed/32")
 		assert r_keypress_grip.status == "200 OK"
 		r_keyrelease_grip = c.delete("/key-pressed/32")
-		assert r_keyrelease_grip.status == "200 OK"
+		assert r_keyrelease_grip.status == "404 NOT FOUND"
 
 		r_keypress_move = c.post("/key-pressed/37")
 		assert r_keypress_move.status == "200 OK"
 		r_keyrelease_move = c.delete("/key-pressed/37")
 		assert r_keyrelease_move.status == "200 OK"
+
+		r_keypress_rotate = c.post("/key-pressed/65")
+		assert r_keypress_rotate.status == "200 OK"
+		r_keyrelease_rotate = c.delete("/key-pressed/65")
+		assert r_keyrelease_rotate.status == "200 OK"
+
+		r_keypress_flip = c.post("/key-pressed/83")
+		assert r_keypress_flip.status == "200 OK"
+		r_keyrelease_flip = c.delete("/key-pressed/83")
+		assert r_keyrelease_flip.status == "404 NOT FOUND"			
 
 		# unsubscribe a model
 		r_unsubscribe_model = c.delete("/attach-model", data=json.dumps({"url": dummy_model}))

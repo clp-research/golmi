@@ -9,17 +9,18 @@ $(document).ready(function () {
 			this.models = modelAPIs ? modelAPIs : new Array();
 			
 			// assign functions to key codes: [function for keydown, function for keyup, down?] 
+			// grip and flip are one-time actions, move and rotate are looped
 			this.keyAssignment = {
-				13: [this.grip, this.stopGrip, false],						// Enter
-				32: [this.grip, this.stopGrip, false],				// Space
-				37: [this.moveLeft, this.stopMove, false],			// arrow left
-				38: [this.moveUp, this.stopMove, false],			// arrow up
-				39: [this.moveRight, this.stopMove, false],			// arrow right
-				40: [this.moveDown, this.stopMove, false],			// arrow down
-				65: [this.rotateLeft, this.stopRotate, false],		// a
-				68: [this.rotateRight, this.stopRotate, false],		// d
-				83: [this.flipHorizontally, this.stopFlip, false],	// s
-				87: [this.flipVertically, this.stopFlip, false]		// w
+				13: [this.grip, null, false],					// Enter
+				32: [this.grip, null, false],					// Space
+				37: [this.moveLeft, this.stopMove, false],		// arrow left
+				38: [this.moveUp, this.stopMove, false],		// arrow up
+				39: [this.moveRight, this.stopMove, false],		// arrow right
+				40: [this.moveDown, this.stopMove, false],		// arrow down
+				65: [this.rotateLeft, this.stopRotate, false],	// a
+				68: [this.rotateRight, this.stopRotate, false],	// d
+				83: [this.flip, null, false],					// s
+				87: [this.flip, null, false]					// w
 			};
 
 			// Stores codes of pressed keys waiting for key release
@@ -74,6 +75,9 @@ $(document).ready(function () {
 			}
 		}
 
+		/**
+		 * Unused. Can be employed to stop a looped gripping action.
+		 */
 		stopGrip(thisArg) {
 			// send a request to each subscribed model
 			for (let modelGripper of thisArg.models) {
@@ -115,7 +119,7 @@ $(document).ready(function () {
  		 */
 		_moveGr(dx, dy) {
 			for (let modelGripper of this.models) {
-				let moveReq = new Request(`http://${modelGripper[0]}/gripper/position`, {method:"POST", body:`{"id": ${modelGripper[1]}, "dx": ${dx}, "dy": ${dy}, "speed": 1}`});
+				let moveReq = new Request(`http://${modelGripper[0]}/gripper/position`, {method:"POST", body:`{"id": ${modelGripper[1]}, "dx": ${dx}, "dy": ${dy}, "speed": 1, "loop": true}`});
 				this._sendRequest(moveReq, `Error moving gripper #${modelGripper[1]} at ${modelGripper[0]}`);
 			}
 		}
@@ -145,7 +149,7 @@ $(document).ready(function () {
 		 */
 		_rotate(direction) {
 			for (let modelGripper of this.models) {
-				let rotateReq = new Request(`http://${modelGripper[0]}/gripper/rotate`, {method:"POST", body:`{"id": ${modelGripper[1]}, "direction": ${direction}}`});
+				let rotateReq = new Request(`http://${modelGripper[0]}/gripper/rotate`, {method:"POST", body:`{"id": ${modelGripper[1]}, "direction": ${direction}, "loop": true}`});
 				this._sendRequest(rotateReq, `Error rotating object gripped by gripper #${modelGripper[1]} at ${modelGripper[0]}`);
 			}
 		}
@@ -158,29 +162,14 @@ $(document).ready(function () {
 		}
 
 		/**
-		 * 
+		 * Notify models to flip a gripped object on a specified axis.
 		 * @param {reference to LocalKeyController instance (this)} thisArg
 		 */
-		flipHorizontally(thisArg) { thisArg._flip(0); }
-
-		/**
-		 * 
-		 * @param {reference to LocalKeyController instance (this)} thisArg
-		 */
-		flipVertically(thisArg) { thisArg._flip(1); }
-
-		/**
-		 * Helper function to notify models to flip a gripped object on a specified axis.
-		 * @param {Axis of reflection. 0: horizontal, 1: vertical} axis
-		 */
-		_flip(axis) {
-			for (let modelGripper of this.models) {
-				console.log("flip", axis, modelGripper[0], modelGripper[1])
+		flip(thisArg) { 
+			for (let modelGripper of thisArg.models) {
+				let stopReq = new Request(`http://${modelGripper[0]}/gripper/flip`, {method:"POST", body:`{"id": ${modelGripper[1]}}`});
+				thisArg._sendRequest(stopReq, `Error flipping object by gripper #${modelGripper[1]} at ${modelGripper[0]}`);
 			}
-		}
-
-		stopFlip(thisArg) {
-			console.log("stopFlip")
 		}
 
 		/**

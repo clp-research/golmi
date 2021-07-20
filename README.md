@@ -154,14 +154,22 @@ This example controller receives key events and requests gripper changes in atta
 * GET: Returns all grippers in the model. The identifier of each gripper is assigned a map that specifies the same keys as for object plus 'gripped'. 'gripped' maps to null or the object identifier and details of a gripped object (same keys as given at the /objects endpoint). 'type' is always 'gripper' here.
 
 **/gripper/position**
-* POST: Notify the model that gripper movement is to be started, specifying the gripper, the direction and optionally the step size. The model will periodically (frequency is defined in the configuration) attempt to move the gripper until a DELETE request is received. Listening views are notified at each change. The length of each step is defined by the 'step_size' key, otherwise the default from the configuration is used. *Request format*: keys 'id', 'dx' and 'dy' are obligatory, 'step_size' is optional. Values for 'dx' and 'dy' are usually -1, 0 or 1 to indicate the direction, but any float is possible. The step size could theoretically be modified with these parameters, but keep in mind that the values will be multiplied by the (default) step size in any case, so 'step_size' should be used for this purpose. Step size should be a float > 0. *Example*: Start moving to the left: {'id': '1', 'dx': -1, 'dy': 0}
-* DELETE: Stop some ongoing gripper movement. *Request format*: the key 'id' is obligatory. *Example*: {'id': '1'}
+* POST: Notify the model that gripper movement is to be started, specifying the gripper, the direction and optionally the step size. Listening views are notified at each change. The length of each step is defined by the 'step_size' key, otherwise the default from the configuration is used. *Request format*: keys 'id', 'dx' and 'dy' are obligatory, 'step_size' and 'loop' are optional. Values for 'dx' and 'dy' are usually -1, 0 or 1 to indicate the direction, but any float is possible. The step size could theoretically be modified with these parameters, but keep in mind that the values will be multiplied by the (default) step size in any case, so 'step_size' should be used for this purpose. Step size should be a float > 0. 'loop' is a Boolean signifying whether the movement should be executed as a continuous or one-time action (more details in 'One-time vs. looped gripper actions'). *Example*: Start moving to the left: {'id': '1', 'dx': -1, 'dy': 0}
+* DELETE: Stop some ongoing gripper movement (if a looped movement was started before). *Request format*: the key 'id' is obligatory. *Example*: {'id': '1'}
 
 **/gripper/grip**
-*(will soon be updated)*
-* POST: Currently, a periodic gripping is started in analogy to the periodic movement, until DELETE is received. This will soon be changed back to a single grip / ungrip being performed with the specified gripper
-* DELETE: to be removed
+* POST: Attempt to grip with a specified gripper, of ungrip if it is already holding some object. *Request format*: 'id' is obligatory, 'loop' is optional. 'id' specifies the gripper to use. 'loop' is a Boolean signifying whether the gripping should be executed as a continuous or one-time action (more details in 'One-time vs. looped gripper actions'). *Example*: {'id': '1', 'loop':true}
+* DELETE: Stop some ongoing gripping action (if a looped gripping was started before): *Request format*: 'id' is obligatory. *Example*: {'id': '1'}
 * GET: Returns a map: All grippers of the models are mapped to their gripped objects. The latter is a map again, the keys are the object identifiers, the values objects as specified for the ```/objects``` endpoint. 
+
+**/gripper/rotate**
+* POST: Attempt to rotate the object held by a specified gripper to the left or right. *Request format*: 'id' and 'direction' are obligatory, 'step_size' and 'loop' are optional. 'id' specifies the gripper to use. 'direction' should be -1 for leftwards movement and 1 for rightwards movement. The turning angle is determined by the model's configuration, unless step_size is used. 'step_size' denotes the turning angle in degrees, so it should be an int > 0 and < 360. Note that views might not be able to depict all angles. 'loop' is a Boolean signifying whether the rotation should be executed as a continuous or one-time action (more details in 'One-time vs. looped gripper actions'). *Example*: {'id': '1', 'direction': -1, 'step_size': 90, 'loop': true}
+* DELETE: Stop some ongoing rotation action (if a looped rotation was started before): *Request format*: 'id' is obligatory. *Example*: {'id': '1'}
+
+**/gripper/flip**
+* POST: Attempt to flip/mirror the object held by a specified gripper. *Request format*: 'id' is obligatory, 'loop' is optional. 'id' specifies the gripper to use. 'loop' is a Boolean signifying whether the flipping should be executed as a continuous or one-time action (more details in 'One-time vs. looped gripper actions'). *Example*: {'id': '1'}
+* DELETE: Stop some ongoing flipping action (if a looped flip was started before): *Request format*: 'id' is obligatory. *Example*: {'id': '1'}
+
 
 ## Extending and customizing the framework
 
@@ -182,6 +190,16 @@ Each of these situations might require different controls, making the need for s
 First, the controller API receives requests specifying key events and triggers the appropriate functions at the model API. While this approach is faithful to the MVC architecture, it also brings additional network traffic and slows down the interactions. A small demo of what requests to send the controller API from the client-side interface can be found in ```demo/js/controller/APIKeyController.js```
 
 The second approach therefore is to let the controller reside at the client's machine. Instead of sending key events to the controller API, a local controller directly interprets the key codes and makes requests to the model API. This variant is included in the ```demo/pentoDemo.html``` interface. The relevant controller class is defined in ```demo/js/controller/LocalKeyController.js```
+
+
+### *One-time* vs. *looped* gripper actions
+For all gripper actions (move, rotate, flip, grip) there are two versions that can be used: firstly, for a *one-time* action, simply make a POST request to the appropriate endpoint. The model is requested to execute the action exactly once, e.g. move the gripper one unit or flip the gripped object. Secondly, a *looped* action is triggered by POSTing to the endpoint with the JSON data containing the key *loop* set to *true*. The model will repeatedly attempt to execute the action until the loop is interrupted by a DELETE request to the same endpoint. The loop duration is modified by the configuration.
+
+What type of action to use depends on the setting. It is the job of the controller to send either type of action request.
+
+For instance, in the use case of keyboard controls (as in our ```KeyController```s), there are two options: requesting a one-time action every time a key is pressed or starting a loop once a key is pressed down and stopping it once the key is released. Deciding between the two comes down to estimating user behavior and trying to reduce messages between controller and model accordingly.
+
+In our example, we expect users to prefer continuous actions (holding the key down) for moving the gripper around and rotating a gripped object, while gripping and flipping objects seem to be typical one-time actions.
 
 ## Misc.
 

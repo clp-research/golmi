@@ -223,44 +223,26 @@ class Model:
 				# notify view of gripper change.
 				self._notify_views(self.get_gripper_updated_event(id))
 
-	def start_moving_gr(self, id, x_steps, y_steps, step_size=None):
+	def start_moving(self, id, x_steps, y_steps, step_size=None):
 		"""
-		Start calling the function move_gr periodically until stop_moving_gr is called.
+		Start calling the function move periodically until stop_moving is called.
 		@param id 	gripper id
 		@param x_steps	steps to move in x direction. Step size is defined by model configuration
 		@param y_steps	steps to move in y direction. Step size is defined by model configuration
 		@param step_size 	Optional: size of step unit in blocks. Default: use move_step of config
 		"""
 		# cancel any ongoing movement
-		self.stop_moving_gr(id)
-		self.start_loop("move", id, self.move_gr, id, x_steps, y_steps, step_size)
+		self.stop_moving(id)
+		self.start_loop("move", id, self.move, id, x_steps, y_steps, step_size)
 
-	def stop_moving_gr(self, id):
+	def stop_moving(self, id):
 		"""
-		Stop calling move_gr periodically.
+		Stop calling move periodically.
 		@param id 	gripper id
 		"""
 		self.stop_loop("move", id)
 
-	def start_rotating(self, id, direction, step_size=None):
-		"""
-		Start calling the function rotate periodically until stop_rotating is called.
-		@param id 	id of the gripper whose gripped object should be rotated
-		@param direction	-1 for leftwards rotation, 1 for rightwards rotation
-		@param step_size	Optional: angle to rotate per step. Default: use rotation_step of config
-		"""
-		# cancel any ongoing movement
-		self.stop_rotating(id)
-		self.start_loop("rotate", id, self.rotate, id, direction, step_size)
-
-	def stop_rotating(self, id):
-		"""
-		Stop calling rotate periodically.
-		@param id 	gripper id
-		"""
-		self.stop_loop("rotate", id)
-
-	def move_gr(self, id, x_steps, y_steps, step_size=None):
+	def move(self, id, x_steps, y_steps, step_size=None):
 		"""
 		If allowed, move the gripper x_steps steps in x direction and y_steps steps in y direction.
 		Only executes if the goal position is inside the game dimensions. Notifies views of change.
@@ -292,6 +274,24 @@ class Model:
 			# notify the views. A gripped object is implicitly redrawn. 
 			self._notify_views(self.get_gripper_updated_event(id))
 
+	def start_rotating(self, id, direction, step_size=None):
+		"""
+		Start calling the function rotate periodically until stop_rotating is called.
+		@param id 	id of the gripper whose gripped object should be rotated
+		@param direction	-1 for leftwards rotation, 1 for rightwards rotation
+		@param step_size	Optional: angle to rotate per step. Default: use rotation_step of config
+		"""
+		# cancel any ongoing rotation
+		self.stop_rotating(id)
+		self.start_loop("rotate", id, self.rotate, id, direction, step_size)
+
+	def stop_rotating(self, id):
+		"""
+		Stop calling rotate periodically.
+		@param id 	gripper id
+		"""
+		self.stop_loop("rotate", id)
+
 	def rotate(self, id, direction, step_size=None):
 		"""
 		If the gripper 'id' currently grips some object, rotate this object one step.
@@ -305,8 +305,36 @@ class Model:
 			# if not step_size was given, use the default from the configuration
 			if not step_size: step_size = self.config.rotation_step
 			self.state.rotate_obj(gr_obj, direction * step_size)
-		# notify the views. The gripped object is implicitly redrawn. 
-		self._notify_views(self.get_gripper_updated_event(id))
+			# notify the views. The gripped object is implicitly redrawn. 
+			self._notify_views(self.get_gripper_updated_event(id))
+
+	def start_flipping(self, id):
+		"""
+		Start calling the function flip periodically until stop_flipping is called.
+		@param id 	id of the gripper whose gripped object should be flipped
+		"""
+		# cancel any ongoing flipping
+		self.stop_flipping(id)
+		self.start_loop("flip", id, self.flip, id)
+
+	def stop_flipping(self, id):
+		"""
+		Stop calling flip periodically.
+		@param id 	gripper id
+		"""
+		self.stop_loop("flip", id)
+
+	def flip(self, id):
+		"""
+		Mirror the object currently gripped by some gripper.
+		@param id 	gripper id
+		"""
+		# check if an object is gripped
+		gr_obj = self.get_gripped_obj(id) 
+		if gr_obj:
+			self.state.flip_obj(gr_obj)
+			# notify the views. The gripped object is implicitly redrawn. 
+			self._notify_views(self.get_gripper_updated_event(id))
 		
 	def _get_grippable(self, gr_id):
 		"""
