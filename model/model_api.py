@@ -247,7 +247,7 @@ def selftest():
 		assert dummy_view not in model.views
 
 		# --- loading a state --- #
-		f = open("resources/state/pentomino_testgame.json", mode="r", encoding="utf-8")
+		f = open("resources/state/pento_test2.json", mode="r", encoding="utf-8")
 		json_state = f.read()
 		f.close()
 		rv_state = c.post("/state", data=json_state)
@@ -256,8 +256,8 @@ def selftest():
 		# --- gripper position --- #
 		rv2 = c.get("/gripper")
 		gripper = rv2.get_json()
-		assert gripper["1"]["x"] == test_state["grippers"]["1"]["x"] and \
-			gripper["1"]["y"] == test_state["grippers"]["1"]["y"]
+		assert float(gripper["1"]["x"]) == float(test_state["grippers"]["1"]["x"]) and \
+			float(gripper["1"]["y"]) == float(test_state["grippers"]["1"]["y"]), "Grippers should be at the same location: {} vs {}".format(gripper["1"], test_state["grippers"]["1"])
 		# move gripper once with default step size
 		rv_move_gripper = c.post("/gripper/position", data=json.dumps({"id":"1", "dx":3, "dy":0}))
 		assert rv_move_gripper.status == "200 OK"
@@ -285,7 +285,14 @@ def selftest():
 
 		# --- gripping --- #
 		rv4 = c.get("/gripper/grip")
-		assert test_state["grippers"]["1"]["gripped"] in rv4.get_json()["1"].keys()
+		# both data structures show no object gripped or same object is gripped
+		if "gripped" not in test_state["grippers"]["1"] or test_state["grippers"]["1"]["gripped"] == None:
+			assert "1" not in rv4.get_json() or rv4.get_json()["1"] == None or len(rv4.get_json()["1"]) == 0, \
+				"test state gripper '1' has no object gripped but model seems to have one: {}".format(rv4.get_json()["1"]) 
+		else:
+			assert test_state["grippers"]["1"]["gripped"] in rv4.get_json()["1"].keys(), \
+				"test state gripper '1' and model gripper '1' do not have the same object gripped: {} vs {}".format(test_state["grippers"]["1"]["gripped"], rv4.get_json()["1"].keys())
+
 		# bad request: missing gripper id
 		rv5_bad_request = c.post("/gripper/grip")
 		# valid request

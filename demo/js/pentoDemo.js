@@ -37,6 +37,71 @@ $(document).ready(function () {
 		} 
 	};
 
+	const TESTGAME2 = {
+		"objs": {
+		  "0": {
+		    "type": "F",
+		    "x": 6,
+		    "y": 10,
+		    "width": 5,
+		    "height": 5,
+		    "color": "#99BBDD",
+		    "mirrored": true,
+		    "rotation": 90
+		  },
+		  "1": {
+		    "type": "I",
+		    "x": 13,
+		    "y": 11,
+		    "width": 5,
+		    "height": 5,
+		    "color": "#DDBB99",
+		    "mirrored": false,
+		    "rotation": 0
+		  },
+		  "2": {
+		    "type": "L",
+		    "x": 13,
+		    "y": 5,
+		    "width": 5,
+		    "height": 5,
+		    "color": "#408000",
+		    "mirrored": false,
+		    "rotation": 0
+		  },
+		  "3": {
+		    "type": "N",
+		    "x": 15,
+		    "y": 14,
+		    "width": 5,
+		    "height": 5,
+		    "color": "#5CD6D6",
+		    "mirrored": false,
+		    "rotation": 0
+		  },
+		  "4": {
+		    "type": "P",
+		    "x": 16,
+		    "y": 3,
+		    "width": 5,
+		    "height": 5,
+		    "color": "#336699",
+		    "mirrored": false,
+		    "rotation": 0
+		  }
+		},
+		"grippers": {
+		  "0": {
+		    "x": "9.5",
+		    "y": "9.5"
+		  },
+		  "1": {
+		    "x": "6",
+		    "y": "9.5"
+		  }
+		}
+		}
+
 	// Set up the MVC APIs
 	// Connect View and Model API (so model can notify the view)
 	let subscribeViewToModel = new Request(`http://${MODEL_API}/attach-view`, {method:"POST", body:`{"url": "${VIEW_API}"}`});
@@ -48,7 +113,7 @@ $(document).ready(function () {
 	});
 
 	// Load a game
-	let loadGameReq = new Request(`http://${MODEL_API}/state`, {method:"POST", body:JSON.stringify(TESTGAME)});
+	let loadGameReq = new Request(`http://${MODEL_API}/state`, {method:"POST", body:JSON.stringify(TESTGAME2)});
 	fetch(loadGameReq)
 	.then(r => {
 		if (!r.ok) {

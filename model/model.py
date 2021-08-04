@@ -6,8 +6,6 @@ import requests
 import json
 from math import floor
 
-# TODO: no object collision
-
 class Model:
 	def __init__(self, config):
 		self.views = list()
@@ -144,13 +142,15 @@ class Model:
 		try:
 			# initialize an empty state
 			self.state = State()
-			for gr in json_data["grippers"]:
+			for gr_name in json_data["grippers"]:
+				gr = str(gr_name) # use string identifiers only for consistency
 				self.state.grippers[gr] = Gripper(
-					json_data["grippers"][gr]["x"],
-					json_data["grippers"][gr]["y"])
+					float(json_data["grippers"][gr]["x"]),
+					float(json_data["grippers"][gr]["y"]))
 				# process optional info
 				if "gripped" in json_data["grippers"][gr]:
-					self.state.grippers[gr].gripped = json_data["grippers"][gr]["gripped"]
+					# cast object name to str, too
+					self.state.grippers[gr].gripped = str(json_data["grippers"][gr]["gripped"])
 				if "width" in json_data["grippers"][gr]:
 					self.state.grippers[gr].width = json_data["grippers"][gr]["width"]
 				elif "height" in json_data["grippers"][gr]:
@@ -159,19 +159,20 @@ class Model:
 					self.state.grippers[gr].color = json_data["grippers"][gr]["color"]
 			
 			# construct objects
-			for obj in json_data["objs"]:
+			for obj_name in json_data["objs"]:
+				obj = str(obj_name) # use string identifiers only for consistency
 				self.state.objs[obj] = Obj(
 					json_data["objs"][obj]["type"],
-					json_data["objs"][obj]["x"],
-					json_data["objs"][obj]["y"],
-					json_data["objs"][obj]["width"],
-					json_data["objs"][obj]["height"],
+					float(json_data["objs"][obj]["x"]),
+					float(json_data["objs"][obj]["y"]),
+					float(json_data["objs"][obj]["width"]),
+					float(json_data["objs"][obj]["height"]),
 					self.get_type_config()[json_data["objs"][obj]["type"]] # block matrix for given type
 				)
 				# process optional info
 				if "rotation" in json_data["objs"][obj]:
 					# rotate the object
-					self.state.rotate_obj(obj, json_data["objs"][obj]["rotation"])
+					self.state.rotate_obj(obj, float(json_data["objs"][obj]["rotation"]))
 				if "mirrored" in json_data["objs"][obj] and json_data["objs"][obj]["mirrored"]:
 					# flip the object if "mirrored" is true in the JSON
 					self.state.flip_obj(obj)
