@@ -40,7 +40,7 @@ $(document).ready(function () {
 	const TESTGAME2 = {
 		"objs": {
 		  "0": {
-		    "type": "F",
+		    "type": "U",
 		    "x": 6,
 		    "y": 10,
 		    "width": 5,
@@ -50,7 +50,7 @@ $(document).ready(function () {
 		    "rotation": 90
 		  },
 		  "1": {
-		    "type": "I",
+		    "type": "V",
 		    "x": 13,
 		    "y": 11,
 		    "width": 5,
@@ -60,7 +60,7 @@ $(document).ready(function () {
 		    "rotation": 0
 		  },
 		  "2": {
-		    "type": "L",
+		    "type": "W",
 		    "x": 13,
 		    "y": 5,
 		    "width": 5,
@@ -70,7 +70,7 @@ $(document).ready(function () {
 		    "rotation": 0
 		  },
 		  "3": {
-		    "type": "N",
+		    "type": "X",
 		    "x": 15,
 		    "y": 14,
 		    "width": 5,
@@ -80,7 +80,7 @@ $(document).ready(function () {
 		    "rotation": 0
 		  },
 		  "4": {
-		    "type": "P",
+		    "type": "Y",
 		    "x": 16,
 		    "y": 3,
 		    "width": 5,

@@ -1,7 +1,7 @@
 {
   "objs": {
     "0": {
-      "type": "F",
+      "type": "U",
       "x": 6,
       "y": 10,
       "width": 5,
@@ -11,7 +11,7 @@
       "rotation": 0
     },
     "2": {
-      "type": "L",
+      "type": "V",
       "x": 13,
       "y": 5,
       "width": 5,
@@ -21,7 +21,7 @@
       "rotation": 90
     },
     "3": {
-      "type": "N",
+      "type": "W",
       "x": 15,
       "y": 14,
       "width": 5,
@@ -31,7 +31,7 @@
       "rotation": 90
     },
     "4": {
-      "type": "P",
+      "type": "X",
       "x": 16,
       "y": 3,
       "width": 5,
