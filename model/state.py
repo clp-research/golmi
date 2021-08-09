@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 class State:
 	def __init__(self):
 		self.objs = dict() # maps ids to Objs
@@ -85,28 +87,36 @@ class State:
 		self.get_obj_by_id(id).x += dx
 		self.get_obj_by_id(id).y += dy
 
-	def rotate_obj(self, id, d_angle):
+	def rotate_obj(self, id, d_angle, rotated_matrix=None):
 		"""
 		Change an object's goal_rotation by d_angle.
 		@param id  	object id
 		@param d_angle	current angle is changed by d_angle
+		@param rotated_matrix 	optional: pre-rotated block matrix, otherwise the current matrix is rotated
 		"""
 		if d_angle != 0:
 			obj = self.get_obj_by_id(id)
 			obj.rotation = (obj.rotation + d_angle) % 360
 			# update block matrix
-			obj.block_matrix = self._rotate_block_matrix(obj.block_matrix, d_angle)
+			if rotated_matrix:
+				obj.block_matrix = rotated_matrix
+			else:
+				obj.block_matrix = self.rotate_block_matrix(obj.block_matrix, d_angle)
 
-	def flip_obj(self, id):
+	def flip_obj(self, id, flipped_matrix=None):
 		"""
 		Mirror an object.
 		@param id 	object_id
+		@param flipped_matrix	optional: pre-flipped block matrix, otherwise the current matrix is flipped
 		"""
 		# change 'mirrored' attribute
 		obj = self.get_obj_by_id(id)
 		obj.mirrored = not obj.mirrored
-		# update the block matrix (function _flip_block_matrix flips in-place)
-		self._flip_block_matrix(obj.block_matrix)
+		# update the block matrix
+		if flipped_matrix:
+			obj.block_matrix = flipped_matrix
+		else:
+			obj.block_matrix = self.flip_block_matrix(obj.block_matrix)
 	
 	def grip(self, gr_id, obj_id):
 		"""
@@ -123,7 +133,7 @@ class State:
 		"""
 		self.grippers[id].gripped = None
 
-	def _rotate_block_matrix(self, old_matrix, d_angle):
+	def rotate_block_matrix(self, old_matrix, d_angle):
 		"""
 		Rearrange blocks of a 0/1 block matrix to apply some rotation.
 		@param old_matrix 	block matrix describing the current block positions
@@ -139,9 +149,9 @@ class State:
 		# start building a new, rotated matrix
 		new_matrix = list()
 		height = len(old_matrix)
-		assert height > 0, "Error: Empty block matrix passed to _rotate_block_matrix() at class State"
+		assert height > 0, "Error: Empty block matrix passed to rotate_block_matrix() at class State"
 		width = len(old_matrix[0])
-		assert width > 0, "Error: Block matrix with empty rows passed to _rotate_block_matrix() at class State"
+		assert width > 0, "Error: Block matrix with empty rows passed to rotate_block_matrix() at class State"
 		for row in range(height):
 			# new empty row
 			new_matrix.append(list())
@@ -157,10 +167,14 @@ class State:
 					print("Error: Invalid turning angle at _rotateByRearrange(): " + approx_angle)
 		return new_matrix
 
-	def _flip_block_matrix(self, old_matrix):
+	def flip_block_matrix(self, old_matrix):
 		"""
-		Flips blocks using a horizontal axis of reflection. *IN PLACE*
+		Flips blocks using a horizontal axis of reflection.
 		@param old_matrix 	block matrix describing the current block positions
+		@return a new block matrix with 1s in horizontally mirrored positions
 		"""
+		# make a deep copy
+		new_matrix = deepcopy(old_matrix)
 		# simply reverse the order of rows
-		old_matrix.reverse()
+		new_matrix.reverse()
+		return new_matrix
