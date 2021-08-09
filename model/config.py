@@ -3,7 +3,7 @@ import json
 #TODO: include option to read the config from a json file
 #Class to store settings such as board width, allowable actions, etc.
 class Config:
-	def __init__(self, type_config, width=20, height=20, snap_to_grid=False,
+	def __init__(self, type_config, width=20, height=20, snap_to_grid=False, prevent_overlap=True,
 	             actions=["move", "rotate"], move_step=0.5, rotation_step=90, action_interval=0.5):
 		"""
 		Constructor.
@@ -11,6 +11,7 @@ class Config:
 	 	@param width 	number of vertical 'blocks' on the board, e.g. for block-based rendering. default:20
 	 	@param height	number of horizontal 'blocks' on the board, e.g. for block-based rendering. default:20
 	 	@param snap_to_grid 	True to lock objects to the nearest block at gripper release. default:False
+		@param prevent_overlap 	True to prohibit any action that would lead to objects overlapping. default:True
 		@param actions 	array of strings naming allowed object manipulations. default:['move', 'rotate']
 	 	@param move_step	step size for object movement. default:0.2[blocks]
 		@param rotation_step	applied angle when object is rotated. Limitations might exist for View implementations. default:90
@@ -19,6 +20,7 @@ class Config:
 		self.width				= width
 		self.height 			= height
 		self.snap_to_grid		= snap_to_grid
+		self.prevent_overlap	= prevent_overlap
 		self.actions 			= actions
 		self.move_step			= move_step
 		self.rotation_step		= rotation_step

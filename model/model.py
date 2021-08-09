@@ -266,7 +266,7 @@ class Model:
 			# 3. object does not overlap with another object
 			if self._is_in_limits(gripper_x+dx, gripper_y+dy) and \
 				self._is_in_limits(gr_obj.get_center_x()+dx, gr_obj.get_center_y()+dy) and \
-				not self._has_overlap(gr_obj_id, gr_obj.x+dx, gr_obj.y+dy, gr_obj.block_matrix):
+				not (self.config.prevent_overlap and self._has_overlap(gr_obj_id, gr_obj.x+dx, gr_obj.y+dy, gr_obj.block_matrix)):
 				
 				self.state.move_gr(id, dx, dy)
 				self.state.move_obj(self.get_gripped_obj(id), dx, dy)
@@ -314,7 +314,7 @@ class Model:
 			d_angle = direction * step_size
 			# rotate the matrix and check whether the new block positions are legal (-> no overlaps)
 			rotated_matrix = self.state.rotate_block_matrix(gr_obj.block_matrix, d_angle)
-			if not self._has_overlap(gr_obj_id, gr_obj.x, gr_obj.y, rotated_matrix):
+			if not (self.config.prevent_overlap and self._has_overlap(gr_obj_id, gr_obj.x, gr_obj.y, rotated_matrix)):
 				self.state.rotate_obj(gr_obj_id, d_angle, rotated_matrix)
 				# notify the views. The gripped object is implicitly redrawn. 
 				self._notify_views(self.get_gripper_updated_event(id))
@@ -346,7 +346,7 @@ class Model:
 			gr_obj = self.get_obj_by_id(gr_obj_id)
 			# flip the matrix, then check whether the new block positions are legal (-> no overlaps)
 			flipped_matrix = self.state.flip_block_matrix(gr_obj.block_matrix)
-			if not self._has_overlap(gr_obj_id, gr_obj.x, gr_obj.y, flipped_matrix):
+			if not (self.config.prevent_overlap and self._has_overlap(gr_obj_id, gr_obj.x, gr_obj.y, flipped_matrix)):
 				self.state.flip_obj(gr_obj_id, flipped_matrix)
 				# notify the views. The gripped object is implicitly redrawn. 
 				self._notify_views(self.get_gripper_updated_event(id))
