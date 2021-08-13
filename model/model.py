@@ -151,10 +151,6 @@ class Model:
 				if "gripped" in json_data["grippers"][gr]:
 					# cast object name to str, too
 					self.state.grippers[gr].gripped = str(json_data["grippers"][gr]["gripped"])
-				if "width" in json_data["grippers"][gr]:
-					self.state.grippers[gr].width = json_data["grippers"][gr]["width"]
-				elif "height" in json_data["grippers"][gr]:
-					self.state.grippers[gr].height = json_data["grippers"][gr]["height"]
 				elif "color" in json_data["grippers"][gr]:
 					self.state.grippers[gr].color = json_data["grippers"][gr]["color"]
 			
@@ -165,8 +161,6 @@ class Model:
 					json_data["objs"][obj]["type"],
 					float(json_data["objs"][obj]["x"]),
 					float(json_data["objs"][obj]["y"]),
-					float(json_data["objs"][obj]["width"]),
-					float(json_data["objs"][obj]["height"]),
 					self.get_type_config()[json_data["objs"][obj]["type"]] # block matrix for given type
 				)
 				# process optional info

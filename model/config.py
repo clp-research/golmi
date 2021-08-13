@@ -22,9 +22,9 @@ class Config:
 		self.snap_to_grid		= snap_to_grid
 		self.prevent_overlap	= prevent_overlap
 		self.actions 			= actions
-		self.move_step			= move_step
+		self.move_step			= 0.1#move_step
 		self.rotation_step		= rotation_step
-		self.action_interval	= action_interval
+		self.action_interval	= 0.1#action_interval
 
 		if type(type_config) == str:
 			self.type_config = self._types_from_JSON(type_config)
@@ -56,6 +56,13 @@ class Config:
 		file = open(filename, mode="r", encoding="utf-8")
 		types = json.loads(file.read())
 		file.close()
+		# remove entries with underscores (comments?)
+		comments = list()
+		for type_name in types.keys():
+			if type_name.startswith("_"):
+				comments.append(type_name)
+		for type_name in comments:
+			types.pop(type_name)
 		return types
 
 	def to_dict(self):
