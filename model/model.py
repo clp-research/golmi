@@ -118,44 +118,36 @@ class Model:
 		try:
 			# initialize an empty state
 			self.state = State()
-			if "grippers" in json_data and type(json_data["grippers"]) == dict:
-				for gr_name in json_data["grippers"]:
-					gr = str(gr_name) # use string identifiers only for consistency
-					self.state.grippers[gr] = Gripper(
-						float(json_data["grippers"][gr]["x"]),
-						float(json_data["grippers"][gr]["y"]))
-					# process optional info
-					if "gripped" in json_data["grippers"][gr]:
-						# cast object name to str, too
-						self.state.grippers[gr].gripped = str(json_data["grippers"][gr]["gripped"])
-					if "width" in json_data["grippers"][gr]:
-						self.state.grippers[gr].width = json_data["grippers"][gr]["width"]
-					elif "height" in json_data["grippers"][gr]:
-						self.state.grippers[gr].height = json_data["grippers"][gr]["height"]
-					elif "color" in json_data["grippers"][gr]:
-						self.state.grippers[gr].color = json_data["grippers"][gr]["color"]
+			for gr_name in json_data["grippers"]:
+				gr = str(gr_name) # use string identifiers only for consistency
+				self.state.grippers[gr] = Gripper(
+					float(json_data["grippers"][gr]["x"]),
+					float(json_data["grippers"][gr]["y"]))
+				# process optional info
+				if "gripped" in json_data["grippers"][gr]:
+					# cast object name to str, too
+					self.state.grippers[gr].gripped = str(json_data["grippers"][gr]["gripped"])
+				elif "color" in json_data["grippers"][gr]:
+					self.state.grippers[gr].color = json_data["grippers"][gr]["color"]
 			
 			# construct objects
-			if "objs" in json_data and type(json_data["objs"]) == dict:
-				for obj_name in json_data["objs"]:
-					obj = str(obj_name) # use string identifiers only for consistency
-					self.state.objs[obj] = Obj(
-						json_data["objs"][obj]["type"],
-						float(json_data["objs"][obj]["x"]),
-						float(json_data["objs"][obj]["y"]),
-						float(json_data["objs"][obj]["width"]),
-						float(json_data["objs"][obj]["height"]),
-						self.get_type_config()[json_data["objs"][obj]["type"]] # block matrix for given type
-					)
-					# process optional info
-					if "rotation" in json_data["objs"][obj]:
-						# rotate the object
-						self.state.rotate_obj(obj, float(json_data["objs"][obj]["rotation"]))
-					if "mirrored" in json_data["objs"][obj] and json_data["objs"][obj]["mirrored"]:
-						# flip the object if "mirrored" is true in the JSON
-						self.state.flip_obj(obj)
-					if "color" in json_data["objs"][obj]:
-						self.state.objs[obj].color = json_data["objs"][obj]["color"]
+			for obj_name in json_data["objs"]:
+				obj = str(obj_name) # use string identifiers only for consistency
+				self.state.objs[obj] = Obj(
+					json_data["objs"][obj]["type"],
+					float(json_data["objs"][obj]["x"]),
+					float(json_data["objs"][obj]["y"]),
+					self.get_type_config()[json_data["objs"][obj]["type"]] # block matrix for given type
+				)
+				# process optional info
+				if "rotation" in json_data["objs"][obj]:
+					# rotate the object
+					self.state.rotate_obj(obj, float(json_data["objs"][obj]["rotation"]))
+				if "mirrored" in json_data["objs"][obj] and json_data["objs"][obj]["mirrored"]:
+					# flip the object if "mirrored" is true in the JSON
+					self.state.flip_obj(obj)
+				if "color" in json_data["objs"][obj]:
+					self.state.objs[obj].color = json_data["objs"][obj]["color"]
 		except: 
 			raise SyntaxError("Error during state initialization: JSON data does not have the right format.\n" + \
 				"Please refer to the documentation.")

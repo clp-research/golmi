@@ -91,7 +91,7 @@ This example controller receives key events and requests gripper changes in atta
 |actions|array / list of str|types of manipulation allowed by the model| \["move", "rotate", "flip"\]| 
 |rotation_step|int|angle change for a single rotation action|90| 
 |colors|array / list of str|available object colors| \["red", "black", "blue"\] |
-|type_config| map: str -> list of lists / array of arrays|map that defines available object types (e.g. the twelve letters for Pentomino) to block matrices defining an object's shape. The matrices contain 0s and 1s, where a 1 signifies the presence of a block| {	"F": [ [0,0,0,0,0], [0,1,1,0,0], [0,0,1,1,0], [0,0,1,0,0], [0,0,0,0,0] ], "I": [ [0,0,1,0,0], [0,0,1,0,0], [0,0,1,0,0], [0,0,1,0,0], [0,0,1,0,0]]}
+|type_config| map: str -> list of lists / array of arrays|map that defines available object types (e.g. the twelve letters for Pentomino) to block matrices defining an object's shape. The matrices contain 0s and 1s, where a 1 signifies the presence of a block. Block matrices should be square to support rotation. Type names cannot start with an underscore. | {	"F": [ [0,0,0,0,0], [0,1,1,0,0], [0,0,1,1,0], [0,0,1,0,0], [0,0,0,0,0] ], "I": [ [0,0,1,0,0], [0,0,1,0,0], [0,0,1,0,0], [0,0,1,0,0], [0,0,1,0,0]]}
 
 **/state**
 * POST: Initialize a new model state. One of more grippers and one or more objects can be defined. The model will attempt to parse the data, overwrites its internal state and notifies any listening view. *Request format:* The keys 'objs' and 'grippers' must be defined and assigned a (possibly empty) map. Both the object and gripper map match object ids to object info. Obligatory and optional keys for object and gripper entries are summarized in the table below. *Example:* ```{
