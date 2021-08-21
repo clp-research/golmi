@@ -5,7 +5,7 @@ class State:
 		self.objs = dict() # maps ids to Objs
 		self.grippers = dict()
 		
-	def get_objects(self):
+	def get_obj_dict(self):
 		"""
 		@return Dictionary mapping object ids to object dictionaries
 		"""
@@ -23,9 +23,9 @@ class State:
 		else:
 			return None
 
-	def get_grippers(self):
+	def get_gripper_dict(self):
 		"""
-		In contrast to get_objects, each gripper dict has the entry "gripped", which itself
+		In contrast to get_obj_dict, each gripper dict has the entry "gripped", which itself
 		is None or a dictionary mapping the gripped object to an object dictionary.
 		@return Dictionary mapping gripper ids to gripper dictionaries.
 		"""
@@ -57,10 +57,10 @@ class State:
 		else:
 			return list()
 
-	# returns None if no object is gripped
 	def get_gripped_obj(self, id): 
 		"""
 		@param id 	gripper id 
+		@return None or the id of the gripped object
 		"""
 		if id in self.grippers:
 			return self.grippers[id].gripped
@@ -124,6 +124,7 @@ class State:
 		@param gr_id 	id of the gripper that grips obj_id
 		@param obj_id 	id of object to grip, must be in objects
 	 	"""
+		self.objs[obj_id].gripped = True
 		self.grippers[gr_id].gripped = obj_id
 	
 	def ungrip(self, id):
@@ -131,6 +132,7 @@ class State:
 		Detach the currently gripped object from the gripper.
 		@param id 	id of the gripper that ungrips
 		"""
+		self.objs[self.grippers[id].gripped].gripped = False
 		self.grippers[id].gripped = None
 
 	def rotate_block_matrix(self, old_matrix, d_angle):
@@ -178,3 +180,13 @@ class State:
 		# simply reverse the order of rows
 		new_matrix.reverse()
 		return new_matrix
+
+	def to_dict(self):
+		"""
+		Create a JSON-friendly representation of the current state
+		@return dict containing current grippers and objects
+		"""
+		state_dict = dict()
+		state_dict["grippers"] = self.get_gripper_dict()
+		state_dict["objs"] = self.get_obj_dict()
+		return state_dict

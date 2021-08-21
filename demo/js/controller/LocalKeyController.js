@@ -1,12 +1,16 @@
 $(document).ready(function () {
 	
 	/**
-	 * @param {Array of [modelURL, gripperId], optional} modelAPIs
+	 * Local controller. Can connect to one or more models. In each model, a gripper is created
+	 * at connection. If a gripperId is passed, an existing gripper with this id is assigned.
+	 * Otherwise a new gripper is added with the given id or alternatively the session id. 
+	 * The user's keystrokes are used to control the assigned gripper(s) and any gripped object.
+	 * @param {optional Array of [socket, gripperId], where gripperId can be null, default:null} modelSockets
 	 */
 	this.LocalKeyController = class LocalKeyController {
-		constructor(modelAPIs=null) {
-			// array of model URLs to notify
-			this.models = modelAPIs ? modelAPIs : new Array();
+		constructor(modelSockets=null) {
+			// array of model socket-gripperId pairs that are controlled
+			this.models = modelSockets ? modelSockets : new Array();
 			
 			// assign functions to key codes: [function for keydown, function for keyup, down?] 
 			// grip and flip are one-time actions, move and rotate are looped
@@ -17,8 +21,8 @@ $(document).ready(function () {
 				38: [this.moveUp, this.stopMove, false],		// arrow up
 				39: [this.moveRight, this.stopMove, false],		// arrow right
 				40: [this.moveDown, this.stopMove, false],		// arrow down
-				65: [this.rotateLeft, this.stopRotate, false],	// a
-				68: [this.rotateRight, this.stopRotate, false],	// d
+				65: [this.rotateLeft, null, false],	// a
+				68: [this.rotateRight, null, false],	// d
 				83: [this.flip, null, false],					// s
 				87: [this.flip, null, false]					// w
 			};
@@ -34,29 +38,47 @@ $(document).ready(function () {
 
 		/**
 		 * Subscribe a new model. Duplicate subscription is prevented.
-		 * @param {url of the model API to notify} url
-		 * @param {id of the gripper to control} gripperId
+		 * If no gripper with the given id exists, it will be added. If no id was
+		 * passed, the session id of the socket is used.
+		 * @param {socket of the model server to notify} socket
+		 * @param {optional: id of the gripper to control, default: null} grId
 		 */
-		attachModel(url, gripperId) {
-			// Make sure not to subscribe a model twice
-			if (!this.models.includes([url, gripperId])) {
-				this.models.push([url, gripperId]);
+		attachModel(socket, grId=null) {
+			// make sure not to subscribe a model-gripper pair twice
+			for (let [s, g] of this.models) {
+				if (s.id == socket.id && g == grId) { return; }
 			}
+			// register the gripper at the model
+			socket.emit("add_gripper", grId);
+			// use the id authoratively assigned by the model
+			socket.on("attach_gripper", (assignedId) => {
+				this.models.push([socket, assignedId]);
+			});
 		}
 
 		/**
-		 * Remove a model from the internal list of models to notify.
-		 * @param {url of the model API to unsubscribe} url
-		 * @param {id of the gripper to unsubscribe, optional. If null, all grippers of the model url will be unsubscribed} gripperId
+		 * Remove a model from the internal list of models to notify. Remove the associated gripper.
+		 * @param {socket of the model API to unsubscribe} socket
+		 * @param {id of the gripper to unsubscribe, optional. If null, all grippers of the model url will be unsubscribed} grId
 		 * 
 		 */
-		detachModel(url, gripperId=null) {
-			if (gripperId) {
-				// Only remove the pair [url, gripperId]
-				this.models = this.models.filter(model => model != [url, gripperId]);
+		detachModel(socket, grId=null) {
+			if (grId) {
+				// only remove pairs [socket, gripperId]
+				for (let i = 0; i < this.models.length; i++) {
+					if (this.models[i][0].id == socket.id && this.models[i][2] == grId) {
+						this.models[i][0].emit("remove_gripper", grId);
+						this.models.splice(i, 1); 
+					}
+				}
 			} else {
-				// Remove any occurence of the URL (even though duplicates should not exist using attachModel())
-				this.models = this.models.filter(model => model[0] != url);
+				// remove any occurence of the socket
+				for (let i = 0; i < this.models.length; i++) {
+					if (this.models[i][0].id == socket.id) {
+						this.models[i][0].emit("remove_gripper", this.models[i][1]);
+						this.models.splice(i, 1); 
+					}
+				}
 			}
 		}
 
@@ -64,15 +86,14 @@ $(document).ready(function () {
 
 		/**
 		 * Notifies all subscribed models that a "grip" should be attempted.
-		 * Makes a POST request to the /gripper/grip endpoint.
 		 * @param {reference to LocalKeyController instance (this)} thisArg
 		 */
 		grip(thisArg) {
-			// send a request to each subscribed model
-			for (let modelGripper of thisArg.models) {
-				let gripReq = new Request(`http://${modelGripper[0]}/gripper/grip`, {method:"POST", body:`{"id": ${modelGripper[1]}}`});
-				thisArg._sendRequest(gripReq, `Error starting to grip: gripper #${modelGripper[1]} at ${modelGripper[0]}`);
-			}
+			let loop = false;
+			// send an event to each model
+			thisArg.models.forEach(([socket, grId]) => {
+				socket.emit("grip", {"id": grId, "loop":loop});
+			});
 		}
 
 		/**
@@ -80,34 +101,31 @@ $(document).ready(function () {
 		 */
 		stopGrip(thisArg) {
 			// send a request to each subscribed model
-			for (let modelGripper of thisArg.models) {
-				let stopReq = new Request(`http://${modelGripper[0]}/gripper/grip`, {method:"DELETE", body:`{"id": ${modelGripper[1]}}`});
-				thisArg._sendRequest(stopReq, `Error stopping to grip: gripper #${modelGripper[1]} at ${modelGripper[0]}`);
-			}
+			thisArg.models.forEach(([socket, grId]) => {
+				socket.emit("stop_grip", {"id":grId});	
+			});
 		}
 
 		/**
-		 * Notify models to move the gripper 1 block to the left.
+		 * Notify models to move the gripper 1 unit to the left.
 		 * @param {reference to LocalKeyController instance (this)} thisArg
 		 */
 		moveLeft(thisArg) { thisArg._moveGr(-1, 0); }
 
 		/**
-		 * Notify models to move the gripper 1 block up.
+		 * Notify models to move the gripper 1 unit up.
 		 * @param {reference to LocalKeyController instance (this)} thisArg
 		 */
-		moveUp(thisArg) {
-			thisArg._moveGr(0, -1); 
-		}
+		moveUp(thisArg) { thisArg._moveGr(0, -1); }
 		
 		/**
-		 * Notify models to move the gripper 1 block to the right.
+		 * Notify models to move the gripper 1 unit to the right.
 		 * @param {reference to LocalKeyController instance (this)} thisArg
 		 */
 		moveRight(thisArg) { thisArg._moveGr(1, 0); }
 
 		/**
-		 * Notify models to move the gripper 1 block down.
+		 * Notify models to move the gripper 1 unit down.
 		 * @param {reference to LocalKeyController instance (this)} thisArg
 		 */
 		moveDown(thisArg) { thisArg._moveGr(0, 1); }
@@ -118,17 +136,16 @@ $(document).ready(function () {
 		 * @param {number of blocks to move in y direction} dy
  		 */
 		_moveGr(dx, dy) {
-			for (let modelGripper of this.models) {
-				let moveReq = new Request(`http://${modelGripper[0]}/gripper/position`, {method:"POST", body:`{"id": ${modelGripper[1]}, "dx": ${dx}, "dy": ${dy}, "speed": 1, "loop": true}`});
-				this._sendRequest(moveReq, `Error moving gripper #${modelGripper[1]} at ${modelGripper[0]}`);
-			}
+			let loop = false;
+			this.models.forEach(([socket, grId]) => {
+				socket.emit("move", {"id": grId, "dx": dx, "dy": dy, "loop": loop, "step_size": 0.5});
+			});
 		}
 
 		stopMove(thisArg) {
-			for (let modelGripper of thisArg.models) {
-				let stopReq = new Request(`http://${modelGripper[0]}/gripper/position`, {method:"DELETE", body:`{"id": ${modelGripper[1]}}`});
-				thisArg._sendRequest(stopReq, `Error stopping gripper #${modelGripper[1]} at ${modelGripper[0]}`);
-			}
+			thisArg.models.forEach(([socket, grId]) => {
+				socket.emit("stop_move", {"id": grId});
+			});
 		}
 
 		/**
@@ -148,17 +165,16 @@ $(document).ready(function () {
 		 * @param {number of units to turn. Pass negative value for leftwards rotation} direction
 		 */
 		_rotate(direction) {
-			for (let modelGripper of this.models) {
-				let rotateReq = new Request(`http://${modelGripper[0]}/gripper/rotate`, {method:"POST", body:`{"id": ${modelGripper[1]}, "direction": ${direction}, "loop": true}`});
-				this._sendRequest(rotateReq, `Error rotating object gripped by gripper #${modelGripper[1]} at ${modelGripper[0]}`);
-			}
+			let loop = false;
+			this.models.forEach(([socket, grId]) => {
+				socket.emit("rotate", {"id":grId, "direction":direction, "loop":loop});
+			});
 		}
 
 		stopRotate(thisArg) {
-			for (let modelGripper of thisArg.models) {
-				let stopReq = new Request(`http://${modelGripper[0]}/gripper/rotate`, {method:"DELETE", body:`{"id": ${modelGripper[1]}}`});
-				thisArg._sendRequest(stopReq, `Error stopping rotation of gripper #${modelGripper[1]} at ${modelGripper[0]}`);
-			}
+			thisArg.models.forEach(([socket, grId]) => {
+				socket.emit("stop_rotate", {"id":grId});
+			});
 		}
 
 		/**
@@ -166,26 +182,15 @@ $(document).ready(function () {
 		 * @param {reference to LocalKeyController instance (this)} thisArg
 		 */
 		flip(thisArg) { 
-			for (let modelGripper of thisArg.models) {
-				let stopReq = new Request(`http://${modelGripper[0]}/gripper/flip`, {method:"POST", body:`{"id": ${modelGripper[1]}}`});
-				thisArg._sendRequest(stopReq, `Error flipping object by gripper #${modelGripper[1]} at ${modelGripper[0]}`);
-			}
+			let loop = false;
+			thisArg.models.forEach(([socket, grId]) => {
+				socket.emit("flip", {"id":grId, "loop":loop});
+			});
 		}
 
-		/**
-		 * Helper function for sending and processing a single request
-		 * @param {Request object, containing method and optional body} request
-		 * @param {error message to log to the console if something goes wrong} errMsg
-		 */
-		_sendRequest(request, errMsg) {
-			// send a request to each subscribed model, log to console if something goes wrong:
-			fetch(request)
-			.then(r => {
-				// log to console if something goes wrong:
-				if (!r.ok) {
-					let info = r.status == 404 ? ": gripper with this id does not exist" : "";
-					console.log(`${errMsg}${info}`);
-				}
+		stopFlip(thisArg) {
+			thisArg.models.forEach(([socket, grId]) => {
+				socket.emit("stop_flip", {"id":grId});
 			});
 		}
 

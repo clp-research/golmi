@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
+from flask_socketio import SocketIO, send, emit, ConnectionRefusedError
 from model import Model
 from config import Config
 import requests
@@ -14,34 +15,153 @@ import argparse
 
 # --- define globals --- #
 
+# has to be passed by clients to connect
+# might want to set this in the environment variables: AUTH = os.environ['GOLMI_AUTH']
+AUTH = "GiveMeTheBigBluePasswordOnTheLeft"
+
 # TODO: /gripper/{id} (+ grip?)
 # TODO: /objects/{id}
 
 app = Flask(__name__)
+# Secret key used for sessions: 
+# Before publishing, generate random bytes e.g. using:
+# $ python -c 'import os; print(os.urandom(16))'
+# (This is the recommendation by the Flask documentation: https://flask.palletsprojects.com/en/2.0.x/quickstart/#sessions)
+app.config["SECRET KEY"] = "definite change this to some random value!".encode("utf-8")
 # enable cross-origin requests 
 # TODO: restrict sources
 CORS(app)
+socketio = SocketIO(app, logger=True, engineio_logger=True, cors_allowed_origins='*')
 
 # todo: endpoint to change config
 config = Config("resources/type_config/pentomino_types.json")
-model = Model(config)
+model = Model(config, socketio)
+
+# --- socketio events --- #
+# --- connection --- #
+@socketio.on("connect")
+def client_connect(auth):
+	# authenticate the client:
+	if auth != AUTH:
+		raise ConnectionRefusedError("unauthorized")
+	# send config + state
+	emit("update_config", model.config.to_dict())
+	emit("update_state", model.state.to_dict())
+
+# --- state --- #
+@socketio.on("load_state")
+def load_state(json):
+	#print("received state:" + str(json), type(json))
+	model.set_initial_state(json)
+
+# --- gripper --- #
+@socketio.on("add_gripper")
+def add_gripper(gr_id=None):
+	# if no id was passed (or None), use the session id
+	if not gr_id:
+		gr_id = request.sid
+	# add gripper to the model
+	model.add_gr(gr_id)
+	emit("attach_gripper", gr_id)
+
+@socketio.on("remove_gripper")
+def remove_gripper(gr_id=None):
+	# if no id was passed (or None), use the session id
+	if not gr_id:
+		gr_id = request.sid
+	# delete the gripper
+	model.remove_gr(gr_id)
+
+# For all actions: move, flip, rotate, grip, there are 2 options: 'one-time action' and 'looped action'.
+# See the documentation for details.
+
+@socketio.on("move")
+def move(params):
+	# check the arguments and make sure the gripper exists
+	if type(params) == dict and "id" in params and "dx" in params and "dy" in params and \
+		model.get_gripper_by_id(str(params["id"])) != None:
+
+		step_size = params["step_size"] if "step_size" in params else None
+		# continuous / looped action
+		if "loop" in params and params["loop"]:
+			model.start_moving(str(params["id"]), params["dx"], params["dy"], step_size)
+		# one-time action
+		else:
+			model.move(str(params["id"]), params["dx"], params["dy"], step_size)
+
+@socketio.on("stop_move")
+def stop_move(params):
+	# check the arguments and make sure the gripper exists
+	if type(params) == dict and "id" in params and \
+		model.get_gripper_by_id(str(params["id"])):
+
+		model.stop_moving(str(params["id"]))
+
+@socketio.on("rotate")
+def rotate(params):
+	# check the arguments and make sure the gripper exists
+	if type(params) == dict or "id" in params and "direction" in params and \
+		model.get_gripper_by_id(str(params["id"])) != None:
+		
+		step_size = params["step_size"] if "step_size" in params else None
+		# continuous / looped action
+		if "loop" in params and params["loop"]:
+			model.start_rotating(str(params["id"]), params["direction"], step_size)
+		# one-time action
+		else:
+			model.rotate(str(params["id"]), params["direction"], step_size)
+
+@socketio.on("stop_rotate")
+def stop_rotate(params):
+	# check the arguments and make sure the gripper exists
+	if type(params) == dict or "id" in params and \
+		model.get_gripper_by_id(str(params["id"])) != None:
+
+		model.stop_rotating(str(params["id"]))
+
+@socketio.on("flip")
+def flip(params):
+	# check the arguments and make sure the gripper exists
+	if type(params) == dict or "id" in params and \
+		model.get_gripper_by_id(str(params["id"])) != None:
+		
+		# continuous / looped action
+		if "loop" in params and params["loop"]:
+			model.start_flipping(str(params["id"]))
+		# one-time action
+		else:
+			model.flip(str(params["id"]))
+
+@socketio.on("stop_flip")
+def stop_flip(params):
+	# check the arguments and make sure the gripper exists
+	if type(params) == dict or "id" in params and \
+		model.get_gripper_by_id(str(params["id"])) != None:
+		
+		model.stop_flipping(str(params["id"]))
+
+@socketio.on("grip")
+def grip(params):
+	# check the arguments and make sure the gripper exists
+	if type(params) == dict and "id" in params and \
+		model.get_gripper_by_id(str(params["id"])) != None:
+
+		# continuous / looped action
+		if "loop" in params and params["loop"]:
+			model.start_gripping(str(params["id"]))
+		# one-time action
+		else:
+			model.grip(str(params["id"]))
+
+@socketio.on("stop_grip")
+def stop_grip(params):
+	# check the arguments and make sure the gripper exists
+	if type(params) == dict or "id" in params and \
+		model.get_gripper_by_id(str(params["id"])) != None:
+
+		model.stop_gripping(str(params["id"]))
 
 # --- define routes --- # 
-
-@app.route("/attach-view", methods=["POST", "DELETE"])
-#@cross_origin(origin='localhost')
-def attach_view():
-	if not request.data:
-		return "1", 400
-	elif request.method == "POST":
-		json_data = json.loads(request.data)
-		model.attach_view(json_data["url"])
-		return "0"
-	elif request.method == "DELETE":
-		json_data = json.loads(request.data)
-		return "0" if model.detach_view(json_data["url"]) else ("1", 400)
-	else:
-		return "1", 405
 
 @app.route("/config", methods=["GET", "POST"])
 def config():
@@ -53,167 +173,10 @@ def config():
 	else: 
 		return "1", 405
 
-
-@app.route("/gripper", methods=["GET"])
-def gripper():
-	if request.method == "GET":
-		return model.get_grippers()
-	else: 
-		return "1", 405
-
-# For all actions: move, flip, rotate, grip, there are 2 options: 'one-time action' and 'looped action'.
-# See the documentation for details.
-
-@app.route("/gripper/position", methods=["POST", "DELETE"])
-def gripper_position():
-	if request.method == "POST":
-		if not request.data:
-			return "1", 400
-		else:
-			json_data = json.loads(request.data)
-		if type(json_data) == dict and "id" in json_data and "dx" in json_data and "dy" in json_data:
-			# Make sure the gripper exists
-			if not model.get_gripper_by_id(str(json_data["id"])):
-				return "1", 404
-
-			step_size = json_data["step_size"] if "step_size" in json_data else None
-
-			# continuous / looped action
-			if "loop" in json_data and json_data["loop"]:
-				model.start_moving(str(json_data["id"]), json_data["dx"], json_data["dy"], step_size)
-			# one-time action
-			else:
-				model.move(str(json_data["id"]), json_data["dx"], json_data["dy"], step_size)
-			return "0"
-		else: 
-			return "1", 400
-	elif request.method == "DELETE":
-		if not request.data:
-			return "1", 400
-		else:
-			json_data = json.loads(request.data)
-		if type(json_data) == dict and "id" in json_data:
-			# Make sure the gripper exists
-			if not model.get_gripper_by_id(str(json_data["id"])):
-				return "1", 404
-			model.stop_moving(str(json_data["id"]))
-			return "0", 200
-		else: 
-			return "1", 400 
-
-@app.route("/gripper/rotate", methods=["POST", "DELETE"])
-def gripper_rotate():
-	"""
-	Rotate the gripped object.
-	"""
-	if not request.data:
-		return "1", 400
-	else:
-		json_data = json.loads(request.data)
-	# assert the request has the right parameters
-	if type(json_data) != dict or "id" not in json_data:
-		return "1", 400
-	# assert the gripper exists
-	if not model.get_gripper_by_id(str(json_data["id"])):
-		return "1", 404
-	# rotate the gripped object
-	if request.method == "POST":
-		if "direction" not in json_data:
-			return "1", 400
-
-		step_size = json_data["step_size"] if "step_size" in json_data else None
-
-		# continuous / looped action
-		if "loop" in json_data and json_data["loop"]:
-			model.start_rotating(str(json_data["id"]), json_data["direction"], step_size)
-		# one-time action
-		else:
-			model.rotate(str(json_data["id"]), json_data["direction"], step_size)
-		return "0", 200
-	elif request.method == "DELETE":
-		model.stop_rotating(str(json_data["id"]))
-		return "0", 200
-
-@app.route("/gripper/flip", methods=["POST", "DELETE"])
-def gripper_flip():
-	"""
-	Flip the gripped object.
-	"""
-	if not request.data:
-		return "1", 400
-	else:
-		json_data = json.loads(request.data)
-	# assert the request has the right parameters
-	if type(json_data) != dict or "id" not in json_data:
-		return "1", 400
-	# assert the gripper exists
-	if not model.get_gripper_by_id(str(json_data["id"])):
-		return "1", 404
-	# rotate the gripped object
-	if request.method == "POST":
-		# continuous / looped action
-		if "loop" in json_data and json_data["loop"]:
-			model.start_flipping(str(json_data["id"]))
-		# one-time action
-		else:
-			model.flip(str(json_data["id"]))
-		return "0", 200
-	elif request.method == "DELETE":
-		model.stop_flipping(str(json_data["id"]))
-		return "0", 200
-
-@app.route("/gripper/grip", methods=["POST", "GET", "DELETE"])
-def gripper_grip():
-	if request.method == "GET":
-		grippers = model.get_grippers()
-		return {gr_id: gr["gripped"] for gr_id, gr in grippers.items()}
-	elif request.method == "POST":
-		# load request json, if present
-		if not request.data:
-			return "1", 400
-		else:
-			json_data = json.loads(request.data)
-
-		# assert the request has the right parameters
-		if type(json_data) != dict or "id" not in json_data:
-			return "1", 400
-
-		# assert the gripper exists
-		if not model.get_gripper_by_id(str(json_data["id"])):
-			return "1", 404
-
-		# continuous / looped action
-		if "loop" in json_data and json_data["loop"]:
-			model.start_gripping(str(json_data["id"]))
-		# one-time action
-		else:
-			model.grip(str(json_data["id"]))
-		
-		return "0"
-	elif request.method == "DELETE":
-		# load request json, if present
-		if not request.data:
-			return "1", 400
-		else:
-			json_data = json.loads(request.data)
-
-		# assert the request has the right parameters
-		if type(json_data) != dict or "id" not in json_data:
-			return "1", 400
-
-		# assert the gripper exists
-		if not model.get_gripper_by_id(str(json_data["id"])):
-			return "1", 404
-
-		model.stop_gripping(str(json_data["id"]))
-		return "0"
-	else: 
-		return "1", 405
-
 @app.route("/objects", methods=["GET", "POST"])
 def objects():
 	if request.method == "GET":
-		return model.get_objects()
+		return model.get_object_dict()
 	elif request.method == "POST":
 		# add an object
 		print("POST at /objects: not implemented")
@@ -235,7 +198,7 @@ def state():
  
 # --- tests --- #
 
-def selftest():
+def selftest(): 
 	with app.test_client() as c:
 		# --- attaching and detaching views --- #
 		dummy_view = "127.0.0.1:666"
@@ -310,7 +273,7 @@ def selftest():
 
 		# --- deleting the state --- #
 		rv_reset = c.delete("/state")
-		assert rv_reset.status == "200 OK" and len(model.get_objects()) == 0
+		assert rv_reset.status == "200 OK" and len(model.get_object_dict()) == 0
 
 # --- command line arguments ---
 parser = argparse.ArgumentParser(description="Run GOLMI's model API.")
@@ -323,4 +286,4 @@ if __name__ == "__main__":
 	if args.test:
 		selftest()
 		print("All tests passed.")
-	app.run(host=args.host, port=args.port)
+	socketio.run(app, host=args.host, port=args.port)

@@ -1,25 +1,25 @@
 from state import State
 from gripper import Gripper
 from obj import Obj
-from timed_loop import TimedLoop
 import requests
 import json
 from math import floor, ceil 
+import time, threading
 
 class Model:
-	def __init__(self, config):
-		self.views = list()
+	def __init__(self, config, socket):
+		self.socket = socket # to communicate with subscribed views
 		self.state = State()
 		self.config = config
 
 		# handles for loops will be saved in here to start / stop periodic actions
 		# the nested dicts map gripper ids to the loop handles
-		self.loops = {"move": dict(), "grip": dict(), "flip": dict(), "rotate": dict()}
+		self.stop_events = {"move": dict(), "grip": dict(), "flip": dict(), "rotate": dict()}
 
 	# --- getter --- #
 
-	def get_objects(self):
-		return self.state.get_objects()
+	def get_obj_dict(self):
+		return self.state.get_obj_dict()
 
 	def get_object_ids(self):
 		return self.state.get_object_ids()
@@ -27,13 +27,16 @@ class Model:
 	def get_obj_by_id(self, id):
 		return self.state.get_obj_by_id(id)
 
-	def get_grippers(self):
-		return self.state.get_grippers()
+	def get_gripper_dict(self):
+		return self.state.get_gripper_dict()
 
 	def get_gripper_ids(self):
 		return self.state.get_gripper_ids()
 
 	def get_gripper_by_id(self, id):
+		"""
+		@return Gripper instance or None if id is not registered
+		"""
 		return self.state.get_gripper_by_id(id)
 
 	def get_gripped_obj(self, id):
@@ -59,16 +62,15 @@ class Model:
 
 	#  --- events --- #
 
-	def get_gripper_updated_event(self, id): 
-		#TODO: only gripper with id!
-		return {"grippers": self.get_grippers()}
+	def get_gripper_updated_event(self):
+		return {"grippers": self.get_gripper_dict()}
 
 	def get_new_state_loaded_event(self): 
 		# update all grippers and objects. Config does not need to be reloaded.
-		return {"grippers": self.get_grippers(), "objs": self.get_objects()}
+		return {"grippers": self.get_gripper_dict(), "objs": self.get_obj_dict()}
 	
 	def get_obj_updated_event(self, id): 
-		return {"objs": self.get_objects()}
+		return {"objs": self.get_obj_dict()}
 
 	# currently unused
 	def get_config_changed_event(self):
@@ -76,40 +78,13 @@ class Model:
 
 	# --- Communicating with views --- # 
 
-	def attach_view(self, view):
-		"""
-		Link a new view. Each view is notified of model changes via events.
-		@param view 	URL of view API
-		"""
-		if view not in self.views:
-			self.views.append(view)
-
-	def detach_view(self, view):
-		"""
-		Removes a view from the list of listeners.
-		@param view 	registered URL of view to remove
-		@return true if the view was found and removed, false if the view was not subscribed
-		"""
-		# use while loop to deal with possible duplicate registration
-		found = False
-		while view in self.views:
-			self.views.remove(view)
-			found = True
-		return True
-		
-	def clear_views(self):
-		"""
-		Removes all view listeners.
-		"""
-		self.views.clear()
-
-	def _notify_views(self, updates):
+	def _notify_views(self, event_name, data):
 		"""
 		Notify all listening views of model events (usually data updates)
-		@param updates 	dictionary of updates. Sent to each of the model's views
+		@param event_name 	str: event type, e.g. "update_grippers"
+		@param data 	serializable data to send to listeners
 		"""
-		for view in self.views:
-			requests.post("http://{}/updates".format(view), data=json.dumps(updates))
+		self.socket.emit(event_name, data, broadcast=True)
 
 	# --- Set up and configuration --- #
 
@@ -124,14 +99,14 @@ class Model:
 		# state is a State instance
 		else:
 			self.state = state
-		self._notify_views(self.get_new_state_loaded_event())
+		self._notify_views("update_state", self.state.to_dict())
 
 	def reset(self):
 		"""
 		Reset the current state.
 		"""
 		self.state = State()
-		self._notify_views(self.get_new_state_loaded_event())
+		self._notify_views("update_state", self.state.to_dict())
 
 	# TODO: make sure pieces are on the board! (at least emit warning)
 	def _state_from_JSON(self, json_data):
@@ -142,47 +117,70 @@ class Model:
 		try:
 			# initialize an empty state
 			self.state = State()
-			for gr_name in json_data["grippers"]:
-				gr = str(gr_name) # use string identifiers only for consistency
-				self.state.grippers[gr] = Gripper(
-					float(json_data["grippers"][gr]["x"]),
-					float(json_data["grippers"][gr]["y"]))
-				# process optional info
-				if "gripped" in json_data["grippers"][gr]:
-					# cast object name to str, too
-					self.state.grippers[gr].gripped = str(json_data["grippers"][gr]["gripped"])
-				if "width" in json_data["grippers"][gr]:
-					self.state.grippers[gr].width = json_data["grippers"][gr]["width"]
-				elif "height" in json_data["grippers"][gr]:
-					self.state.grippers[gr].height = json_data["grippers"][gr]["height"]
-				elif "color" in json_data["grippers"][gr]:
-					self.state.grippers[gr].color = json_data["grippers"][gr]["color"]
+			if "grippers" in json_data and type(json_data["grippers"]) == dict:
+				for gr_name in json_data["grippers"]:
+					gr = str(gr_name) # use string identifiers only for consistency
+					self.state.grippers[gr] = Gripper(
+						float(json_data["grippers"][gr]["x"]),
+						float(json_data["grippers"][gr]["y"]))
+					# process optional info
+					if "gripped" in json_data["grippers"][gr]:
+						# cast object name to str, too
+						self.state.grippers[gr].gripped = str(json_data["grippers"][gr]["gripped"])
+					if "width" in json_data["grippers"][gr]:
+						self.state.grippers[gr].width = json_data["grippers"][gr]["width"]
+					elif "height" in json_data["grippers"][gr]:
+						self.state.grippers[gr].height = json_data["grippers"][gr]["height"]
+					elif "color" in json_data["grippers"][gr]:
+						self.state.grippers[gr].color = json_data["grippers"][gr]["color"]
 			
 			# construct objects
-			for obj_name in json_data["objs"]:
-				obj = str(obj_name) # use string identifiers only for consistency
-				self.state.objs[obj] = Obj(
-					json_data["objs"][obj]["type"],
-					float(json_data["objs"][obj]["x"]),
-					float(json_data["objs"][obj]["y"]),
-					float(json_data["objs"][obj]["width"]),
-					float(json_data["objs"][obj]["height"]),
-					self.get_type_config()[json_data["objs"][obj]["type"]] # block matrix for given type
-				)
-				# process optional info
-				if "rotation" in json_data["objs"][obj]:
-					# rotate the object
-					self.state.rotate_obj(obj, float(json_data["objs"][obj]["rotation"]))
-				if "mirrored" in json_data["objs"][obj] and json_data["objs"][obj]["mirrored"]:
-					# flip the object if "mirrored" is true in the JSON
-					self.state.flip_obj(obj)
-				if "color" in json_data["objs"][obj]:
-					self.state.objs[obj].color = json_data["objs"][obj]["color"]
+			if "objs" in json_data and type(json_data["objs"]) == dict:
+				for obj_name in json_data["objs"]:
+					obj = str(obj_name) # use string identifiers only for consistency
+					self.state.objs[obj] = Obj(
+						json_data["objs"][obj]["type"],
+						float(json_data["objs"][obj]["x"]),
+						float(json_data["objs"][obj]["y"]),
+						float(json_data["objs"][obj]["width"]),
+						float(json_data["objs"][obj]["height"]),
+						self.get_type_config()[json_data["objs"][obj]["type"]] # block matrix for given type
+					)
+					# process optional info
+					if "rotation" in json_data["objs"][obj]:
+						# rotate the object
+						self.state.rotate_obj(obj, float(json_data["objs"][obj]["rotation"]))
+					if "mirrored" in json_data["objs"][obj] and json_data["objs"][obj]["mirrored"]:
+						# flip the object if "mirrored" is true in the JSON
+						self.state.flip_obj(obj)
+					if "color" in json_data["objs"][obj]:
+						self.state.objs[obj].color = json_data["objs"][obj]["color"]
 		except: 
 			raise SyntaxError("Error during state initialization: JSON data does not have the right format.\n" + \
 				"Please refer to the documentation.")
 
 	# --- Gripper manipulation --- #
+
+	def add_gr(self, gr_id):
+		"""
+		Add a new gripper to the internal state. The start position is the center. Notifies listeners.
+		@param gr_id 	identifier for the new gripper
+		"""
+		start_x = self.get_width()/2
+		start_y = self.get_height()/2
+		# if a new gripper was created, notify listeners
+		if gr_id not in self.state.grippers:
+			self.state.grippers[gr_id] = Gripper(start_x, start_y)
+			self._notify_views("update_grippers", self.get_gripper_dict())
+
+	def remove_gr(self, gr_id):
+		"""
+		Delete a gripper from the internal state and notify listeners.
+		@param gr_id 	identifier of the gripper to remove
+		"""
+		if gr_id in self.state.grippers:
+			self.state.grippers.pop(gr_id)
+			self._notify_views("update_grippers", self.get_gripper_dict())
 
 	def start_gripping(self, id):
 		"""
@@ -210,19 +208,18 @@ class Model:
 		if old_gripped:
 			# state takes care of detaching object and gripper
 			self.state.ungrip(id)
-			self._notify_views(self.get_obj_updated_event(old_gripped))
-			# notify view of gripper change.
-			self._notify_views(self.get_gripper_updated_event(id))
+			# notify view of object and gripper change
+			self._notify_views("update_objs", self.get_obj_dict())
+			self._notify_views("update_grippers", self.get_gripper_dict())
 		else: 
 			# Check if gripper hovers over some object
 			new_gripped = self._get_grippable(id)
 			# changes to object and gripper
 			if new_gripped: 
 				self.state.grip(id, new_gripped)
-				# notify views of the now attached object
-				self._notify_views(self.get_obj_updated_event(new_gripped))
-				# notify view of gripper change.
-				self._notify_views(self.get_gripper_updated_event(id))
+				# notify view of object and gripper change
+				self._notify_views("update_objs", self.get_obj_dict())
+				self._notify_views("update_grippers", self.get_gripper_dict())
 
 	def start_moving(self, id, x_steps, y_steps, step_size=None):
 		"""
@@ -271,13 +268,13 @@ class Model:
 				self.state.move_gr(id, dx, dy)
 				self.state.move_obj(self.get_gripped_obj(id), dx, dy)
 				# notify the views. A gripped object is implicitly redrawn. 
-				self._notify_views(self.get_gripper_updated_event(id))
+				self._notify_views("update_grippers", self.get_gripper_dict())
 
 		# if no object is gripped, only move the gripper
 		elif self._is_in_limits(gripper_x + dx, gripper_y + dy):
 			self.state.move_gr(id, dx, dy)
 			# notify the views. A gripped object is implicitly redrawn. 
-			self._notify_views(self.get_gripper_updated_event(id))
+			self._notify_views("update_grippers", self.get_gripper_dict())
 
 	def start_rotating(self, id, direction, step_size=None):
 		"""
@@ -317,7 +314,7 @@ class Model:
 			if not (self.config.prevent_overlap and self._has_overlap(gr_obj_id, gr_obj.x, gr_obj.y, rotated_matrix)):
 				self.state.rotate_obj(gr_obj_id, d_angle, rotated_matrix)
 				# notify the views. The gripped object is implicitly redrawn. 
-				self._notify_views(self.get_gripper_updated_event(id))
+				self._notify_views("update_grippers", self.get_gripper_dict())
 
 	def start_flipping(self, id):
 		"""
@@ -349,7 +346,7 @@ class Model:
 			if not (self.config.prevent_overlap and self._has_overlap(gr_obj_id, gr_obj.x, gr_obj.y, flipped_matrix)):
 				self.state.flip_obj(gr_obj_id, flipped_matrix)
 				# notify the views. The gripped object is implicitly redrawn. 
-				self._notify_views(self.get_gripper_updated_event(id))
+				self._notify_views("update_grippers", self.get_gripper_dict())
 		
 	def _get_grippable(self, gr_id):
 		"""
@@ -455,18 +452,35 @@ class Model:
 	# --- Loop functionality ---
 
 	def start_loop(self, action_type, gripper, fn, *args, **kwargs):
-		self.loops[action_type][gripper] = TimedLoop(self.config.action_interval, fn, *args, **kwargs)
+		# 
+		self.stop_events[action_type][gripper] = threading.Event()
+		self.socket.start_background_task(
+			self._setInterval, self.config.action_interval, self.stop_events[action_type][gripper],
+			fn, *args, **kwargs)
 
 	def stop_loop(self, action_type, gripper):
-		if gripper in self.loops[action_type]: 
-			self.loops[action_type][gripper].cancel()
+		if gripper in self.stop_events[action_type] and \
+			not self.stop_events[action_type][gripper].is_set():
+			
+			self.stop_events[action_type][gripper].set()
+
+	def _setInterval(self, interval, stop_event, fn, *args, **kwargs):
+		# immediately execute once
+		fn(*args, **kwargs)
+		next_time = time.time() + interval
+		# wait for interval to pass or stop event
+		#TODO: This is currently blocking. Need to find gevent-friendly threading option.
+		# monkey-patching?
+		while not stop_event.wait(next_time - time.time()) :
+		    next_time += interval
+		    fn(*args, **kwargs)
 
 if __name__ == "__main__":
 	# Unit tests
 	from config import Config
 	test_config = Config("../pentomino/pentomino_types.json")
 	test_model = Model(test_config)
-	assert len(test_model.get_objects())
+	assert len(test_model.get_obj_dict())
 
 	test_model.add_view("address:port")
 	assert test_model.views == ["address:port"]

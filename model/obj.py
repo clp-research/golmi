@@ -1,5 +1,6 @@
 class Obj:
-	def __init__(self, obj_type, x, y, width, height, block_matrix, rotation=0, mirrored=False, color="blue"): 
+	def __init__(self, obj_type, x, y, width, height, block_matrix, 
+		rotation=0, mirrored=False, color="blue", gripped=False): 
 		self.type			= obj_type
 		self.x				= x
 		self.y				= y
@@ -9,6 +10,7 @@ class Obj:
 		self.mirrored		= mirrored
 		self.color			= color
 		self.block_matrix 	= block_matrix
+		self.gripped 		= gripped
 
 	def get_center_x(self):
 		return self.x + (self.width/2)
@@ -30,16 +32,18 @@ class Obj:
 
 	def to_dict(self):
 		"""
-		Constructs a dictionary from this instance.
+		Constructs a JSON-friendly dictionary representation of this instance.
+		@return dictionary containing all important properties
 		"""
 		return {
-			"type": self.type,
-			"x": self.x,
-			"y": self.y,
-			"width": self.width,
-			"height": self.height,
-			"rotation": self.rotation,
-			"mirrored": self.mirrored,
-			"color": self.color,
-			"block_matrix": self.block_matrix
+			"type":			self.type,
+			"x":			self.x,
+			"y":			self.y,
+			"width":		self.width,
+			"height":		self.height,
+			"rotation":		self.rotation,
+			"mirrored":		self.mirrored,
+			"color":		self.color,
+			"block_matrix":	self.block_matrix,
+			"gripped":		self.gripped
 			}

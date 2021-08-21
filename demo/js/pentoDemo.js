@@ -1,21 +1,26 @@
 $(document).ready(function () {
 
+	// TODO:
+	// test this with multiple browser windows
+	// create model test cases
+	// fix looped actions
+
+	// --- define globals --- // 
+
 	// Set to false to skip unit tests
 	document.SELFTEST = true;
 
-	// Define the API URLs
-
 	const MODEL_API			= "127.0.0.1:5000";
-	const VIEW_API			= "127.0.0.1:5002";
-
+	// // generate a random state
+	// const N_OBJECTS = 15;
+	// const N_GRIPPERS = 1;
+	// const taskGenerator = new document.PentoGenerator(document.MODEL_API);
+	// let sample_state;
+	// taskGenerator.generateState(N_OBJECTS, N_GRIPPERS)
+	// .then(task => {
+	// 	sample_state = task;
+	// });
 	const TESTGAME = {
-		"grippers": {
-			"1": {
-				"x": 5.5,
-				"y": 5.5,
-				"gripped": "2"
-			}
-		},
 		"objs": {
 			"1": {
 				"type": "I",
@@ -37,121 +42,66 @@ $(document).ready(function () {
 		} 
 	};
 
-	const TESTGAME2 = {
-		"objs": {
-		  "0": {
-		    "type": "U",
-		    "x": 6,
-		    "y": 10,
-		    "width": 5,
-		    "height": 5,
-		    "color": "#99BBDD",
-		    "mirrored": true,
-		    "rotation": 90
-		  },
-		  "1": {
-		    "type": "V",
-		    "x": 13,
-		    "y": 11,
-		    "width": 5,
-		    "height": 5,
-		    "color": "#DDBB99",
-		    "mirrored": false,
-		    "rotation": 0
-		  },
-		  "2": {
-		    "type": "W",
-		    "x": 13,
-		    "y": 5,
-		    "width": 5,
-		    "height": 5,
-		    "color": "#408000",
-		    "mirrored": false,
-		    "rotation": 0
-		  },
-		  "3": {
-		    "type": "X",
-		    "x": 15,
-		    "y": 14,
-		    "width": 5,
-		    "height": 5,
-		    "color": "#5CD6D6",
-		    "mirrored": false,
-		    "rotation": 0
-		  },
-		  "4": {
-		    "type": "Y",
-		    "x": 16,
-		    "y": 3,
-		    "width": 5,
-		    "height": 5,
-		    "color": "#336699",
-		    "mirrored": false,
-		    "rotation": 0
-		  }
-		},
-		"grippers": {
-		  "0": {
-		    "x": "9.5",
-		    "y": "9.5"
-		  },
-		  "1": {
-		    "x": "6",
-		    "y": "9.5"
-		  }
-		}
-		}
+	// --- create a socket --- //
+	// don't connect yet
+	var socket = io("http://" + MODEL_API, { autoConnect: false, auth: "GiveMeTheBigBluePasswordOnTheLeft" });
+	// debug: print any messages to the console
+	localStorage.debug = 'socket.io-client:socket';
 
-	// Set up the MVC APIs
-	// Connect View and Model API (so model can notify the view)
-	let subscribeViewToModel = new Request(`http://${MODEL_API}/attach-view`, {method:"POST", body:`{"url": "${VIEW_API}"}`});
-	fetch(subscribeViewToModel)
-	.then(r => {
-		if (!r.ok) {
-			console.log("Error connecting view and model API. Printing response...", r);
-		}
-	});
+	// --- controller --- //
+	// create a controller, we still need to attach a gripper in the model to it
+	let controller = new document.LocalKeyController();
 
-	// Load a game
-	let loadGameReq = new Request(`http://${MODEL_API}/state`, {method:"POST", body:JSON.stringify(TESTGAME2)});
-	fetch(loadGameReq)
-	.then(r => {
-		if (!r.ok) {
-			console.log("Error loading a state. Printing response...", r);
-		}
-	});
-
-	// Create a controller
-	this.controller = new document.LocalKeyController();
-	// Connect Controller to Model API (so controller can post to the model)
-	// Attach the controller to gripper "1"
-	this.controller.attachModel(MODEL_API, "1");
-
+	// --- view --- // 
 	// Get references to the three canvas layers
 	let bgLayer		= document.getElementById("background");
 	let objLayer	= document.getElementById("objects");
 	let grLayer		= document.getElementById("gripper");
 
 	// Set up the view js, this also sets up key listeners
-	this.layerView = new document.LayerView(VIEW_API, MODEL_API, bgLayer, objLayer, grLayer);
+	this.layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
 
-	// Set up buttons
+	// --- socket communication --- //
+	var setup_complete = false;
+	socket.on("connect", () => {
+		console.log("Connected to model server");
+		// only do setup once (reconnections can occur, we don't want to reset the state every time)
+		if (!setup_complete) {
+			// send the initial task state
+			socket.emit("load_state", TESTGAME);
+			// subscribe the controller to some gripper (here we create a new gripper)
+			controller.attachModel(socket, "0");
+			setup_complete = true;
+		}
+	});
+	socket.on("disconnect", () => {
+		console.log("Disconnected from model server");
+	});
+	socket.onAny((eventName, ...args) => {
+		console.log(eventName, args);
+	});
+
+	// --- buttons --- //
 	$("#start").click(() => {
 		// reset the controller in case any key is currently pressed
-		document.controller.resetKeys()
-		document.layerView.startDrawing();
+/*		document.controller.resetKeys()*/
+		// manually establish a connection, connect the controller and load a state
+		socket.connect();
 		// disable this button, otherwise it is now in focus and Space/Enter will trigger the click again
 		$("#start").prop("disabled", true);
 	});
 	$("#stop").click(() => {
-		document.layerView.stopDrawing();
-		// reset the controller in case any key is currently pressed
-		document.controller.resetKeys()
+/*		// reset the controller in case any key is currently pressed
+		document.controller.resetKeys()*/
+		// disconnect the controller
+		controller.detachModel(socket, "0");
+		// manually disconnect
+		socket.disconnect();
 		// reactive the start button
 		$("#start").prop("disabled", false);
 	});
 
-	// --- unit tests ---
+	// --- unit tests --- //
 	if (document.SELFTEST) {
 		//let testController = this.LocalKeyController();
 		console.log("Unit tests passed");

@@ -1,6 +1,16 @@
 $(document).ready(function () {
 
 	/**
+	 * Extends the generic View class by implementations of the drawing functions. 
+	 * This class works with three stacked canvas layers: the 'background' holds a grid 
+	 * (so if no grid is needed, the function drawBg() should be modified), the 'object'
+	 * layer has all static objects, that is objects not currently gripped, and finally the
+	 * 'gripper' layer displays any grippers as well as objects held by the grippers.
+	 * The reasoning behind this separation is that these components need to be redrawn in 
+	 * varying frequency: while the background is static unless the game configuration (board 
+	 * dimensions, etc.) change, the objects are meant to be manipulated throughout an
+	 * interaction and might have to be redrawn several times. The gripper as well as the currently 
+	 * gripped objects however change continuously and have to be redrawn constantly.
 	 * @param {URL of the View API} viewAPI
 	 * @param {URL of the Model API} modelAPI
 	 * @param {reference to the canvas DOM element to draw the background to} bgCanvas
@@ -8,12 +18,16 @@ $(document).ready(function () {
 	 * @param {reference to the canvas DOM element to draw grippers and gripped objects to} grCanvas
 	 */
 	this.LayerView = class LayerView extends document.View {
-		constructor(viewAPI, modelAPI, bgCanvas, objCanvas, grCanvas) {
-			super(viewAPI, modelAPI);
+		constructor(modelSocket, bgCanvas, objCanvas, grCanvas) {
+			super(modelSocket);
 			// Three overlapping canvas
 			this.bgCanvas	= bgCanvas;
 			this.objCanvas	= objCanvas;
 			this.grCanvas	= grCanvas;
+
+			// array holding the currently gripped objects
+			this.grippedObjs = new Array();
+
 			// Empty the canvas
 			this.clear();
 		}
@@ -102,50 +116,12 @@ $(document).ready(function () {
 
 		/**
 		 * Draw the (static) objects.
-		 * @param {optional: object data, e.g. obtained from the view API. default: null} preloadedObjs
-		 * @param {optional: Array holding the indices of gripped objects not to be redrawn here. default: null} preloadedGripped
 		 */
-		async drawObj(preloadedObjs=null, preloadedGripped=null) {
-			// if no objects have been preloaded, load from the model
-			let objects;
-			if (!preloadedObjs) {
-				let response = await fetch(new Request(`http://${this.modelAPI}/objects`, {method:"GET"}));
-				if (response.ok) { // Parse the response as json
-					objects = await response.json();
-				} else { // Something went wrong - emit an error message and leave the function
-					console.log("Error: Could not fetch objects from the model API");
-					return;
-				}
-			} else {
-				objects = preloadedObjs;
-			}
-
-			// if gripped objects have not been preloaded, get them from the model
-			let grippedIds;
-			if (!preloadedGripped) {
-				// get gripped object from the model (because it should not be drawn to this layer)
-				let response = await fetch(new Request(`http://${this.modelAPI}/gripper/grip`, {method:"GET"}));
-				// accumulate the ids into an array
-				grippedIds = new Array();
-				if (response.ok) { // Parse the response as json
-					// response maps gripper ids to a map {obj-id -> obj-details}
-					let gripperToObjMaps = await response.json();
-					for (const objMap of Object.values(gripperToObjMaps)) {
-						if (objMap) {
-							grippedIds = grippedIds.concat(Object.keys(objMap));
-						}
-					}
-				} else { // Something went wrong - emit an error message
-					console.log("Error: Could not fetch gripped object from the model API");
-				}
-			} else {
-				grippedIds = preloadedGripped;
-			}
-
+		drawObjs() {
 			// draw each object
-			for (const [id, obj] of Object.entries(objects))	{
+			for (const obj of Object.values(this.objs))	{
 				// skip any gripped object here
-				if (grippedIds.includes(id)) { continue; }
+				if (obj.gripped) { continue; }
 
 				let blockMatrix = obj.block_matrix;
 				
@@ -164,48 +140,25 @@ $(document).ready(function () {
 
 		/**
 		 * Redraw the (static) objects.
-		 * In contrast to drawObj(), this function assumes the objects have been drawn in the past
+		 * In contrast to drawObjs(), this function assumes the objects have been drawn in the past
 		 * and the old drawing needs to be removed first.
-		 * @param {optional: object data, e.g. obtained from the view API. default: null} preloadedObjs
-		 * @param {optional: Array holding the indices of gripped objects not to be redrawn here. default: null} preloadedGripped
 		 */
-		redrawObj(preloadedObjs=null, preloadedGripped=null) {
+		redrawObjs() {
 			this.clearObj();
-			this.drawObj(preloadedObjs, preloadedGripped);
+			this.drawObjs();
 		}
 
 		/**
 		 * Draw the gripper object and, if applicable, the gripped object.
 		 * The gripper is used to navigate on the canvas and move objects.
-		 * @param {gripper data, e.g. obtained from the view API} preloadedGrippers
-		 * @return Array holding the indices of gripped objects
 		 */
-		async drawGr(preloadedGrippers=null) {
-			// if grippers have not been preloaded, get them from the model
-			let grippers;
-			if (!preloadedGrippers) {
-				// get gripper(s) and gripped object(s) from the model
-				let response = await fetch(new Request(`http://${this.modelAPI}/gripper`, {method:"GET"}));
-				if (response.ok) { // Parse the response as json
-					grippers = await response.json();
-				} else { // Something went wrong - emit an error message and leave the function
-					console.log("Error: Could not fetch grippers from the model API");
-					return;
-				}
-			} else {
-				grippers = preloadedGrippers;
-			}
-
-			// remember gripped objects drawn to this layer
-			let drawnObjects = new Array();
-
+		drawGr() {
 			// set up
 			let ctx = this.grCanvas.getContext("2d");
-			for (const [grId, gripper] of Object.entries(grippers)) {
+			for (const [grId, gripper] of Object.entries(this.grippers)) {
 				// draw any gripped object first (i.e. 'below' the gripper)
 				if (gripper.gripped) {
 					for (const [grippedId, grippedObj] of Object.entries(gripper.gripped)) {
-						drawnObjects.push(grippedId);
 						let blockMatrix = grippedObj.block_matrix;
 						
 						let params = {
@@ -233,19 +186,16 @@ $(document).ready(function () {
 				ctx.lineTo(this._toPxl(gripper.x+grSize), this._toPxl(gripper.y-grSize));
 				ctx.stroke();
 			}
-			return drawnObjects;
 		}
 
 		/**
 		 * Redraw the gripper object and, if applicable, the gripped object.
 		 * In contrast to drawGr(), this function expects the gripper has been drawn in the past
 		 * and the old drawing needs to be removed first.
-		 * @param {gripper data, e.g. obtained from the view API} preloadedGrippers
-		 * @return Array holding the indices of gripped objects
 		 */
-		async redrawGr(preloadedGrippers=null) {
+		redrawGr() {
 			this.clearGr();
-			return await this.drawGr(preloadedGrippers);
+			this.drawGr();
 		}
 
 		// --- draw helper functions ---
@@ -303,42 +253,6 @@ $(document).ready(function () {
 
 		_toPxl(coord) {
 			return coord * this.blockSize;
-		}
-
-		// --- Updating functions ---
-
-		/**
-		 * Process an update object, calling the appropriate redrawing functions.
-		 * OVERWRITING the parent function, because LayerView draws gripped objects on the 
-		 * same layer as the gripper. Therefore, to assure gripped objects are not redrawn on the
-		 * object layer, drawGripper() returns the indices of gripped objects, which is then
-		 * passed to drawObjs(). 
-		 * @param {object containing the keys "grippers", "objs", "config"} update_obj
-		 * @return Boolean: true if updates were made, false otherwise
-		 */
-		async _processUpdates(updates) {
-			// keep track of whether any update was made
-			let update_applied = false;
-			// if the config has changed, redraw everything
-			if (updates["config"]) {
-				await this._loadConfig(updates["config"]);
-				this.redraw();
-				update_applied = true;
-			} else {
-				let grippedObjs = null;
-				// if any gripper was changed, redraw the gripper layer
-				if (updates["grippers"] && Object.keys(updates["grippers"]).length > 0) {
-					grippedObjs = await this.redrawGr(updates["grippers"]);
-					update_applied = true;
-				}
-				// there is only 3 layers here and the background does not need to be updated.
-				// if any object was changed, redraw the object layer
-				if (updates["objs"] && Object.keys(updates["objs"]).length > 0) {
-					this.redrawObj(updates["objs"], grippedObjs);
-					update_applied = true;
-				}
-			}
-			return update_applied;
 		}
 
 	}; // class LayerView end
