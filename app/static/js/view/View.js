@@ -29,7 +29,6 @@ $(document).ready(function () {
 		_initSocketEvents() {
 			// new state -> redraw object and gripper layer
 			this.socket.on("update_state", (state) => {
-				console.log("Updata_state Received")
 				if (state["grippers"] && state["objs"]) {
 					this.grippers = state["grippers"];
 					this.objs = state["objs"];

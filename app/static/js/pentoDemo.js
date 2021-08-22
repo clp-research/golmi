@@ -10,11 +10,11 @@ $(document).ready(function () {
 	// Set to false to skip unit tests
 	document.SELFTEST = true;
 
-	const MODEL_API			= "127.0.0.1:5000";
+	const MODEL = "127.0.0.1:5000";
 	// // generate a random state
 	// const N_OBJECTS = 15;
 	// const N_GRIPPERS = 1;
-	// const taskGenerator = new document.PentoGenerator(document.MODEL_API);
+	// const taskGenerator = new document.PentoGenerator(document.MODEL);
 	// let sample_state;
 	// taskGenerator.generateState(N_OBJECTS, N_GRIPPERS)
 	// .then(task => {
@@ -44,7 +44,7 @@ $(document).ready(function () {
 
 	// --- create a socket --- //
 	// don't connect yet
-	var socket = io("http://" + MODEL_API, { autoConnect: false, auth: "GiveMeTheBigBluePasswordOnTheLeft" });
+	var socket = io("http://" + MODEL, { autoConnect: false, auth: "GiveMeTheBigBluePasswordOnTheLeft" });
 	// debug: print any messages to the console
 	localStorage.debug = 'socket.io-client:socket';
 
@@ -58,7 +58,7 @@ $(document).ready(function () {
 	let objLayer	= document.getElementById("objects");
 	let grLayer		= document.getElementById("gripper");
 
-	// Set up the view js, this also sets up key listeners
+	// Set up the view js
 	this.layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
 
 	// --- socket communication --- //

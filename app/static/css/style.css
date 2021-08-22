@@ -1,0 +1,11 @@
+/**
+ * Fade out background when a dialog is open
+ */
+dialog::backdrop{
+	background: rgba(255, 255, 255, 1);
+}
+
+label{
+	display: inline-block;
+	padding-right: 5px;
+}
