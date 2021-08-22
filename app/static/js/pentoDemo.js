@@ -8,13 +8,13 @@ $(document).ready(function () {
 	// --- define globals --- // 
 
 	// Set to false to skip unit tests
-	document.SELFTEST = true;
+	const SELFTEST = true;
 
-	const MODEL_API			= "127.0.0.1:5000";
+	const MODEL			= "127.0.0.1:5000";
 	// // generate a random state
 	// const N_OBJECTS = 15;
 	// const N_GRIPPERS = 1;
-	// const taskGenerator = new document.PentoGenerator(document.MODEL_API);
+	// const taskGenerator = new document.PentoGenerator(document.MODEL);
 	// let sample_state;
 	// taskGenerator.generateState(N_OBJECTS, N_GRIPPERS)
 	// .then(task => {
@@ -44,7 +44,7 @@ $(document).ready(function () {
 
 	// --- create a socket --- //
 	// don't connect yet
-	var socket = io("http://" + MODEL_API, { autoConnect: false, auth: "GiveMeTheBigBluePasswordOnTheLeft" });
+	var socket = io("http://" + MODEL, { autoConnect: false, auth: "GiveMeTheBigBluePasswordOnTheLeft" });
 	// debug: print any messages to the console
 	localStorage.debug = 'socket.io-client:socket';
 
@@ -59,7 +59,7 @@ $(document).ready(function () {
 	let grLayer		= document.getElementById("gripper");
 
 	// Set up the view js, this also sets up key listeners
-	this.layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
+	const layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
 
 	// --- socket communication --- //
 	var setup_complete = false;
@@ -81,29 +81,37 @@ $(document).ready(function () {
 		console.log(eventName, args);
 	});
 
-	// --- buttons --- //
-	$("#start").click(() => {
+	// --- stop and start drawing --- //
+	function start() {
 		// reset the controller in case any key is currently pressed
-/*		document.controller.resetKeys()*/
+		controller.resetKeys()
 		// manually establish a connection, connect the controller and load a state
 		socket.connect();
-		// disable this button, otherwise it is now in focus and Space/Enter will trigger the click again
-		$("#start").prop("disabled", true);
-	});
-	$("#stop").click(() => {
-/*		// reset the controller in case any key is currently pressed
-		document.controller.resetKeys()*/
+	}
+
+	function stop() {
+		// reset the controller in case any key is currently pressed
+		controller.resetKeys();
 		// disconnect the controller
 		controller.detachModel(socket, "0");
 		// manually disconnect
 		socket.disconnect();
+	}
+
+	// --- buttons --- //
+	$("#start").click(() => {
+		start();
+		// disable this button, otherwise it is now in focus and Space/Enter will trigger the click again
+		$("#start").prop("disabled", true);
+	});
+	$("#stop").click(() => {
+		stop();
 		// reactive the start button
 		$("#start").prop("disabled", false);
 	});
 
 	// --- unit tests --- //
-	if (document.SELFTEST) {
-		//let testController = this.LocalKeyController();
+	if (SELFTEST) {
 		console.log("Unit tests passed");
 		
 	}

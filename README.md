@@ -14,11 +14,11 @@ It is built on Flask and Flask-SocketIO.
 
 ## Demo
 
-The folder `demo` holds a simple demo of a browser interface showing a board with Pentomino pieces. A user can manipulate a *'gripper'* to grip and move pieces. 
+The `/demo` endpoint offers a simple demo of a browser interface showing a board with Pentomino pieces. A user can manipulate a *'gripper'* to grip and move pieces. 
 
 How to start the demo:
 
-(0. Activate your virtual environment, if using one)
+0. (Activate your virtual environment, if using one)
 1. Install python dependencies: `pip install -r requirements.txt`
 2. Run the server: `python run.py [-h] [--host HOST] [--port PORT] [--test]`. Per default, it will run on `http://localhost:5000/`
 3. Navigate to  `http://localhost:5000/demo` in a browser. 
