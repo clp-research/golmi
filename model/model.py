@@ -1,8 +1,6 @@
-from state import State
-from gripper import Gripper
-from obj import Obj
-import requests
-import json
+from model.state import State
+from model.gripper import Gripper
+from model.obj import Obj
 from math import floor, ceil 
 import time, threading
 

@@ -3,7 +3,8 @@
 # GOLMI
 ## - General Objects in Language-driven Manipulation Interfaces -
 
-*GOLM* is a framework for creating abstract representations and interfaces to  *object manipulation* tasks. 
+*GOLMI* is a framework for creating abstract representations and interfaces to  *object manipulation* tasks.
+It is built on Flask and Flask-SocketIO. 
 
 #### Example Usages
 
@@ -17,10 +18,11 @@ The folder `demo` holds a simple demo of a browser interface showing a board wit
 
 How to start the demo:
 
-1. Make sure the 2 server components are running. If running them locally, simple run `python3 model/model_api.py`, `python3 view/view_api.py in two different terminal tabs. If the components are running elsewhere, you need to update the URLs in `demo/js/pentoDemo.js`.
-Note: Currently, unit tests are run at every startup. For these to work, the model API needs to be started **first**! The unit tests will be made optional via command line arguments soon.
-2. Open `demo/pentoDemo.html` in a browser. 
-3. Press the 'Start' button to begin rendering. You can move the gripper around using the arrow keys and grip using Space or Enter. Use 'Stop' to stop rendering and freeze the current state.
+(0. Activate your virtual environment, if using one)
+1. Install python dependencies: `pip install -r requirements.txt`
+2. Run the server: `python run.py [-h] [--host HOST] [--port PORT] [--test]`. Per default, it will run on `http://localhost:5000/`
+3. Navigate to  `http://localhost:5000/demo` in a browser. 
+4. Press the 'Start' button to begin rendering. You can move the gripper around using the arrow keys and grip using Space or Enter. Use 'Stop' to stop rendering and freeze the current state.
 
 ## Architecture
 
@@ -28,17 +30,10 @@ GOLMI is realized as a model-view-controller (MVC) architecture. The tasks of ea
 
 ![Image](./resources/img/block_diagram.png 'Block diagram of the MVC structure')
 
-## APIs
+Communication between server and client is realized through SocketIO. The events exchanged are described below.
 
-Each API can be run with
+## Events
 
-```python3 PATH_TO_API.py [-h] [--host HOST] [--port PORT] [--test]```
-
-By default, the model API runs at ```127.0.0.1:5000```, the controller API runs at ```127.0.0.1:5001``` and the view API runs at ```127.0.0.1:5002```. You can easily run multiple instances of an API locally (e.g. for multiple views) by varying the port numbers.
-
-An overview of the API endpoints followed by a more detailed explanation is given below.
-
-![Image](./resources/img/API_endpoints.png 'Overview of the API endpoints')
 
 ### View API
 
@@ -207,6 +202,3 @@ In our example, we expect users to prefer continuous actions (holding the key do
 
 
 [slurk]: https://clp.ling.uni-potsdam.de/publications/Schlangen-2018.pdf
-
-
-

@@ -1,4 +1,4 @@
-from obj import Obj
+from model.obj import Obj
 
 class Gripper(Obj):
 	def __init__(self, x, y, gripped=None, width=1, height=1, color="blue"):
