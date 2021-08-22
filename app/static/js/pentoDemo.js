@@ -61,6 +61,9 @@ $(document).ready(function () {
 	// Set up the view js, this also sets up key listeners
 	const layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
 
+	// --- logger --- //
+	const logView = new document.LogView(socket);
+
 	// --- socket communication --- //
 	var setup_complete = false;
 	socket.on("connect", () => {
@@ -76,6 +79,9 @@ $(document).ready(function () {
 	});
 	socket.on("disconnect", () => {
 		console.log("Disconnected from model server");
+		// demo of the logView: send the logged data to the server
+		logView.addData("test", true);
+		logView.sendData();
 	});
 	socket.onAny((eventName, ...args) => {
 		console.log(eventName, args);

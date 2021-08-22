@@ -1,35 +1,12 @@
-from flask import Flask, request
-from flask_cors import CORS, cross_origin
+
 from flask_socketio import SocketIO, send, emit, ConnectionRefusedError
-from model.model import Model
-from model.config import Config
-
-# --- create the app --- #
-
-# has to be passed by clients to connect
-# might want to set this in the environment variables: AUTH = os.environ['GOLMI_AUTH']
-AUTH = "GiveMeTheBigBluePasswordOnTheLeft"
-app = Flask(__name__)
-# --- app settings --- # 
-# Secret key used for sessions: 
-# Before publishing, generate random bytes e.g. using:
-# $ python -c 'import os; print(os.urandom(16))'
-# (This is the recommendation by the Flask documentation: https://flask.palletsprojects.com/en/2.0.x/quickstart/#sessions)
-app.config["SECRET KEY"] = "definite change this to some random value!".encode("utf-8")
-app.config["DATA_COLLECTION"] = "app/static/resources/data_collection/"
-# enable cross-origin requests 
-# TODO: restrict sources
-CORS(app)
-# add socket io
-socketio = SocketIO(app, logger=True, engineio_logger=True, cors_allowed_origins='*')
+from app import socketio
+from app import model
+from app import Config
 
 # --- create a data model --- #
-
 config = Config("app/static/resources/type_config/pentomino_types.json")
 model = Model(config, socketio)
-
-# finally load the routes
-from app import views
 
 # --- socketio events --- #
 # --- connection --- #
@@ -41,6 +18,10 @@ def client_connect(auth):
 	# send config + state
 	emit("update_config", model.config.to_dict())
 	emit("update_state", model.state.to_dict())
+
+@socketio.on("update_state")
+def update_state(json):
+	print("received my own update_state:" + str(json))
 
 # --- state --- #
 @socketio.on("load_state")

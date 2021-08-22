@@ -200,5 +200,9 @@ In our example, we expect users to prefer continuous actions (holding the key do
 
 * **Coordinates**: (0,0) is the upper left corner, so y-coordinates increase towards the bottom, x-coordinates increase towards the right
 
+## Troubleshooting
+
+* if your browser won't load the LogView script, this might be your adblocker trying to save you from evil data collection. Try turning off the adblock for this site or rename LogView into something less suspicious.
+
 
 [slurk]: https://clp.ling.uni-potsdam.de/publications/Schlangen-2018.pdf
