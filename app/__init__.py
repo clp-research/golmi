@@ -38,9 +38,9 @@ def client_connect(auth):
 	# authenticate the client:
 	if auth != AUTH:
 		raise ConnectionRefusedError("unauthorized")
-	# only send config for this task
+	# send config and state
 	emit("update_config", model.config.to_dict())
-	#emit("update_state", model.state.to_dict())
+	emit("update_state", model.state.to_dict())
 
 # --- state --- #
 @socketio.on("load_state")
