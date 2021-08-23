@@ -1,13 +1,10 @@
 $(document).ready(function () {
-	// create an anonymous user id:
-	let USER_DATA = new Object(); 
-	const ONSERVER = true;
 	// if true, some unit tests will be performed
 	const SELFTEST = false;
 
 	// --- set up the APIs --- //
 	// Define the API URLs
-	const MODEL			= "127.0.0.1:5000";
+	const MODEL	= "127.0.0.1:5000";
 
 	const CONFIG = document.CONFIG;
 	// TODO: POST config here
@@ -30,8 +27,10 @@ $(document).ready(function () {
 	let objLayer	= document.getElementById("objects");
 	let grLayer		= document.getElementById("gripper");
 
-	// Set up the view js
-	this.layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
+	const layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
+
+	// --- logger --- //
+	const logView = new document.LogView(socket);
 
 	// --- socket communication --- //
 	let setup_complete = false;
@@ -55,49 +54,30 @@ $(document).ready(function () {
 	});
 	
 	// --- tasks and instruction giving view --- //
-	
-	const N_TASKS = 5;
-	const N_OBJECTS = 15;
-	const N_GRIPPERS = 1;
-
+	// randomly select one of the algorithms
+	const algorithms = ["IA", "RDT", "SE"];
+	const randomAlg = document._randomFromArray(algorithms);
+	// log what algorithm has been used
+	logView.addData("algorithm", randomAlg);
 	let instructionGiver;
 	let tasks;
-	// generate tasks randomly
-	/*let taskGenerator = new document.PentoGenerator(MODEL);
-	tasks = new Object();
-	for (let i=0; i<N_TASKS; i++) {
-		// generate a random task
-		taskGenerator.generateState(N_OBJECTS, N_GRIPPERS)
-		.then(task => {
-			tasks[i] = {"task": task};
-			// randomly select one object as the target
-			tasks[i]["target"] = Math.floor(Math.random() * (N_OBJECTS)).toString();
+
+	// load json file with tasks
+	const task_route = "/ba_tasks";
+	fetch(new Request(task_route, {method:"GET"}))
+	.then(response => {
+		if (!response.ok) {
+			console.log("Error loading tasks!");
+			error.showModal(); // show error screen to the user
+		} else {
+			response.json()
+			.then(json => {
+				tasks = JSON.parse(json);
+				// Set up the instruction giver once the tasks are loaded
+				instructionGiver = new document.IGView(socket, tasks, randomAlg, gripperId);
 			});
-	}
-	*/
-	// need to be on a server because of same origin policy
-	if (ONSERVER) {
-		// load json file with tasks
-		const task_route = "/ba_tasks";
-		fetch(new Request(task_route, {method:"GET"}))
-		.then(response => {
-			if (!response.ok) {
-				console.log("Error loading tasks!");
-				error.showModal(); // show error screen to the user
-			} else {
-				response.json()
-				.then(json => {
-					tasks = JSON.parse(json);
-					// Set up the instruction giver once the tasks are loaded
-					instructionGiver = new document.IGView(socket, tasks, "SE", gripperId);
-				});
-			}
-		});
-	} else {
-		tasks = document.TASKS;
-		// Set up the instruction giver once the tasks are loaded
-		instructionGiver = new document.IGView(socket, tasks, "SE", gripperId);			
-	}
+		}
+	});
 
 	// --- stop and start drawing --- //
 	function start() {
@@ -135,27 +115,28 @@ $(document).ready(function () {
 
 	$("#close_audiotest").click(() => {
 		// save the user's audio transcript
-		USER_DATA["audiotest"] = encodeURIComponent($("#transcript").val());
+		logView.addData("audiotest", encodeURIComponent($("#transcript").val()));
 		audiotest.close();
 		start();
 	});
 
 	$("#close_questionnaire").click(() => {
-		// get all the form data:
+		// get all the form data and send it to the logView
 		let freeformData = ["age", "gender", "education", "language", "comments"];
 		let scaleData = ["fluency", "anthropomorphism1", "anthropomorphism2", "anthropomorphism3",
 			"likeability1", "likeability2", "likeability3", "intelligence1", "intelligence2", "intelligence3"];
 		freeformData.forEach(dataId => {
-			USER_DATA[dataId] = encodeURIComponent($("#"+dataId).val());
+			logView.addData(dataId, encodeURIComponent($("#"+dataId).val()));
 		})
 		scaleData.forEach(dataId => {
-			USER_DATA[dataId] = $("#"+dataId).val();
+			logView.addData(dataId, $("#"+dataId).val());
 		})
-		// TODO: save!
-		console.log(USER_DATA)
+		// save all collected data to the server
+		logView.sendData();
+		// show a 'thank you' dialog to the participant
 		questionnaire.close();
 		goodbye.showModal();
-	})
+	});
 
 	// --- event handling --- //
 

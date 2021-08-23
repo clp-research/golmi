@@ -16,7 +16,7 @@ app = Flask(__name__)
 # $ python -c 'import os; print(os.urandom(16))'
 # (This is the recommendation by the Flask documentation: https://flask.palletsprojects.com/en/2.0.x/quickstart/#sessions)
 app.config["SECRET KEY"] = "definite change this to some random value!".encode("utf-8")
-app.config["DATA_COLLECTION"] = "app/static/resources/data_collection/"
+app.config["DATA_COLLECTION"] = "app/static/resources/"
 # enable cross-origin requests 
 # TODO: restrict sources
 CORS(app)
@@ -38,9 +38,9 @@ def client_connect(auth):
 	# authenticate the client:
 	if auth != AUTH:
 		raise ConnectionRefusedError("unauthorized")
-	# send config + state
+	# only send config for this task
 	emit("update_config", model.config.to_dict())
-	emit("update_state", model.state.to_dict())
+	#emit("update_state", model.state.to_dict())
 
 # --- state --- #
 @socketio.on("load_state")

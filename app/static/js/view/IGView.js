@@ -10,7 +10,8 @@ $(document).ready(function () {
 	 * @param {optional: distance (blocks) the user has to move the gripper before feedback is given, default: 2} feedbackDistInt
 	 */
 	this.IGView = class IGView {
-		constructor(modelSocket, tasks, referenceAlg, gripperId, feedbackTimeInt=10000, feedbackDistInt=2) {
+		constructor(modelSocket, tasks, referenceAlg, gripperId,
+			feedbackTimeInt=10000, feedbackDistInt=2, maxTries=3) {
 			// server
 			this.socket			= modelSocket;
 
@@ -21,6 +22,8 @@ $(document).ready(function () {
 			this.currentObjects; // store objects for performance reasons.
 			this.gripperId		= gripperId; // identifier of the gripper that is tracked
 			this.config; 				// model configuration
+			this.maxTries		= maxTries;
+			this.currentTries	= 0;
 
 			// set reference and feedback algorithm according to the given algorithm name
 			this._referenceAlg, this._feedbackAlg;
@@ -57,6 +60,13 @@ $(document).ready(function () {
 		 */
 		get nextTask() {
 			return (++this.currentTask) < this.nTasks ? this.tasks[(this.currentTask).toString()] : null;
+		}
+
+		/**
+		 * @return true if some task has been loaded already
+		 */
+		get hasStarted() {
+			return this.currentTask >= 0;
 		}
 
 		/**
@@ -164,22 +174,41 @@ $(document).ready(function () {
 			});
 			// state was loaded. Start giving instructions
 			this.socket.on("update_state", (state) => {
+				// only react to this if some task was started
+				if (!this.hasStarted) { return; } 
 				// get the objects from the model, since the state might differ slightly
 				// from the sent task (because of defaults and configuration restrictions). It's best to 
 				// synchronize with the model to match the instruction with what is displayed.
 				this.currentObjects = state["objs"];
-				// save the target coordinates
-				let target = this.currentObjects[this.currentTarget];
-				this.targetCoords = [target.x+(target.width/2), target.y+(target.height/2)];
+				// save the target coordinates (if objects containing the target were sent)
+				if (this.currentObjects[this.currentTarget]) {
+					let target = this.currentObjects[this.currentTarget];
+					this.targetCoords = [target.x+(target.width/2), target.y+(target.height/2)];
 
-				this.giveInstruction();
+					this.giveInstruction();
+				}
 			});
 			this.socket.on("update_grippers", (grippers) => {
 				if (grippers[this.gripperId]) {
 					if (grippers[this.gripperId]["gripped"]) {
-						// some object was gripped (-> marks task completion)
-						// TODO max tries
-						this.taskCompleted();
+						// task is completed if 
+						// (a) correct object was selected
+						// (b) maxTries incorrect attempts were made
+						if (Object.keys(grippers[this.gripperId]["gripped"]).includes(this.currentTarget)) {
+							// target was selected
+							this.taskCompleted();	
+						} else {
+							if (++this.currentTries >= this.maxTries) {
+								this.taskCompleted();
+							} else {
+								// automatically ungrip the piece
+								this.socket.emit("grip", {"id": this.gripperId});
+								// tell the participant they have to try again
+								this._outputMsg("That was incorrect", "feedback");
+								this.giveFeedback(true);
+							}
+						}
+						
 					} else {
 						// the gripper has been moved (-> might trigger feedback)
 						// save the new gripper position
@@ -207,7 +236,10 @@ $(document).ready(function () {
 			this.welcome();
 			// start the task flow
 			this.currentTask = -1;
-			this._loadTask();
+			if (!this._loadTask()) {
+				console.log("Error: No task could be loaded at IGView. Passed empty task object?");
+				this.goodbye();
+			}
 		}
 
 		/**
@@ -216,27 +248,36 @@ $(document).ready(function () {
 		taskCompleted() {
 			// abort pending messages
 			this.abortAllMsgs();
-			this._outputMsg("Task complete")
 			// pause feedback loop until a new task is started
 			this.stopFeedbackTimeout();
-			this._loadTask();
+			// emit global event for logger to catch
+			document.dispatchEvent(new CustomEvent("logSegment", 
+				{ detail: { "segmentTitle": this.currentTask,
+							"additionalData": { "target": this.currentTarget, "incorrectAttempts": this.currentTries}}}));
+			if (!this._loadTask()) {
+				this.goodbye();
+			}
 		}
 
 		/**
 		 * If there is another task, post it to the model, then save the objects and target of this task.
+		 * @return true if a task was loaded, false if no more tasks are available
 		 */
 		_loadTask() {
 			// load the next (predefined) task
 			let task = this.nextTask;
 			// task is null if no tasks remain
 			if (!task) { return false; }
+			// reset the attempts
+			this.currentTries = 0;
 			// set the goal object
-			this.currentTarget = parseInt(task.target);
+			this.currentTarget = task.target.toString();
 			// remember the gripper start position
 			this.gripperTrace = [[Date.now(), task.task.grippers[this.gripperId].x, task.task.grippers[this.gripperId].y]];
 
 			// load the task into the model
 			this.socket.emit("load_state", task.task);
+			return true;
 		}
 
 		// --- User communication --- //
@@ -245,14 +286,21 @@ $(document).ready(function () {
 		 * Welcome the user, explain rules, etc.
 		 */
 		welcome() {
-			this._outputMsg("Welcome to Pentomino")
+			// welcome the participant
+			this._outputMsg("Welcome! I'm Matthew." +
+				" Let's pick up some Pentomino pieces together." +
+				" The first task is just for warming up before we get to the study");
+			// explain the rules
+			this._outputMsg("Move around using the arrow keys" +
+				" and select an object using space or enter." +
+				" You have 3 tries to get the correct piece");
 		}
 
 		/**
 		 * Thank the user for participating, etc. Dispatch a "tasksCompleted" event.
 		 */
 		goodbye() {
-			this._outputMsg("Thank you for participating. Have a nice day")
+			this._outputMsg("Thank you for participating. Have a nice day");
 			document.dispatchEvent(new Event("tasksCompleted"));
 		}
 
@@ -263,7 +311,7 @@ $(document).ready(function () {
 		giveInstruction() {
 			// use reference algorithm to generate an instruction, otherwise force feedback 
 			let instr = this.referenceAlg ? this.referenceAlg() : this.feedbackAlg(true);
-			this._outputMsg(instr);
+			this._outputMsg(instr, "instruction");
 			// give feedback after a set interval, if user doesn't react
 			this.startFeedbackTimeout(this.feedbackTimeInt);
 		}
@@ -277,7 +325,7 @@ $(document).ready(function () {
 			// try to contruct feedback - returns null if no feedback needed
 			let feedback = this.feedbackAlg(force);
 			if (feedback) {
-				this._outputMsg(feedback);
+				this._outputMsg(feedback, "feedback");
 				// give feedback after a set interval, if user doesn't react
 				this.startFeedbackTimeout(this.feedbackTimeInt);
 			}
@@ -286,8 +334,9 @@ $(document).ready(function () {
 		/**
 		 * Deliver a message to the user.
 		 * @param {string, message to send} msg
+		 * @param {type of message, one of ["instruction", "feedback", "meta"], used for log event} type
 		 */
-		_outputMsg(msg) {
+		_outputMsg(msg, type="meta") {
 			// get the audio: file name is msg in lower case, without spaces and with an .mp3 extension
 //			let msgFile = `./resources/audio/${msg.toLowerCase().replaceAll(" ", "")}.mp3`;
 //			// for now use dummy audio
@@ -301,6 +350,9 @@ $(document).ready(function () {
 //			if (this.msgQueue.length == 1) {
 //				// start playing the message as soon as audio is loaded sufficiently
 //				audio.oncanplaythrough = function() {
+//					// dispatch message event
+//					document.dispatchEvent(new CustomEvent("emitMessage", 
+//						{ detail: { "type": type, "content": msg, "duration": nextAudio.duration }}));
 //					$("#instructions").text(msg);
 //					audio.play();
 //				};
@@ -318,10 +370,16 @@ $(document).ready(function () {
 //					// start playing the message as soon as audio is loaded sufficiently
 //					let [nextMsg, nextAudio] = thisArg.msgQueue[0];
 //					if (nextAudio.readyState >= 2) {
+//						// dispatch message event
+//						document.dispatchEvent(new CustomEvent("emitMessage", 
+//							{ detail: { "type": type, "content": msg, "duration": nextAudio.duration }}));
 //						$("#instructions").text(nextMsg);
 //						nextAudio.play();
 //					} else {
 //						nextAudio.oncanplaythrough = function() {
+//							// dispatch message event
+//							document.dispatchEvent(new CustomEvent("emitMessage", 
+//								{ detail: { "type": type, "content": msg, "duration": nextAudio.duration }}));
 //							$("#instructions").text(nextMsg);
 //							nextAudio.play();
 //						};
@@ -331,6 +389,9 @@ $(document).ready(function () {
 			
 			// WITHOUT AUDIO:
 			// temporarily implemented as simply printing to the screen
+			// dispatch message event
+			document.dispatchEvent(new CustomEvent("emitMessage", 
+				{ detail: { "type": type, "content": msg }}));
 			$("#instructions").text(msg);
 			this.lastMsg = Date.now();
 			// delete old gripper trace and start tracking again from the recordedlast position

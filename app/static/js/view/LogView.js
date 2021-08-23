@@ -17,7 +17,30 @@ $(document).ready(function () {
 			this.currentGrippers = new Object();
 			this.currentConfig = new Object();
 			// start listening to events
+			this._initEventListeners();
+		}
+
+		_initEventListeners() {
+			// register socket event listeners
 			this._initSocketEvents();
+			// register document event listeners
+			document.addEventListener("logSegment", e => {
+				if (e.detail["segmentTitle"] != undefined && e.detail["segmentTitle"] != null) {
+					this.addSegment(e.detail["segmentTitle"].toString(), e.detail["additionalData"]);
+				} else {
+					console.log("Error: No segment title sent with logSegment event");
+				}
+			});
+			document.addEventListener("emitMessage", e => {
+				// append the message as a regular event to the log
+				let timeOffset;
+				if (!this.startTime) {
+					timeOffset = -1;
+				} else {
+					timeOffset = Date.now() - this.startTime;
+				}
+				this._addSnapshot(timeOffset, e.detail);
+			})
 		}
 
 		/**
@@ -89,6 +112,33 @@ $(document).ready(function () {
 			});
 		}
 
+		// --- add, change, delete data --- // 
+
+		/** 
+		 * Make a cut and store the data logged so far (or since the last segment) as a 
+		 * segment with key segmentTitle. Optionally add some extra info to the segment.
+		 * @param {key to store the logged data with, can not be "log"} segmentTitle
+		 * @param {optional data object to store with the new segment, default: null} additionalData
+		 */
+		addSegment(segmentTitle, additionalData=null) {
+			if (segmentTitle == "log") {
+				// 'log' key is reserved for the collected event data
+				console.log("Error at LogView.createSegment(): 'log' is reserved, use another segment name");
+			} else {
+				this.data[segmentTitle] = {"log": this.data["log"]};
+				if (additionalData) {
+					Object.entries(additionalData).forEach(([key, value]) => {
+						if (key != "log") {
+							this.data[segmentTitle][key] = value;
+						} else {
+							console.log("Skipping key 'log' of additional data in LogView.addSegment()");
+						}
+					});
+				}
+				this.clearLog();
+			}
+		}
+
 		/**
 		 * Add additional data to the current log. Will be saved at 
 		 * the top-level of the log object.
@@ -98,11 +148,40 @@ $(document).ready(function () {
 		addData(key, data) {
 			if (key == "log") {
 				// 'log' key is reserved for the collected event data
-				console.log("Error at LogView: Cannot manually add data with reserved key 'log'.");
+				console.log("Error at LogView.addData(): Cannot manually add data with reserved key 'log'.");
 			} else {
 				this.data[key] = data;
 			}
 		}
+
+		/**
+		 * Save additional data to an already created segment.
+		 * @param {name of an existing segment to save the data to} segment
+		 * @param {string, identifier for the data, 'log' is reserved} key
+		 * @param {data to save, can be any json-friendly format, e.g. object, list, string} data
+		 */
+		addDataToSegment(segment, key, data) {
+			if (!this.data[segment]) {
+				console.log(`Error at LogView.addDataToSegment(): segment ${segment} does not exist.`);
+			} else if (key == "log") {
+				// 'log' key is reserved for the collected event data
+				console.log("Error at LogView.addDataToSegment(): Cannot manually add data with reserved key 'log'.");
+			} else {
+				this.data[segment][key] = data;
+			}
+		}
+
+		/**
+		 * Delete the current log and reset the saved state except for the configuration.
+		 */
+		clearLog() {
+			this.data["log"] = new Array();
+			this.startTime = undefined;
+			this.currentObjs = new Object();
+			this.currentGrippers = new Object();
+		}
+
+		// --- save data --- // 
 
 		/**
 		 * Save the data on the server.
@@ -123,17 +202,6 @@ $(document).ready(function () {
 					return false;
 				}
 			});
-		}
-
-		/**
-		 * Delete any data collected so far.
-		 */
-		clear() {
-			this.data = {"log": new Array()};
-			this.startTime = undefined;
-			this.currentObjs = new Object();
-			this.currentGrippers = new Object();
-			this.currentConfig = new Object();
 		}
 
 		// --- helper functions --- //
