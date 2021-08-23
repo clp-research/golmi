@@ -273,7 +273,8 @@ $(document).ready(function () {
 			// set the goal object
 			this.currentTarget = task.target.toString();
 			// remember the gripper start position
-			this.gripperTrace = [[Date.now(), task.task.grippers[this.gripperId].x, task.task.grippers[this.gripperId].y]];
+			this.gripperTrace = [
+				[Date.now(), task.task.grippers[this.gripperId].x, task.task.grippers[this.gripperId].y]];
 
 			// load the task into the model
 			this.socket.emit("load_state", task.task);

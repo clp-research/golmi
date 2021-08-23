@@ -58,22 +58,6 @@ class Model:
 	def get_type_config(self):
 		return self.config.type_config
 
-	#  --- events --- #
-
-	def get_gripper_updated_event(self):
-		return {"grippers": self.get_gripper_dict()}
-
-	def get_new_state_loaded_event(self): 
-		# update all grippers and objects. Config does not need to be reloaded.
-		return {"grippers": self.get_gripper_dict(), "objs": self.get_obj_dict()}
-	
-	def get_obj_updated_event(self, id): 
-		return {"objs": self.get_obj_dict()}
-
-	# currently unused
-	def get_config_changed_event(self):
-		return {"config": True}
-
 	# --- Communicating with views --- # 
 
 	def _notify_views(self, event_name, data):
@@ -86,10 +70,10 @@ class Model:
 
 	# --- Set up and configuration --- #
 
-	def set_initial_state(self, state):
+	def set_state(self, state):
 		"""
 		Initialize the model's (game) state.
-		@param state	State object or dict or JSON file
+		@param state	State object or dict or JSON string
 		"""
 		# state is a JSON string or parsed JSON dictionary
 		if type(state) == str or type(state) == dict:
@@ -98,6 +82,20 @@ class Model:
 		else:
 			self.state = state
 		self._notify_views("update_state", self.state.to_dict())
+
+	def set_config(self, config):
+		"""
+		Change the model's configuration. Overwrites any attributes
+		passed in config and leaves the rest as before. New keys simply added.
+		@param config	Config object or dict or JSON string
+		"""
+		# config is a JSON string or parsed JSON dictionary
+		if type(config) == str or type(config) == dict:
+			self._config_from_JSON(config)
+		# config is a Config instance
+		else:
+			self.config = config
+		self._notify_views("update_config", self.config.to_dict())
 
 	def reset(self):
 		"""
@@ -156,6 +154,16 @@ class Model:
 		except: 
 			raise SyntaxError("Error during state initialization: JSON data does not have the right format.\n" + \
 				"Please refer to the documentation.")
+
+	def _config_from_JSON(self, json_data):
+		if type(json_data) == str:
+			# a JSON string
+			json_data = json.loads(json_data)
+		# otherwise assume json_data is a dict 
+		# overwrite any setting given in the data, leave the rest as before.
+		# new keys are also allowed
+		for attr_key, attr_value in json_data.items():
+			setattr(self.config, attr_key, attr_value)
 
 	# --- Gripper manipulation --- #
 

@@ -27,10 +27,10 @@
 	
 	<!-- The "viewport" id and three stacked canvases of the same size are needed to 
 		properly render using the LayerView class -->
-	<div id="viewport" style="height: 600px; width: 600px; padding: 10px; overflow: visible;">
-		<canvas id="background" width="600" height="600"></canvas>
-		<canvas id="objects" width="600" height="600"></canvas>
-		<canvas id="gripper" width="600" height="600"></canvas>
+	<div id="viewport" style="height: 800px; width: 800px; padding: 10px; overflow: visible;">
+		<canvas id="background" width="800" height="800"></canvas>
+		<canvas id="objects" width="800" height="800"></canvas>
+		<canvas id="gripper" width="800" height="800"></canvas>
 	</div>
 
 	<!-- dialogs -->
@@ -138,7 +138,6 @@
 	<script src="{{ url_for('static', filename='js/view/IGView.js') }}"></script>
 	<script src="{{ url_for('static', filename='js/view/LogView.js') }}"></script>
 	<script src="{{ url_for('static', filename='js/controller/LocalKeyController.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/gameConfig.js') }}"></script>
 	<script src="{{ url_for('static', filename='js/index.js') }}"></script>
 </body>
 

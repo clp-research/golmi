@@ -6,8 +6,12 @@ $(document).ready(function () {
 	// Define the API URLs
 	const MODEL	= "127.0.0.1:5000";
 
-	const CONFIG = document.CONFIG;
-	// TODO: POST config here
+	// model configuration
+	const CONFIG = {
+		"move_step": 1,
+		"width": 40,
+		"height": 40
+	}
 	
 	// --- create a socket --- //
 	// don't connect yet
@@ -38,7 +42,8 @@ $(document).ready(function () {
 		console.log("Connected to model server");
 		// only do setup once (reconnections can occur, we don't want to reset the state every time)
 		if (!setup_complete) {
-
+			// send the configuration
+			socket.emit("load_config", CONFIG);
 			// start giving instructions and feedback
 			instructionGiver.start();
 			// subscribe the controller to some gripper (here we create a new gripper)

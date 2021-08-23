@@ -25,7 +25,7 @@ socketio = SocketIO(app, logger=True, engineio_logger=True, cors_allowed_origins
 
 # --- create a data model --- #
 
-config = Config("app/static/resources/type_config/pentomino_types.json")
+config = Config("app/static/resources/config/pentomino_types.json")
 model = Model(config, socketio)
 
 # finally load the routes
@@ -45,7 +45,12 @@ def client_connect(auth):
 # --- state --- #
 @socketio.on("load_state")
 def load_state(json):
-	model.set_initial_state(json)
+	model.set_state(json)
+
+# --- configuration --- #
+@socketio.on("load_config")
+def load_config(json):
+	model.set_config(json)
 
 # --- gripper --- #
 @socketio.on("add_gripper")
