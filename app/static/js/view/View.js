@@ -5,6 +5,7 @@ $(document).ready(function () {
 	 * performance (the components are static to varying degrees).
 	 * While drawing functions lack implementations, internal data structures and basic communication
 	 * with the model are already sketched out in this class.
+	 * @param {Socket io connection to the server} modelSocket
 	 */
 	this.View = class View {
 		constructor(modelSocket) {
@@ -15,7 +16,6 @@ $(document).ready(function () {
 			this.blockSize;		// block width/height in pixels
 			this.cols;			// canvas width in blocks
 			this.rows;			// canvas height in blocks
-			this.typeConfig;	// map: type -> block matrix
 
 			// Current state
 			this.objs = new Object();
@@ -158,7 +158,6 @@ $(document).ready(function () {
 			this.blockSize = (this.canvasWidth / config.width);
 			this.cols = config.width;
 			this.rows = config.height;
-			this.typeConfig = config.type_config;
 		}
 
 	}; // class View end

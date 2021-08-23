@@ -11,8 +11,7 @@ $(document).ready(function () {
 	 * dimensions, etc.) change, the objects are meant to be manipulated throughout an
 	 * interaction and might have to be redrawn several times. The gripper as well as the currently 
 	 * gripped objects however change continuously and have to be redrawn constantly.
-	 * @param {URL of the View API} viewAPI
-	 * @param {URL of the Model API} modelAPI
+	 * @param {Socket io connection to the server} modelSocket
 	 * @param {reference to the canvas DOM element to draw the background to} bgCanvas
 	 * @param {reference to the canvas DOM element to draw the static objects to} objCanvas
 	 * @param {reference to the canvas DOM element to draw grippers and gripped objects to} grCanvas

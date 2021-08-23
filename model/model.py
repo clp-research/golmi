@@ -82,7 +82,7 @@ class Model:
 		@param event_name 	str: event type, e.g. "update_grippers"
 		@param data 	serializable data to send to listeners
 		"""
-		self.socket.emit(event_name, data, broadcast=True)
+		self.socket.emit(event_name, data, include_self=True, broadcast=True)
 
 	# --- Set up and configuration --- #
 

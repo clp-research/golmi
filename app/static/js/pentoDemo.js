@@ -8,9 +8,10 @@ $(document).ready(function () {
 	// --- define globals --- // 
 
 	// Set to false to skip unit tests
-	document.SELFTEST = true;
+	const SELFTEST = true;
 
 	const MODEL = "127.0.0.1:5000";
+
 	// // generate a random state
 	// const N_OBJECTS = 15;
 	// const N_GRIPPERS = 1;
@@ -58,8 +59,11 @@ $(document).ready(function () {
 	let objLayer	= document.getElementById("objects");
 	let grLayer		= document.getElementById("gripper");
 
-	// Set up the view js
-	this.layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
+	// Set up the view js, this also sets up key listeners
+	const layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
+
+	// --- logger --- //
+	const logView = new document.LogView(socket);
 
 	// --- socket communication --- //
 	var setup_complete = false;
@@ -76,34 +80,45 @@ $(document).ready(function () {
 	});
 	socket.on("disconnect", () => {
 		console.log("Disconnected from model server");
+		// demo of the logView: send the logged data to the server
+		logView.addData("test", true);
+		logView.sendData();
 	});
 	socket.onAny((eventName, ...args) => {
 		console.log(eventName, args);
 	});
 
-	// --- buttons --- //
-	$("#start").click(() => {
+	// --- stop and start drawing --- //
+	function start() {
 		// reset the controller in case any key is currently pressed
-/*		document.controller.resetKeys()*/
+		controller.resetKeys()
 		// manually establish a connection, connect the controller and load a state
 		socket.connect();
-		// disable this button, otherwise it is now in focus and Space/Enter will trigger the click again
-		$("#start").prop("disabled", true);
-	});
-	$("#stop").click(() => {
-/*		// reset the controller in case any key is currently pressed
-		document.controller.resetKeys()*/
+	}
+
+	function stop() {
+		// reset the controller in case any key is currently pressed
+		controller.resetKeys();
 		// disconnect the controller
 		controller.detachModel(socket, "0");
 		// manually disconnect
 		socket.disconnect();
+	}
+
+	// --- buttons --- //
+	$("#start").click(() => {
+		start();
+		// disable this button, otherwise it is now in focus and Space/Enter will trigger the click again
+		$("#start").prop("disabled", true);
+	});
+	$("#stop").click(() => {
+		stop();
 		// reactive the start button
 		$("#start").prop("disabled", false);
 	});
 
 	// --- unit tests --- //
-	if (document.SELFTEST) {
-		//let testController = this.LocalKeyController();
+	if (SELFTEST) {
 		console.log("Unit tests passed");
 		
 	}
