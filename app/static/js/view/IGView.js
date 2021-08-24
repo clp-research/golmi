@@ -17,7 +17,7 @@ $(document).ready(function () {
 
 			// task management
 			this.tasks 			= tasks;
-			this.currentTask	= -1; // index of current task
+			this.currentTask	= -2; // index of current task
 			this.currentTarget; // id of the goal object in the current task
 			this.currentObjects; // store objects for performance reasons.
 			this.gripperId		= gripperId; // identifier of the gripper that is tracked
@@ -174,8 +174,6 @@ $(document).ready(function () {
 			});
 			// state was loaded. Start giving instructions
 			this.socket.on("update_state", (state) => {
-				// only react to this if some task was started
-				if (!this.hasStarted) { return; } 
 				// get the objects from the model, since the state might differ slightly
 				// from the sent task (because of defaults and configuration restrictions). It's best to 
 				// synchronize with the model to match the instruction with what is displayed.
@@ -235,7 +233,7 @@ $(document).ready(function () {
 			// introduction
 			this.welcome();
 			// start the task flow
-			this.currentTask = -1;
+			this.currentTask = -2;
 			if (!this._loadTask()) {
 				console.log("Error: No task could be loaded at IGView. Passed empty task object?");
 				this.goodbye();

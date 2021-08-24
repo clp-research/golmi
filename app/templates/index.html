@@ -20,6 +20,9 @@
 
 <body>
 	<div style="padding:10px;">
+		<div id="progress_bg">
+			<div id="progress_bar">0%</div>
+		</div>
 		<button id="start" autocomplete="off">Start</button>
 		<button id="stop" autocomplete="off">Stop</button>
 		<p id="instructions"></p>
@@ -38,8 +41,11 @@
 	<dialog id="welcome">
 		<h2>Welcome to Pentomino!</h2>
 		<p>In this experiment, you will be instructed by your personal agent <strong>Matthew</strong> to pick up some Pentomino pieces such as this one:</p>
-		<img src="{{ url_for('static', filename='resources/img/pentomino_piece.png') }}" width="100px">
-		<p>There will be one training example followed by <strong>10 tasks</strong>. Finally, you will be asked some <strong>questions</strong> about your experience.</p>
+		<img class="center" src="{{ url_for('static', filename='resources/img/pentomino_piece.png') }}" width="100px">
+		<p>You can move around using the <strong>arrow keys</strong> and select an object with <strong>enter</strong> or <strong>space</strong>:</p>
+		<img src="{{ url_for('static', filename='resources/img/arrow_keys.png') }}" width="150px" style="margin-left: 15%; margin-right: 5%;">
+		<img src="{{ url_for('static', filename='resources/img/enter_space.png') }}" width="300px" style="margin-left: 5%; margin-right: 15%;">
+		<p>There will be one training example followed by <strong>12 tasks</strong>. Finally, you will be asked some <strong>questions</strong> about your experience.</p>
 		<p>The game should take around <strong>10-15 minutes</strong>. Please try to find a quiet place and complete the tasks in one go.</p>
 		<p>Thank you for supporting my project, and have fun!</p>
 		<button id="close_welcome" autocomplete="off">Continue</button>

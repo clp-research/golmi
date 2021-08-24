@@ -8,7 +8,7 @@ $(document).ready(function () {
 
 	// model configuration
 	const CONFIG = {
-		"move_step": 1,
+		"move_step": 0.5,
 		"width": 40,
 		"height": 40
 	}
@@ -34,7 +34,8 @@ $(document).ready(function () {
 	const layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
 
 	// --- logger --- //
-	const logView = new document.LogView(socket);
+	const logFullState = false; // only log updated data at each change
+	const logView = new document.LogView(socket, logFullState);
 
 	// --- socket communication --- //
 	let setup_complete = false;
@@ -64,9 +65,10 @@ $(document).ready(function () {
 	const randomAlg = document._randomFromArray(algorithms);
 	// log what algorithm has been used
 	logView.addData("algorithm", randomAlg);
+	const feedbackTimeInt = 10000;
+	const feedbackDistInt = 3;
 	let instructionGiver;
 	let tasks;
-
 	// load json file with tasks
 	const task_route = "/ba_tasks";
 	fetch(new Request(task_route, {method:"GET"}))
@@ -79,7 +81,8 @@ $(document).ready(function () {
 			.then(json => {
 				tasks = JSON.parse(json);
 				// Set up the instruction giver once the tasks are loaded
-				instructionGiver = new document.IGView(socket, tasks, randomAlg, gripperId);
+				instructionGiver = new document.IGView(
+					socket, tasks, randomAlg, gripperId, feedbackTimeInt, feedbackDistInt);
 			});
 		}
 	});
@@ -143,11 +146,35 @@ $(document).ready(function () {
 		goodbye.showModal();
 	});
 
-	// --- event handling --- //
+	// --- Progress bar --- //
+	/**
+	 * Updates the displayed progress bar
+	 * @param {Completion in percent (int)} completion
+	 */
+	function updateProgressBar(completion) {
+		// update width
+		$('#progress_bar').css('width', `${completion}%`);
+		// update number
+		$('#progress_bar').html(`${completion}%`);
+	}
 
-	// "tasksCompleted" is dispatched by the IGView
+	// --- event handling --- //
+	// one tasks complete (dispatched by IGView)
+	document.addEventListener("logSegment", e => {
+		if (instructionGiver.currentTask >= 0) {
+			// show progress to user. first task is not counted because
+			// it is a training example here
+			updateProgressBar(Math.floor(
+				100 * instructionGiver.currentTask / (Object.keys(tasks).length-1)
+			));
+		}
+	});
+
+	// all tasks completed (dispatched by IGView)
 	document.addEventListener("tasksCompleted", e => {
 		stop();
+		// update the progress bar to show 100 %
+		updateProgressBar(100);
 		// open the goodbye dialog
 		if (!questionnaire.open || !goodbye.open) {
 			questionnaire.showModal();
@@ -173,7 +200,7 @@ $(document).ready(function () {
 
 	// --- start --- //
 	// open the welcome dialog
-	//welcome.showModal();
+	welcome.showModal();
 
 	// --- unit tests --- //
 	if (SELFTEST) {
