@@ -30,6 +30,8 @@ $(document).ready(function () {
 	let bgLayer		= document.getElementById("background");
 	let objLayer	= document.getElementById("objects");
 	let grLayer		= document.getElementById("gripper");
+	// resize the canvas and their container to the window
+	_resizeCanvas();
 
 	const layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
 
@@ -55,22 +57,20 @@ $(document).ready(function () {
 	socket.on("disconnect", () => {
 		console.log("Disconnected from model server");
 	});
-	socket.onAny((eventName, ...args) => {
-		console.log(eventName, args);
-	});
 	
 	// --- tasks and instruction giving view --- //
 	// randomly select one of the algorithms
 	const algorithms = ["IA", "RDT", "SE"];
-	const randomAlg = document._randomFromArray(algorithms);
+	const randomAlg = document.randomFromArray(algorithms);
 	// log what algorithm has been used
+	//const randomAlg = "SE";
 	logView.addData("algorithm", randomAlg);
 	const feedbackTimeInt = 10000;
-	const feedbackDistInt = 3;
+	const feedbackDistInt = 4;
 	let instructionGiver;
 	let tasks;
 	// load json file with tasks
-	const task_route = "/ba_tasks";
+	const task_route = "/get_tasks/ba_tasks";
 	fetch(new Request(task_route, {method:"GET"}))
 	.then(response => {
 		if (!response.ok) {
@@ -105,17 +105,6 @@ $(document).ready(function () {
 	}
 
 	// --- buttons --- //
-	$("#start").click(() => {
-		start();
-		// disable this button, otherwise it is now in focus and Space/Enter will trigger the click again
-		$("#start").prop("disabled", true);
-	});
-	$("#stop").click(() => {
-		stop();
-		// reactive the start button
-		$("#start").prop("disabled", false);
-	});
-
 	$("#close_welcome").click(() => {
 		welcome.close();
 		audiotest.showModal();
@@ -146,21 +135,14 @@ $(document).ready(function () {
 		goodbye.showModal();
 	});
 
-	// --- Progress bar --- //
-	/**
-	 * Updates the displayed progress bar
-	 * @param {Completion in percent (int)} completion
-	 */
-	function updateProgressBar(completion) {
-		// update width
-		$('#progress_bar').css('width', `${completion}%`);
-		// update number
-		$('#progress_bar').html(`${completion}%`);
-	}
-
 	// --- event handling --- //
+	window.onresize = function(event) {
+		_resizeCanvas();
+		layerView.redraw();
+	};
+	
 	// one tasks complete (dispatched by IGView)
-	document.addEventListener("logSegment", e => {
+	$(document).on("logSegment", e => {
 		if (instructionGiver.currentTask >= 0) {
 			// show progress to user. first task is not counted because
 			// it is a training example here
@@ -171,7 +153,7 @@ $(document).ready(function () {
 	});
 
 	// all tasks completed (dispatched by IGView)
-	document.addEventListener("tasksCompleted", e => {
+	$(document).on("tasksCompleted", e => {
 		stop();
 		// update the progress bar to show 100 %
 		updateProgressBar(100);
@@ -197,10 +179,35 @@ $(document).ready(function () {
 	dialogPolyfill.registerDialog(goodbye);
 	dialogPolyfill.registerDialog(error);
 	dialogPolyfill.registerDialog(questionnaire);
+	
+	// --- style updating functions --- //
+	/**
+	 * Updates the displayed progress bar
+	 * @param {Completion in percent (int)} completion
+	 */
+	function updateProgressBar(completion) {
+		// update width
+		$('#progress_bar').css('width', `${completion}%`);
+		// update number
+		$('#progress_bar').html(`${completion}%`);
+	}
+	
+	/**
+	 * Adapt the three canvas elements to the current window sizes
+	 */
+	function _resizeCanvas() {
+		let newSize = 0.8 * window.innerHeight;
+		for (let element of [bgLayer, objLayer, grLayer]) {
+			element.width = newSize;
+			element.height = newSize;
+		}
+		$("#viewport").css({"width": newSize, "height": newSize});
+	};
 
 	// --- start --- //
 	// open the welcome dialog
 	welcome.showModal();
+	//start();
 
 	// --- unit tests --- //
 	if (SELFTEST) {

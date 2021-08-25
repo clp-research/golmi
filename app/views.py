@@ -1,5 +1,6 @@
 from app import app
-from flask import render_template, request, jsonify
+from flask import render_template, request, send_from_directory, abort, url_for, make_response
+from flask_socketio import emit
 import json
 from time import time_ns
 import os
@@ -12,21 +13,26 @@ def index():
 	"""
 	return render_template("index.html")
 
-@app.route("/ba_tasks", methods=["GET"])
-def tasks():
+@app.route("/get_tasks/<string:taskname>", methods=["GET"])
+def tasks(taskname):
 	"""
-	Tasks for the interface in JSON format.
+	Retrieve tasks in JSON format.
+	@param taskname	name of the task set to load, one of: ["ba_tasks"]
 	"""
 	# tasks are saved in JSON format in a server-side file
-	file = open("./app/static/resources/tasks/ba_tasks.json", mode="r", encoding="utf-8")
-	tasks = file.read()
-	file.close()
-	return json.dumps(tasks)
+	savepath = app.config["TASKS"]
+	if taskname == "ba_tasks":
+		file = open(os.path.join(savepath, "ba_tasks.json"), mode="r", encoding="utf-8")
+		tasks = file.read()
+		file.close()
+		return json.dumps(tasks)
+	else: # Not Found
+		abort(404)
 
 @app.route("/save_log", methods=["POST"])
 def save_log():
 	if not request.data or not request.is_json:
-		return "1", 400
+		abort(400)
 	json_data = request.json
 	# as a filename that 
 	# (1) can not be manipulated by a client
@@ -34,7 +40,7 @@ def save_log():
 	# a simple timestamp is used
 	filename = str(time_ns()) + ".json"
 	# check if "data_collection" directory exists, create if necessary
-	savepath = os.path.join(app.config["DATA_COLLECTION"], "data_collection")
+	savepath = app.config["DATA_COLLECTION"]
 	if not os.path.exists(savepath):
 		os.mkdir(savepath)
 	file = open(os.path.join(savepath, filename), encoding="utf-8", mode="w")

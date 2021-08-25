@@ -13,7 +13,6 @@ $(document).ready(function () {
 			this._initSocketEvents();
 
 			// Configuration. Is assigned at startDrawing()
-			this.blockSize;		// block width/height in pixels
 			this.cols;			// canvas width in blocks
 			this.rows;			// canvas height in blocks
 
@@ -66,6 +65,10 @@ $(document).ready(function () {
 		get canvasHeight() {
 			console.log("get canvasHeight() at View: not implemented");
 			return undefined;
+		}
+		
+		get blockSize() {
+			return this.canvasWidth/this.cols;
 		}
 
 		// --- drawing functions --- //
@@ -155,7 +158,6 @@ $(document).ready(function () {
 		 */
 		_loadConfig(config) {
 			// Save all relevant values
-			this.blockSize = (this.canvasWidth / config.width);
 			this.cols = config.width;
 			this.rows = config.height;
 		}

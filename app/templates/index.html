@@ -7,7 +7,7 @@
 
 	<title>Collaborative reference in Pentomino</title>
 
-	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
 	<meta name="description" content="Modeling collaborative reference in a Pentomino domain using the GOLMI framework">
 	<meta name="author" content="Karla Friedrichs">
@@ -23,17 +23,15 @@
 		<div id="progress_bg">
 			<div id="progress_bar">0%</div>
 		</div>
-		<button id="start" autocomplete="off">Start</button>
-		<button id="stop" autocomplete="off">Stop</button>
-		<p id="instructions"></p>
+		<h5 id="instructions"></h5>
 	</div>
 	
 	<!-- The "viewport" id and three stacked canvases of the same size are needed to 
 		properly render using the LayerView class -->
-	<div id="viewport" style="height: 800px; width: 800px; padding: 10px; overflow: visible;">
-		<canvas id="background" width="800" height="800"></canvas>
-		<canvas id="objects" width="800" height="800"></canvas>
-		<canvas id="gripper" width="800" height="800"></canvas>
+	<div id="viewport" style="padding: 10px; overflow: visible;">
+		<canvas id="background" width="700" height="700"></canvas>
+		<canvas id="objects" width="700" height="700"></canvas>
+		<canvas id="gripper" width="700" height="700"></canvas>
 	</div>
 
 	<!-- dialogs -->

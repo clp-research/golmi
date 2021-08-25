@@ -18,7 +18,12 @@ $(document).ready(function () {
 	}
 	
 	// --- array helper functions --- //
-	document._randomFromArray = function(array) {
+	/**
+	 * Choose a random element from an array.
+	 * @param {array to select an element from} array
+	 * @return randomly selected element
+	 */
+	document.randomFromArray = function(array) {
 		return array[Math.floor(Math.random() * array.length)];
 	}
 

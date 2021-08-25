@@ -63,7 +63,7 @@ $(document).ready(function () {
 		}
 
 		/**
-		 * @return true if some task has been loaded already
+		 * @return true if some task (excluding training tasks) has been loaded already
 		 */
 		get hasStarted() {
 			return this.currentTask >= 0;
@@ -202,7 +202,7 @@ $(document).ready(function () {
 								// automatically ungrip the piece
 								this.socket.emit("grip", {"id": this.gripperId});
 								// tell the participant they have to try again
-								this._outputMsg("That was incorrect", "feedback");
+								this._queueMsg("That was incorrect", "feedback");
 								this.giveFeedback(true);
 							}
 						}
@@ -286,11 +286,11 @@ $(document).ready(function () {
 		 */
 		welcome() {
 			// welcome the participant
-			this._outputMsg("Welcome! I'm Matthew." +
+			this._queueMsg("Welcome! I'm Matthew." +
 				" Let's pick up some Pentomino pieces together." +
 				" The first task is just for warming up before we get to the study");
 			// explain the rules
-			this._outputMsg("Move around using the arrow keys" +
+			this._queueMsg("Move around using the arrow keys" +
 				" and select an object using space or enter." +
 				" You have 3 tries to get the correct piece");
 		}
@@ -299,7 +299,7 @@ $(document).ready(function () {
 		 * Thank the user for participating, etc. Dispatch a "tasksCompleted" event.
 		 */
 		goodbye() {
-			this._outputMsg("Thank you for participating. Have a nice day");
+			this._queueMsg("Thank you for participating. Have a nice day");
 			document.dispatchEvent(new Event("tasksCompleted"));
 		}
 
@@ -310,9 +310,7 @@ $(document).ready(function () {
 		giveInstruction() {
 			// use reference algorithm to generate an instruction, otherwise force feedback 
 			let instr = this.referenceAlg ? this.referenceAlg() : this.feedbackAlg(true);
-			this._outputMsg(instr, "instruction");
-			// give feedback after a set interval, if user doesn't react
-			this.startFeedbackTimeout(this.feedbackTimeInt);
+			this._queueMsg(instr, "instruction");
 		}
 
 		/**
@@ -324,9 +322,7 @@ $(document).ready(function () {
 			// try to contruct feedback - returns null if no feedback needed
 			let feedback = this.feedbackAlg(force);
 			if (feedback) {
-				this._outputMsg(feedback, "feedback");
-				// give feedback after a set interval, if user doesn't react
-				this.startFeedbackTimeout(this.feedbackTimeInt);
+				this._queueMsg(feedback, "feedback");
 			}
 		}
 
@@ -335,66 +331,101 @@ $(document).ready(function () {
 		 * @param {string, message to send} msg
 		 * @param {type of message, one of ["instruction", "feedback", "meta"], used for log event} type
 		 */
-		_outputMsg(msg, type="meta") {
-			// get the audio: file name is msg in lower case, without spaces and with an .mp3 extension
-//			let msgFile = `./resources/audio/${msg.toLowerCase().replaceAll(" ", "")}.mp3`;
-//			// for now use dummy audio
-//			//let msgFile = "./resources/audio/example_instruction.mp3";
-//			let audio = new Audio(msgFile);
-//			// keep the audio in the queue until it has been played, this way we have a
-//			// reference to it in case we need to abort playing
-//			this.msgQueue.push([msg, audio]);
-//
-//			// if there is no other message currently playing, start this message immediately
-//			if (this.msgQueue.length == 1) {
-//				// start playing the message as soon as audio is loaded sufficiently
-//				audio.oncanplaythrough = function() {
-//					// dispatch message event
-//					document.dispatchEvent(new CustomEvent("emitMessage", 
-//						{ detail: { "type": type, "content": msg, "duration": nextAudio.duration }}));
-//					$("#instructions").text(msg);
-//					audio.play();
-//				};
-//			}
-//			let thisArg = this;
-//			audio.onended = function() {
-//				// update the timestamp of the last message delivered to the user
-//				thisArg.lastMsg = Date.now();
-//				// delete old gripper trace and start tracking again from the recordedlast position
-//				thisArg.gripperTrace = thisArg.gripperTrace.slice(-1);
-//				// delete the audio from the queue
-//				thisArg.msgQueue = thisArg.msgQueue.slice(1);
-//				// start the next waiting message
-//				if (thisArg._hasPendingMsg()) {
-//					// start playing the message as soon as audio is loaded sufficiently
-//					let [nextMsg, nextAudio] = thisArg.msgQueue[0];
-//					if (nextAudio.readyState >= 2) {
-//						// dispatch message event
-//						document.dispatchEvent(new CustomEvent("emitMessage", 
-//							{ detail: { "type": type, "content": msg, "duration": nextAudio.duration }}));
-//						$("#instructions").text(nextMsg);
-//						nextAudio.play();
-//					} else {
-//						nextAudio.oncanplaythrough = function() {
-//							// dispatch message event
-//							document.dispatchEvent(new CustomEvent("emitMessage", 
-//								{ detail: { "type": type, "content": msg, "duration": nextAudio.duration }}));
-//							$("#instructions").text(nextMsg);
-//							nextAudio.play();
-//						};
-//					}
-//				}
-//			}
+		_queueMsg(msg, type="meta") {
+			// stop the feedback loop, will be restarted once queue is empty
+			this.stopFeedbackTimeout();
+			// get the audio filename: msg in lower case, without spaces or
+			// special characters and with an .mp3 extension
+			let msgFile = msg.toLowerCase();
+			for (let char of [" ", ",", ".", "'", "!", "?"]) {
+				msgFile = msgFile.replaceAll(char, "");
+			}
+			msgFile = "./static/resources/audio/" + msgFile + ".mp3";
+			let audio = new Audio(msgFile);
+			// keep the message in the queue until it has been delivered, this way we have a
+			// reference to it in case we need to abort playing
+			this.msgQueue.push([msg, audio, type]);
 			
-			// WITHOUT AUDIO:
-			// temporarily implemented as simply printing to the screen
-			// dispatch message event
-			document.dispatchEvent(new CustomEvent("emitMessage", 
-				{ detail: { "type": type, "content": msg }}));
-			$("#instructions").text(msg);
+			// if there is no other message currently playing, start this message immediately
+			if (this.msgQueue.length == 1) {
+				this._playNextMsg();
+			}
+		}
+		
+		/**
+		 * Stop any audio currently playing and delete waiting messages.
+		 */
+		abortAllMsgs() {
+			if (this._hasPendingMsg()) {
+				//TODO: make sure pending message msgEnded is run
+				this.msgQueue[0][1].pause();
+				this.msgQueue = new Array();
+			}
+		}
+		
+		_playNextMsg() {
+			if (this._hasPendingMsg()) {
+				// play the first message in the queue
+				let [nextMsg, nextAudio, nextType] = this.msgQueue[0];
+				// if an error occurs because the audio doesn't exist,
+				// at least display the message on the screen
+				if (nextAudio.error) {
+					this._displayNextMsg();
+					return;
+				}
+				nextAudio.onerror = () => this._displayNextMsg();
+				nextAudio.onended = () => this._msgEnded();
+				// dispatch event and play as soon as the audio is ready:
+				if (nextAudio.readyState >= 2) {
+						document.dispatchEvent(new CustomEvent("emitMessage",
+							{ detail: { "type": nextType, "content": nextMsg, "duration": nextAudio.duration }}));
+						nextAudio.play();
+				} else {
+					nextAudio.oncanplaythrough = function() {
+						// dispatch message event
+						document.dispatchEvent(new CustomEvent("emitMessage",
+							{ detail: { "type": nextType, "content": nextMsg, "duration": nextAudio.duration }}));
+						nextAudio.play();
+					};
+				}
+			}
+		}
+		
+		/**
+		 * Fallback method for message delivery in case audio can't be used.
+		 * Not very user-friendly.
+		 */
+		_displayNextMsg() {
+			if (this._hasPendingMsg()) {
+				let [nextMsg, nextAudio, nextType] = this.msgQueue[0];
+				// dispatch message event (with error tag)
+				document.dispatchEvent(new CustomEvent("emitMessage",
+					{ detail: { "type": nextType, "content": nextMsg, "error":true }}));
+				// print message to console and display in the interface
+				console.log(nextMsg);
+				$("#instructions").text(nextMsg);
+				// delete the message from the queue
+				this._msgEnded();
+				// continue with the next message
+				this._playNextMsg();
+			}
+		}
+		
+		_msgEnded() {
+			// update the timestamp of the last message delivered to the user
 			this.lastMsg = Date.now();
-			// delete old gripper trace and start tracking again from the recordedlast position
+			// delete old gripper trace and start tracking again from the recorded last position
 			this.gripperTrace = this.gripperTrace.slice(-1);
+			// delete the audio from the queue
+			let msgType = this.msgQueue[0][2];
+			this.msgQueue = this.msgQueue.slice(1);
+			// make sure any waiting message is played next
+			if (this._hasPendingMsg()) {
+				this._playNextMsg();
+			} else if (msgType != "meta") {
+				// (re)start the feedback loop if the delivered message was instruction or feedback
+				this.startFeedbackTimeout(this.feedbackTimeInt);
+			}
 		}
 		
 		/**
@@ -405,16 +436,6 @@ $(document).ready(function () {
 			return this.msgQueue.length > 0;
 		}
 		
-		/**
-		 * Stop any audio currently playing and delete waiting messages.
-		 */
-		abortAllMsgs() {
-			if (this._hasPendingMsg()) {
-				this.msgQueue[0][1].pause();
-				this.msgQueue = new Array();
-			}
-		}
-
 		/**
 		 * Give feedback to the user after some time has elapsed. Stop the loop using stopFeedbackTimeout()
 		 * @param {time to wait before feedback} delay
@@ -475,12 +496,13 @@ $(document).ready(function () {
 				// check if enough properties have been collected to rule out all contrast objects
 				if (C.size == 0) {
 					// TODO: always add "shape-letter" here or not?
-					return document._randomFromArray(this.instrStart) + " the " + this._verbalizeRE(L);
+					return document.randomFromArray(this.instrStart) + " the " + this._verbalizeRE(L);
 				}
 			}
 			// no expression that rules out all contrast objects was found
-			console.log("IA: failure")
-			return document._randomFromArray(this.instrStart) + " the " + this._verbalizeRE(L);
+			// original algorithm declares "IA: failure", but with the task at hand
+			// this case is expected. User is supported by feedback.
+			return document.randomFromArray(this.instrStart) + " the " + this._verbalizeRE(L);
 		}
 
 		/**
@@ -520,7 +542,7 @@ $(document).ready(function () {
 			let D = new this.Domain(new Set(Object.keys(this.currentObjects)), new Set(), 0, null);
 			// initially create a partition structure (all arguments are passed by reference)
 			this._createPartitions(D, T);
-			return document._randomFromArray(this.instrStart) + " " + this.generateRDT();
+			return document.randomFromArray(this.instrStart) + " " + this.generateRDT();
 		}
 
 		/**
@@ -875,10 +897,10 @@ $(document).ready(function () {
 			switch(this._lastDirectionToTarget()) {
 				case 1:
 					// moving towards target: positive feedback
-					return document._randomFromArray(posFeedback);
+					return document.randomFromArray(posFeedback);
 				case -1:
 					// moving away from target: negative feedback
-					return document._randomFromArray(negFeedback);
+					return document.randomFromArray(negFeedback);
 				case 0:
 					// no recent movement: repeat the RE
 					return this.referenceAlg();
@@ -1031,31 +1053,33 @@ $(document).ready(function () {
 
 			if ((justEnteredXRange && inYRange) || justEnteredYRange && inXRange) {
 				// instruct to grip if last user action brought the gripper close to the target
-				return document._randomFromArray(this.instrStart) + " this object";
+				//this.abortAllMsgs();
+				return document.randomFromArray(this.instrStart) + " this object";
 			} else if (justEnteredXRange) {
 				// x axis is now correct, y axis not: give instruction for y direction
-				return "Stop. " + document._randomFromArray(["Go", "Move"]) + " " + this._yFeedback();
+				return "Stop. " + document.randomFromArray(["Go", "Move"]) + " " + this._yFeedback();
 			} else if (justEnteredYRange) {
 				// x axis is now correct, y axis not: give instruction for y direction
-				return "Stop. " + document._randomFromArray(["Go", "Move"]) + " " + this._xFeedback();
+				return "Stop. " + document.randomFromArray(["Go", "Move"]) + " " + this._xFeedback();
 			} else if (force || this._needFeedback()) {
 				// special case: instruction follower is ready to grip
 				if (inXRange && inYRange) {
-					return document._randomFromArray(this.instrStart) + " this object";
+					//this.abortAllMsgs();
+					return document.randomFromArray(this.instrStart) + " this object";
 				}
 				// give feedback if user made some progress or was idle for some time
 				// check if the last step went into the right direction
 				switch(this._lastDirectionToTarget()) {
 					case 1:
 						// moving towards target: give positive feedback
-						return document._randomFromArray(["Yes, this direction", "Yes, there", "Yeah"]);
+						return document.randomFromArray(["Yes, this direction", "Yes, there", "Yeah"]);
 					case -1:
 						// moving away from target: negative feedback + adjustment
-						return "No. " + document._randomFromArray(["Go", "Move"]) + " " +
+						return "No. " + document.randomFromArray(["Go", "Move"]) + " " +
 							((inXRange) ? this._yFeedback() : this._xFeedback());
 					case 0:
 						// no recent movement: give new adjustment
-						return document._randomFromArray(["Go", "Move"]) + " " +
+						return document.randomFromArray(["Go", "Move"]) + " " +
 							((inXRange) ? this._yFeedback() : this._xFeedback());
 					}
 			} else {
