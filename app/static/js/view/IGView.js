@@ -203,6 +203,9 @@ $(document).ready(function () {
 								this.socket.emit("grip", {"id": this.gripperId});
 								// tell the participant they have to try again
 								this._queueMsg("That was incorrect", "feedback");
+								// empty the gripper trace. The user is obviously on
+								// the wrong track so we do a small reset
+								this.gripperTrace = this.gripperTrace.slice(-1);
 								this.giveFeedback(true);
 							}
 						}
@@ -266,6 +269,8 @@ $(document).ready(function () {
 			let task = this.nextTask;
 			// task is null if no tasks remain
 			if (!task) { return false; }
+			// empty the instruction display
+			this._emptyDisplay();
 			// reset the attempts
 			this.currentTries = 0;
 			// set the goal object
@@ -411,6 +416,13 @@ $(document).ready(function () {
 			}
 		}
 		
+		/**
+		 * Delete any message currently displayed in the interface
+		 */
+		_emptyDisplay() {
+			$("#instructions").text("");
+		}
+		
 		_msgEnded() {
 			// update the timestamp of the last message delivered to the user
 			this.lastMsg = Date.now();
@@ -470,7 +482,6 @@ $(document).ready(function () {
 		 */
 		IA() {
 			// preference order
-			// TODO: shapeAny
 			let P = this.properties;
 			// construct a contrast set: first copy all objects into a set
 			let C = new Set(Object.values(this.currentObjects));
@@ -599,15 +610,20 @@ $(document).ready(function () {
 			});
 
 			// increase the salience of the domain containing Gp
-			this.RS.forEach(domain => {
+			let foundMatchingDomain = false;
+			for (let domain of this.RS) {
 				if (document.setEquals(domain.ground, Gp)) {
 					domain.salience = this._getMaxSalience() + 1;
-					return;
+					foundMatchingDomain = true;
+					break;
 				}
-			});
-			// if no matching domain was found, create a new domain with maximum salience
-			let newD = new this.Domain(Gp, Sp, this._getMaxSalience()+1, this._defaultPartition(Gp));
-			this.RS.add(newD);
+			}
+			if (!foundMatchingDomain) {
+				// if no matching domain was found, create a new domain with maximum salience
+				let newD = new this.Domain(
+					Gp, Sp, this._getMaxSalience()+1, this._defaultPartition(Gp));
+				this.RS.add(newD);
+			}
 		}
 
 		/**
@@ -712,7 +728,6 @@ $(document).ready(function () {
 			return bestDomain;
 		}
 
-// TODO: something wrong here. For positive feedback, "the ..." gets selected where "this one" etc would be more appropriate..
 // The problem seems to be that i never update the focus of domains ...
 		/**
 		 * Find an underspecified domain matching the given domain
@@ -727,16 +742,20 @@ $(document).ready(function () {
 			// the cases listed in Table 1 of the paper are checked in decreasing Giveness
 			if (document.setEquals(D.partition[2], t)) {
 				// case 1 and 2: Focus is {currentTarget}
-				// TODO: what is the difference? with the best domain, msd(D) is always true?
 				return plural ? "these ones" : "this one";
 			}
 
-			// find the partition in d that contains t
+			// if there is a constrasting attribute (i.e. the partition was
+			// NOT constructed using "id"), find the partition in d that contains t
 			let tPartition;
-			for (let partition of Object.values(D.partition[1])) {
-				if (document.isSuperset(partition, t)) {
-					tPartition = partition;
-					break;
+			if (D.partition[0] == "id") {
+				tPartition = D.ground;
+			} else {
+				for (let partition of Object.values(D.partition[1])) {
+					if (document.isSuperset(partition, t)) {
+						tPartition = partition;
+						break;
+					}
 				}
 			}
 
@@ -749,14 +768,16 @@ $(document).ready(function () {
 				return "the " + this._verbalizeRE(S, plural);
 			} else if (D.partition[2].size > 0) {
 				// focus is not empty
-				// two cases: either target is only partition out of focus or multiple particitions are out of focus
+				// two cases: either target is only partition out of focus
+				// or multiple partitions are out of focus
 				for (let partition of Object.values(D.partition[1])) {
-					D.partition[2].forEach(partitionInFocus => {
-						// check whether the partition is NOT in focus AND NOT the target set -> case 6 / 7
+					for (let partitionInFocus of D.partition[2]) {
+						// check whether the partition is NOT in focus AND NOT the target set
+						// -> case 6 / 7
 						if (!document.setEquals(partition, partitionInFocus) && !document.setEquals(partition, t)) {
 							return "another one";
 						}
-					});
+					}
 				}
 				// no 'out of focus' partition except t was found: case 4/5
 				return "the other one";
@@ -801,24 +822,24 @@ $(document).ready(function () {
 				case "hpos":
 					// horizontal position relative to the gripper
 					if (!this.getGripperX()) {
-						return null;
+						return "";
 					} else if (obj.x + obj.width <= this.getGripperX()) {
 						return "left of";
 					} else if (obj.x >= this.getGripperX()) {
 						return "right of";
 					} else {
-						return null;
+						return "";
 					}
 				case "vpos":
 					// vertical position relative to the gripper
 					if (!this.getGripperY()) {
-						return null;
+						return "";
 					} else if (obj.y + obj.height <= this.getGripperY()) {
 						return "above";
 					} else if (obj.y >= this.getGripperY()) {
 						return "below";
 					} else {
-						return null;
+						return "";
 					}
 				default:
 					console.log(`Error at _findValue(): property ${prop} not implemented`);
@@ -858,7 +879,8 @@ $(document).ready(function () {
 			// if two types of locations are used, connect them 
 			let conj = location && (relLocationV || relLocationH) ? "of the board and " : "";
 			// add the values in a natural-sounding order
-			return `${color} ${shape}${plural ? "s" : ""} ${location} ${conj}${relLocationV} ${relLocationH}${(relLocationH || relLocationV) ? " the gripper" : ""}`;
+			return `${color} ${shape}${plural ? "s" : ""} ${location}` +
+			 ` ${conj}${relLocationV} ${relLocationH}${(relLocationH || relLocationV) ? " the gripper" : ""}`;
 		}
 
 		/**
@@ -891,7 +913,7 @@ $(document).ready(function () {
 				return null;
 			}
 			let negFeedback = ["Not this direction", "Not there", "No"];
-			let posFeedback = ["Yes, this direction", "Yes, there", "Yeah"];
+			let posFeedback = ["Yes, this direction", "Yes", "Yeah", "Yes, this way"];
 			// determine what kind of feedback to give
 			let type;
 			switch(this._lastDirectionToTarget()) {
@@ -1072,7 +1094,7 @@ $(document).ready(function () {
 				switch(this._lastDirectionToTarget()) {
 					case 1:
 						// moving towards target: give positive feedback
-						return document.randomFromArray(["Yes, this direction", "Yes, there", "Yeah"]);
+						return document.randomFromArray(["Yes, this direction", "Yes", "Yeah", "Yes, this way"]);
 					case -1:
 						// moving away from target: negative feedback + adjustment
 						return "No. " + document.randomFromArray(["Go", "Move"]) + " " +

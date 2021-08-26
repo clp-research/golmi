@@ -52,13 +52,16 @@
 	<dialog id="audiotest">
 		<h2>Can you hear Mathew?</h2>
 		<p>You will need to follow spoken instructions.</p>
-		<p><strong>Click play to listen to the following message and type what Matthew said in the text box below.</strong></p>
-		<audio controls src="{{ url_for('static', filename='resources/audio/audiotest.mp3') }}">
+		<p><strong>Type what Matthew said in the text box below. He will repeat the message after a few seconds.</strong></p>
+		<audio id="test_audio" src="{{ url_for('static', filename='resources/audio/audiotest.mp3') }}">
 			Your current browser does not support the <code>audio</code> element. If you can, you may want to try a different browser.
 		</audio>
 		<p></p>
 		<label for="transcript">What did Matthew say?</label><input id="transcript" size="30" name="transcript"/>
-		<p>Unfortunately, if you can't hear the audio, you cannot take part in this study. You can also try another browser: Firefox should work.</p>
+		<p>If you don't hear anything, automatic playing of audio might be disabled in your browser. Try enabling it:</p>
+		<p><strong>Firefox:</strong>: Type about:preferences#privacy in the address bar, go to Permissions (Berechtigungen) and change the Autoplay (automatische Wiedergabe) settings to allow autoplay.</p>
+		<p><strong>Safari:</strong>: Click on Safari -> Preferences for this Website... (Einstellungen für diese Website...) and activate Autoplay</p>
+		<p>If the problem persists, try another browser.</p>
 		<button id="close_audiotest">Continue</button>
 	</dialog>
 	<!-- Goodbye dialog -->

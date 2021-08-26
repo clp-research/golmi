@@ -63,7 +63,7 @@ $(document).ready(function () {
 	const algorithms = ["IA", "RDT", "SE"];
 	const randomAlg = document.randomFromArray(algorithms);
 	// log what algorithm has been used
-	//const randomAlg = "SE";
+	//const randomAlg = "IA";
 	logView.addData("algorithm", randomAlg);
 	const feedbackTimeInt = 10000;
 	const feedbackDistInt = 4;
@@ -108,9 +108,14 @@ $(document).ready(function () {
 	$("#close_welcome").click(() => {
 		welcome.close();
 		audiotest.showModal();
+		// start the looped test audio
+		$("#test_audio").attr("loop", true);
+		$("#test_audio")[0].play();
 	});
 
 	$("#close_audiotest").click(() => {
+		// stop the looped test audio
+		$("#test_audio").attr("loop", false);
 		// save the user's audio transcript
 		logView.addData("audiotest", encodeURIComponent($("#transcript").val()));
 		audiotest.close();
