@@ -4,7 +4,8 @@ $(document).ready(function () {
 
 	// --- set up the APIs --- //
 	// Define the API URLs
-	const MODEL	= "127.0.0.1:5000";
+	const MODEL	= document.domain + ':' + location.port;
+	console.log(MODEL)
 
 	// model configuration
 	const CONFIG = {
