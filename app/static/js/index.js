@@ -16,7 +16,7 @@ $(document).ready(function () {
 	
 	// --- create a socket --- //
 	// don't connect yet
-	var socket = io("http://" + MODEL, { autoConnect: false, auth: "GiveMeTheBigBluePasswordOnTheLeft" });
+	var socket = io("https://" + MODEL, { autoConnect: false, auth: "GiveMeTheBigBluePasswordOnTheLeft" });
 	// debug: print any messages to the console
 	localStorage.debug = 'socket.io-client:socket';
 
