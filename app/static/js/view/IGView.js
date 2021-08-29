@@ -791,7 +791,6 @@ $(document).ready(function () {
 
 		_findValue(obj, prop) {
 			switch(prop) {
-				//TODO: shapeAny
 				case "shapeLetter":
 					return obj.type;
 				case "color":

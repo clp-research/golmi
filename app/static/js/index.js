@@ -4,8 +4,7 @@ $(document).ready(function () {
 
 	// --- set up the APIs --- //
 	// Define the API URLs
-	const MODEL	= document.domain + ':' + location.port;
-	console.log(MODEL)
+	const MODEL	= window.location.protocol + "//" +document.domain + ':' + location.port;
 
 	// model configuration
 	const CONFIG = {
@@ -16,7 +15,7 @@ $(document).ready(function () {
 	
 	// --- create a socket --- //
 	// don't connect yet
-	var socket = io("https://" + MODEL, { autoConnect: false, auth: "GiveMeTheBigBluePasswordOnTheLeft" });
+	var socket = io(MODEL, { autoConnect: false, auth: "GiveMeTheBigBluePasswordOnTheLeft" });
 	// debug: print any messages to the console
 	localStorage.debug = 'socket.io-client:socket';
 
