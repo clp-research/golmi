@@ -61,9 +61,9 @@ $(document).ready(function () {
 	// --- tasks and instruction giving view --- //
 	// randomly select one of the algorithms
 	const algorithms = ["IA", "RDT", "SE"];
-	const randomAlg = document.randomFromArray(algorithms);
+	//const randomAlg = document.randomFromArray(algorithms);
 	// log what algorithm has been used
-	//const randomAlg = "IA";
+	const randomAlg = "RDT";
 	logView.addData("algorithm", randomAlg);
 	const feedbackTimeInt = 10000;
 	const feedbackDistInt = 4;
@@ -109,13 +109,11 @@ $(document).ready(function () {
 		welcome.close();
 		audiotest.showModal();
 		// start the looped test audio
-		$("#test_audio").attr("loop", true);
-		$("#test_audio")[0].play();
+		startAudiotest();
 	});
 
 	$("#close_audiotest").click(() => {
-		// stop the looped test audio
-		$("#test_audio").attr("loop", false);
+		stopAudiotest();
 		// save the user's audio transcript
 		logView.addData("audiotest", encodeURIComponent($("#transcript").val()));
 		audiotest.close();
@@ -125,14 +123,18 @@ $(document).ready(function () {
 	$("#close_questionnaire").click(() => {
 		// get all the form data and send it to the logView
 		let freeformData = ["age", "gender", "education", "language", "comments"];
+		let checkboxData = ["pentoVeteran"];
 		let scaleData = ["fluency", "anthropomorphism1", "anthropomorphism2", "anthropomorphism3",
 			"likeability1", "likeability2", "likeability3", "intelligence1", "intelligence2", "intelligence3"];
 		freeformData.forEach(dataId => {
 			logView.addData(dataId, encodeURIComponent($("#"+dataId).val()));
-		})
+		});
+		checkboxData.forEach(dataId => {
+			logView.addData(dataId, $("#"+dataId).is(":checked"));
+		});
 		scaleData.forEach(dataId => {
 			logView.addData(dataId, $("#"+dataId).val());
-		})
+		});
 		// save all collected data to the server
 		logView.sendData();
 		// show a 'thank you' dialog to the participant
@@ -152,7 +154,7 @@ $(document).ready(function () {
 			// show progress to user. first task is not counted because
 			// it is a training example here
 			updateProgressBar(Math.floor(
-				100 * instructionGiver.currentTask / (Object.keys(tasks).length-1)
+				100 * ((instructionGiver.currentTask+1) / (Object.keys(tasks).length-1))
 			));
 		}
 	});
@@ -185,7 +187,28 @@ $(document).ready(function () {
 	dialogPolyfill.registerDialog(error);
 	dialogPolyfill.registerDialog(questionnaire);
 	
-	// --- style updating functions --- //
+	// --- helper functions --- //
+	
+	var testSample;
+	/**
+	 * Start playing an audiosample in a loop similarly to how
+	 * the IGView will play instructions later.
+	 */
+	function startAudiotest() {
+		testSample = new Audio("./static/resources/audio/audiotest.mp3");
+		testSample.loop = true;
+		testSample.play();
+	}
+	
+	/**
+	 * Stop the looped test audio.
+	 */
+	function stopAudiotest() {
+		if (testSample) {
+			testSample.pause();
+		}
+	}
+	
 	/**
 	 * Updates the displayed progress bar
 	 * @param {Completion in percent (int)} completion

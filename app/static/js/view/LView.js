@@ -12,6 +12,8 @@ $(document).ready(function () {
 			this.data = {"log": new Array()};
 			this.logFullState = logFullState;
 			this.startTime;
+			// if used, only log updates for this gripper
+			this.grId;
 			// only used if logFullState is true
 			this.currentObjs = new Object();
 			this.currentGrippers = new Object();
@@ -48,6 +50,9 @@ $(document).ready(function () {
 		 * initialization, the view logs the client-server communication.
 		 */
 		_initSocketEvents() {
+			this.socket.on("attach_gripper", (assignedId) => {
+				this.grId = assignedId;
+			});
 			this.socket.on("update_state", (state) => {
 				// Assumes the logging starts at first 'update_state' event.
 				let timeOffset;
@@ -66,9 +71,11 @@ $(document).ready(function () {
 					this.currentObjs = state["objs"];
 					this.currentGrippers = state["grippers"];
 					this._addSnapshot(timeOffset, this._getFullState());
-				} else {
-					this._addSnapshot(timeOffset, state);
 				}
+				// uncomment to log the state
+				//else {
+				//	this._addSnapshot(timeOffset, state);
+				//}
 			})
 			this.socket.on("update_grippers", (grippers) => {
 				if (this.startTime) {
@@ -77,7 +84,21 @@ $(document).ready(function () {
 						this.currentGrippers = grippers;
 						this._addSnapshot(timeOffset, this._getFullState());
 					} else {
-						this._addSnapshot(timeOffset, {"gripper": grippers});
+						// reduce the log size if a gripper id is given
+						if (this.grId && grippers[this.grId]) {
+							if (grippers[this.grId].gripped) {
+								// log the id of the gripped object
+								this._addSnapshot(timeOffset, {"gripper": {
+									"gripped": Object.keys(grippers[this.grId].gripped)[0]}});
+							} else {
+								this._addSnapshot(timeOffset, {"gripper": {
+									"x": grippers[this.grId]["x"],
+									"y": grippers[this.grId]["y"]
+								}});
+							}
+						} else {
+							this._addSnapshot(timeOffset, {"gripper": grippers});
+						}
 					}
 				}
 				
@@ -88,9 +109,11 @@ $(document).ready(function () {
 					if (this.logFullState) {
 						this.currentObjs = objs;
 						this._addSnapshot(timeOffset, this._getFullState());
-					} else {
-						this._addSnapshot(timeOffset, {"objs": objs});
 					}
+					// uncomment this to log object changes
+					//else {
+					//	this._addSnapshot(timeOffset, {"objs": objs});
+					//}
 				}
 			});
 			this.socket.on("update_config", (config) => {

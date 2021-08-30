@@ -53,9 +53,6 @@
 		<h2>Can you hear Matthew?</h2>
 		<p>You will need to follow spoken instructions.</p>
 		<p><strong>Type what Matthew said in the text box below. He will repeat the message after a few seconds.</strong></p>
-		<audio id="test_audio" src="{{ url_for('static', filename='resources/audio/audiotest.mp3') }}">
-			Your current browser does not support the <code>audio</code> element. If you can, you may want to try a different browser.
-		</audio>
 		<p></p>
 		<label for="transcript">What did Matthew say?</label><input id="transcript" size="30" name="transcript"/>
 		<p>If you don't hear anything, automatic playing of audio might be disabled in your browser. Try enabling it:</p>
@@ -87,6 +84,8 @@
 		<label for="education">Highest level of completed education:</label><input id="education" name="education"><br>
 		<!-- Language -->
 		<label for="language">Native language:</label><input id="language" name="language"><br>
+		<!-- Played Pentomino before -->
+		<input type="checkbox" id="pentoVeteran"><label for="pentoVeteran">I have played Pentomino before</label>
 		<!-- Fluency -->
 		<p>How fluent are you in English?</p>
 		<label for="fluency">limited fluency</label>
