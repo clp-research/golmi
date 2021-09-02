@@ -1,82 +1,168 @@
-Select the purple X
-Take the purple X
-Get the purple X
-Look for the purple X
-Select the purple Y in the left
-Take the purple Y in the left
-Get the purple Y in the left
-Look for the purple Y in the left
-Take the blue W in the bottom
-Select the blue W in the bottom
-Get the blue W in the bottom
-Take a blue W in the bottom
-Select a blue W in the bottom
+Get a blue N in the top right
 Get a blue W in the bottom
-Look for a blue W in the bottom
-Yeah. the blue W in the bottom
-Take the red T
-Select the red T
-Get the red T
-Look for the red T
-Take the green piece
-Select the green piece
-Get the green piece
-Look for the green piece
-Take the yellow P
-Select the yellow P
-Get the yellow P
-Look for the yellow P
-Take the gray I in the bottom right
-Select the gray I in the bottom right
-Get the gray I in the bottom right
-Take a gray I in the bottom right
-Select a gray I in the bottom right
+Get a blue W in the bottom  
 Get a gray I in the bottom right
-Look for a gray I in the bottom right
-Yeah. a gray I in the bottom right of the board and below right of the gripper
-Take a gray I in the bottom right
-Look for a gray I in the bottom right
-Yeah. a gray I in the bottom right of the board and below right of the gripper
-Yeah. a gray I  below right of the gripper
-Look for a gray I
-Yeah. the gray I  below right of the gripper
-Yeah. the gray piece   right of the gripper
-Yeah. the gray piece
-Yeah. a gray I  below  the gripper
-Yeah. the gray I  below left of the gripper
-Yeah. a gray piece   left of the gripper
-Look for a gray piece
-Yeah. a gray piece  above left of the gripper
-Yeah. a  piece  above left of the gripper
-Yeah. a  piece  above  the gripper
-Yeah. a gray piece  above right of the gripper
-Yeah. the gray piece   right of the gripper
-Yeah. the gray piece
-Look for a gray piece
-Yeah. a gray piece  below left of the gripper
-Yeah. a  piece left of the gripper
-Look for a gray piece
-Take the red U in the bottom left
-Select the red U in the bottom left
-Get the red U in the bottom left
-Look for
-Take the blue L
-Select the blue L
+Get a green Z in the bottom left
+Get a green Z in the bottom left  
+Get a red U in the bottom left
+Get a red U in the bottom left  
+Get a red X in the bottom
 Get the blue L
-Look for
-Take the red F in the bottom right
-Select the red F in the bottom right
-Get the red F in the bottom right
-Look for
-Take the blue N in the top right
-Select the blue N in the top right
 Get the blue N in the top right
-Look for
-Take the red X in the bottom
-Select the red X in the bottom
-Get the red X in the bottom
-Look for
-Take the green Z in the bottom left
-Select the green Z in the bottom left
+Get the blue W in the bottom
+Get the gray I in the bottom right
 Get the green Z in the bottom left
-Look for
+Get the green piece
+Get the purple X
+Get the purple Y in the left
+Get the red F in the bottom right
+Get the red T
+Get the red U in the bottom left
+Get the red X in the bottom
+Get the yellow P
+Look for a blue N in the top right
+Look for a blue N in the top right  
+Look for a blue W in the bottom
+Look for a blue W in the bottom  
+Look for a gray I in the bottom right
+Look for a gray I in the bottom right  
+Look for a gray piece
+Look for a green Z in the bottom left
+Look for a green Z in the bottom left 
+Look for a green Z in the bottom left  
+Look for a red U in the bottom left
+Look for a red U in the bottom left  
+Look for a red X in the bottom
+Look for a red X in the bottom  
+Look for the blue L
+Look for the green piece
+Look for the purple X
+Look for the purple X   
+Look for the purple Y in the left
+Look for the purple Y in the left  
+Look for the red F in the bottom right
+Look for the red F in the bottom right  
+Look for the red T
+Look for the red T   
+Look for the yellow P
+Look for the yellow P   
+Not this one. Look for another one 
+Select a blue N in the top right
+Select a blue N in the top right  
+Select a blue W in the bottom
+Select a gray I in the bottom right
+Select a green Z in the bottom left
+Select a red U in the bottom left
+Select a red X in the bottom
+Select the blue L
+Select the blue N in the top right
+Select the blue W in the bottom
+Select the gray I in the bottom right
+Select the green Z in the bottom left
+Select the green piece
+Select the purple X
+Select the purple Y in the left
+Select the red F in the bottom right
+Select the red T
+Select the red U in the bottom left
+Select the red X in the bottom
+Select the yellow P
+Take a blue N in the top right
+Take a blue W in the bottom
+Take a gray I in the bottom right
+Take a gray I in the bottom right  
+Take a green Z in the bottom left
+Take a red U in the bottom left
+Take a red X in the bottom
+Take a red X in the bottom  
+Take the blue L
+Take the blue N in the top right
+Take the blue W in the bottom
+Take the gray I in the bottom right
+Take the green Z in the bottom left
+Take the green piece
+Take the purple X
+Take the purple Y in the left
+Take the red F in the bottom right
+Take the red T
+Take the red U in the bottom left
+Take the red X in the bottom
+Take the yellow P
+Yeah. a  piece left of the gripper
+Yeah. a blue N in the top right of the board and left of the gripper 
+Yeah. a blue N in the top right of the board and right of the gripper 
+Yeah. a blue N in the top right of the board and above the gripper
+Yeah. a blue N in the top right of the board and below the gripper 
+Yeah. a blue N in the top right of the board and above left of the gripper 
+Yeah. a blue N in the top right of the board and above right of the gripper 
+Yeah. a blue N in the top right of the board and below left of the gripper 
+Yeah. a blue N in the top right of the board and below right of the gripper 
+Yeah. a blue N in the top right
+Yeah. a blue W in the bottom of the board and  left of the gripper 
+Yeah. a blue W in the bottom of the board and  right of the gripper 
+Yeah. a blue W in the bottom of the board and  below the gripper 
+Yeah. a blue W in the bottom of the board and  above the gripper 
+Yeah. a blue W in the bottom of the board and above right of the gripper
+Yeah. a blue W in the bottom of the board and above left of the gripper 
+Yeah. a blue W in the bottom of the board and below left of the gripper 
+Yeah. a blue W in the bottom of the board and below right of the gripper 
+Yeah. a gray I in the bottom right of the board and above  the gripper 
+Yeah. a gray I in the bottom right of the board and above right of the gripper 
+Yeah. a gray I in the bottom right of the board and above left of the gripper 
+Yeah. a gray I in the bottom right of the board and below right of the gripper
+Yeah. a gray I in the bottom right of the board and below left of the gripper 
+Yeah. a gray piece  below left of the gripper
+Yeah. a green Z in the bottom left of the board and  left of the gripper 
+Yeah. a green Z in the bottom left of the board and above  the gripper 
+Yeah. a green Z in the bottom left of the board and above left of the gripper 
+Yeah. a green Z in the bottom left of the board and below  the gripper 
+Yeah. a green Z in the bottom left of the board and below left of the gripper 
+Yeah. a red U in the bottom left of the board and  left of the gripper
+Yeah. a red U in the bottom left of the board and  right of the gripper
+Yeah. a red U in the bottom left of the board and below the gripper
+Yeah. a red U in the bottom left of the board and above the gripper  
+Yeah. a red U in the bottom left of the board and above left of the gripper 
+Yeah. a red U in the bottom left of the board and below left of the gripper
+Yeah. a red U in the bottom left of the board and above right of the gripper 
+Yeah. a red U in the bottom left of the board and below right of the gripper 
+Yeah. a red U in the bottom left 
+Yeah. a red X in the bottom of the board and above  the gripper 
+Yeah. a red X in the bottom of the board and above left of the gripper 
+Yeah. a red X in the bottom of the board and above right of the gripper 
+Yeah. a red X in the bottom of the board and below  the gripper 
+Yeah. a red X in the bottom of the board and below left of the gripper 
+Yeah. a red X in the bottom of the board and below right of the gripper 
+Yeah. the blue N in the top right  
+Yeah. the blue N in the top right of the board and  left of the gripper 
+Yeah. the blue N in the top right of the board and  right of the gripper 
+Yeah. the blue N in the top right of the board and above  the gripper 
+Yeah. the blue N in the top right of the board and above left of the gripper 
+Yeah. the blue N in the top right of the board and above right of the gripper 
+Yeah. the blue W in the bottom
+Yeah. a blue W in the bottom  
+Yeah. the blue W in the bottom of the board and  left of the gripper 
+Yeah. the gray I in the bottom right  
+Yeah. the gray I in the bottom right of the board and  left of the gripper 
+Yeah. the gray I in the bottom right of the board and  right of the gripper 
+Yeah. the gray I in the bottom right of the board and below left of the gripper 
+Yeah. the gray I in the bottom right of the board and below right of the gripper 
+Yeah. the green Z in the bottom left  
+Yeah. the green Z in the bottom left of the board and  left of the gripper 
+Yeah. the green Z in the bottom left of the board and right of the gripper 
+Yeah. the green Z in the bottom left of the board and above left of the gripper 
+Yeah. the green Z in the bottom left of the board and above right of the gripper 
+Yeah. the red U in the bottom left  
+Yeah. the red U in the bottom left of the board and  left of the gripper 
+Yeah. the red U in the bottom left of the board and  right of the gripper
+Yeah. the red U in the bottom left of the board and below the gripper
+Yeah. the red U in the bottom left of the board and above the gripper  
+Yeah. the red U in the bottom left of the board and below left of the gripper 
+Yeah. the red U in the bottom left of the board and below right of the gripper 
+Yeah. the red X in the bottom  
+Yeah. the red X in the bottom of the board and  left of the gripper 
+Yeah. the red X in the bottom of the board and  right of the gripper 
+Yeah. the red X in the bottom of the board and above  the gripper 
+Yeah. the red X in the bottom of the board and above left of the gripper 
+Yeah. the red X in the bottom of the board and above right of the gripper 
+Yeah. a gray I in the bottom right of the board and below  the gripper
+Yeah. the gray I in the bottom right of the board and below  the gripper
