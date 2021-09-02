@@ -30,16 +30,17 @@ $(document).ready(function () {
 			this.setAlgorithms(referenceAlg);
 
 			// instruction parameters
-			this.instrStart		= ["Pick", "Take", "Select", "Get", "Grip"];
-			this.generalTypes	= ["object", "shape", "piece"];
-			this.properties		= ["shapeLetter", "color", "location"];
+			this.instrStart		= ["Take", "Select", "Get"];
+			this.generalTypes	= ["piece"];
+			this.properties		= ["color", "shape", "posRelBoard"];
+			this.trProperties	= ["hPosRelGr", "vPosRelGr"];
 
 			// feedback parameters
 			this.feedbackTimeInt	= feedbackTimeInt;
 			this.feedbackDistInt	= feedbackDistInt;
 			this.lastMsg			= 0; // timestamp of the last message given to the user
 			this.targetCoords; // target object coordinates (center of object)
-			this.gripperTrace		= new Array(); // track locations since last message: [timestamp, x, y]
+			this.gripperTrace		= new Array(); // track positions since last message: [timestamp, x, y]
 			this.feedbackTimeoutId; // stores timeout id to manage timed feedback
 			
 			this.msgQueue			= new Array(); // audios currently playing or waiting to be played
@@ -131,7 +132,7 @@ $(document).ready(function () {
 			if (this.gripperTrace.length < -stepsBack) {
 				return undefined;
 			} else {
-				// location added last
+				// position added last
 				return this.gripperTrace[this.gripperTrace.length+stepsBack][1];
 			}
 		}
@@ -144,7 +145,7 @@ $(document).ready(function () {
 			if (this.gripperTrace.length < -stepsBack) {
 				return undefined;
 			} else {
-				// location added last
+				// position added last
 				return this.gripperTrace[this.gripperTrace.length+stepsBack][2];
 			}
 		}
@@ -234,7 +235,8 @@ $(document).ready(function () {
 		 */
 		start() {
 			// introduction
-			this.welcome();
+			//TODO
+			//this.welcome();
 			// start the task flow
 			this.currentTask = -2;
 			if (!this._loadTask()) {
@@ -347,6 +349,8 @@ $(document).ready(function () {
 			}
 			msgFile = "./static/resources/audio/" + msgFile + ".mp3";
 			let audio = new Audio(msgFile);
+			// Safari browser needs this line
+			audio.load();
 			// keep the message in the queue until it has been delivered, this way we have a
 			// reference to it in case we need to abort playing
 			this.msgQueue.push([msg, audio, type]);
@@ -506,7 +510,6 @@ $(document).ready(function () {
 
 				// check if enough properties have been collected to rule out all contrast objects
 				if (C.size == 0) {
-					// TODO: always add "shape-letter" here or not?
 					return document.randomFromArray(this.instrStart) + " the " + this._verbalizeRE(L);
 				}
 			}
@@ -585,8 +588,9 @@ $(document).ready(function () {
 		}
 
 		/**
-		 * Restructure the referential space after a reference within D, using the properties of S,
-		 * has been made
+		 * Restructure the referential space after a reference within D,
+		 * using only the persistent properties of S. Transient properties
+		 * and all domains and partitions generated using them are deleted.
 		 * @param {domain} D
 		 * @param {set of property-value pairs} S
 		 */
@@ -655,8 +659,8 @@ $(document).ready(function () {
 							let newSemantic = new Set([[T[0], key]]);
 							D.semanticDesc.forEach(desc => newSemantic.add(desc));
 							// create the new domain and its partitions
-							// the paper asks to create a default partition here, but this is not necessary
-							// unless no more properties are left
+							// the paper asks to create a default partition here, but this
+							// is not necessary unless no more properties are left
 							let newD = new this.Domain(P[key], newSemantic, D.salience, null);
 							this._createPartitions(newD, T.slice(1));
 						}
@@ -684,7 +688,7 @@ $(document).ready(function () {
 		/**
 		 * Create a partition of a set of objects with respect to some property.
 		 * In other words, create the quotient set of 'ground' by 'property'.
-		 * @param {SET? of objects to divide} ground
+		 * @param {set of objects to divide} ground
 		 * @param {property name for division: each object in 'ground' should have this property} property
 		 * @return The partition is realized as an object here, each value found for property maps to a set of objects
 		 */
@@ -728,7 +732,6 @@ $(document).ready(function () {
 			return bestDomain;
 		}
 
-// The problem seems to be that i never update the focus of domains ...
 		/**
 		 * Find an underspecified domain matching the given domain
 		 * Fig. 2 line 3 / underspecified domains defined in Table 1
@@ -791,12 +794,11 @@ $(document).ready(function () {
 
 		_findValue(obj, prop) {
 			switch(prop) {
-				//TODO: shapeAny
-				case "shapeLetter":
+				case "shape":
 					return obj.type;
 				case "color":
 					return obj.color;
-				case "location": 
+				case "posRelBoard":
 					// describe top/bottom position
 					let val = "";
 					// the x / y properties of objects describe the upper left corner
@@ -819,7 +821,7 @@ $(document).ready(function () {
 						val = "center";
 					}
 					return val;
-				case "hpos":
+				case "hPosRelGr":
 					// horizontal position relative to the gripper
 					if (!this.getGripperX()) {
 						return "";
@@ -830,7 +832,7 @@ $(document).ready(function () {
 					} else {
 						return "";
 					}
-				case "vpos":
+				case "vPosRelGr":
 					// vertical position relative to the gripper
 					if (!this.getGripperY()) {
 						return "";
@@ -849,38 +851,41 @@ $(document).ready(function () {
 
 		/**
 		 * Construct a natural language description from collected property-value pairs.
-		 * @param {object mapping property names [shapeLetter, color, location] to values} propVals
+		 * @param {object mapping property names to values} propVals
 		 * @param {optional: pass true to produce a plural form, default: false}
 		 * @return string containing the values from propVals
 		 */
 		_verbalizeRE(propVals, plural=false) {
 			// property "id" is simply ignored
-			let color = "", shape = "", location = "", relLocationH = "", relLocationV = "";
+			let color = "", shape = "", posRelBoard = "", hPosRelGr = "", vPosRelGr = "";
 			propVals.forEach(([prop, val]) => {
 				switch(prop) {
 					case "color":
 						color = val;
 						break;
-					case "shapeLetter":
+					case "shape":
 						shape = val;
 						break;
-					case "location":
-						location = "in the " + val;
+					case "posRelBoard":
+						posRelBoard = "in the " + val;
 						break;
-					case "hpos":
-						relLocationH = val;
+					case "hPosRelGr":
+						hPosRelGr = val;
 						break;
-					case "vpos":
-						relLocationV = val;
+					case "vPosRelGr":
+						vPosRelGr = val;
 				}
 			});
 			// if no shape given, use a generic noun
 			shape = shape ? shape : this.generalTypes[Math.floor(Math.random() * this.generalTypes.length)];
-			// if two types of locations are used, connect them 
-			let conj = location && (relLocationV || relLocationH) ? "of the board and " : "";
+			// special case: hpos and vpos are the only properties, but the gripper
+			// is right above the piece so both have the value ""
+			
+			// if two types of positions are used, connect them
+			let conj = posRelBoard && (vPosRelGr || hPosRelGr) ? "of the board and " : "";
 			// add the values in a natural-sounding order
-			return `${color} ${shape}${plural ? "s" : ""} ${location}` +
-			 ` ${conj}${relLocationV} ${relLocationH}${(relLocationH || relLocationV) ? " the gripper" : ""}`;
+			return `${color} ${shape}${plural ? "s" : ""} ${posRelBoard}` +
+				` ${conj}${vPosRelGr} ${hPosRelGr}${(hPosRelGr || vPosRelGr) ? " the gripper" : ""}`;
 		}
 
 		/**
@@ -975,10 +980,15 @@ $(document).ready(function () {
 			D.partition[2] = F;
 			if (F.has(this.currentTarget)) {
 				if (F.size > 1) {
-					let newD = new this.Domain(F, D.semanticDesc, D.salience+1, null);
-					this._createPartitions(newD, ["hpos", "vpos"]);
+					let newD = new this.Domain(F, new Set(D.semanticDesc), D.salience+1, null);
+					this._createPartitions(newD, this.trProperties);
+					let feedback = "Yeah. " + this.generateRDT();
+					// delete the domains that use transient properties
+					this._removeTransientDomains();
+					return feedback;
+				} else {
+					return "Yeah. " + this.generateRDT();
 				}
-				return "Yeah. " + this.generateRDT();
 			} else {
 				if (F.size == 0) {
 					return "Look for " + this.generateRDT();
@@ -1004,7 +1014,7 @@ $(document).ready(function () {
 			} 
 
 			let inFocus = new Set(domain.ground);
-			// determine the moving direction (computed using the last two logged locations)
+			// determine the moving direction (computed using the last two logged positions)
 			let horizontalDir = this.getGripperX(-1) - this.getGripperX(-2);
 			let verticalDir = this.getGripperY(-1) - this.getGripperY(-2);
 
@@ -1013,7 +1023,7 @@ $(document).ready(function () {
 				return new Set();
 			}
 			// if a direction is 0, no filters need to be applied
-			// otherwise, remove any objects 'behind' the current gripper location (or at the same height/width)
+			// otherwise, remove any objects 'behind' the current gripper position (or at the same height/width)
 			// filter for horizontal direction
 			if (horizontalDir > 0) {
 				inFocus.forEach(obj => {
@@ -1043,6 +1053,25 @@ $(document).ready(function () {
 				});
 			}
 			return inFocus;
+		}
+		
+		/**
+		 * Remove any domain in the reference space that uses transient
+		 * properties in its semantic description or partition structure.
+		 */
+		_removeTransientDomains() {
+			this.RS.forEach(domain => {
+				if (this.trProperties.includes(domain.partition[0])) {
+					this.RS.delete(domain);
+				} else {
+					for (let [prop, _] of domain.semanticDesc) {
+						if (this.trProperties.includes(prop)) {
+							this.RS.delete(domain);
+							break;
+						}
+					}
+				}
+			});
 		}
 		
 		// --- Supervised exploration --- //

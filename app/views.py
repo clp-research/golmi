@@ -1,9 +1,9 @@
-from app import app
-from flask import render_template, request, send_from_directory, abort, url_for, make_response
-from flask_socketio import emit
+from app import app, socketio
+from flask import render_template, request, abort
 import json
 from time import time_ns
 import os
+
 # --- define routes --- # 
 
 @app.route("/", methods=["GET"])
@@ -38,7 +38,7 @@ def save_log():
 	# (1) can not be manipulated by a client
 	# (2) has a negligible chance of collision
 	# a simple timestamp is used
-	filename = str(time_ns()) + ".json"
+	filename = str(time_ns()/1000) + ".json"
 	# check if "data_collection" directory exists, create if necessary
 	savepath = app.config["DATA_COLLECTION"]
 	if not os.path.exists(savepath):
