@@ -1,9 +1,9 @@
-from app import app
-from flask import render_template, request, send_from_directory, abort, url_for, make_response
-from flask_socketio import emit
+from app import app, socketio
+from flask import render_template, request, abort
 import json
 from time import time_ns
 import os
+
 # --- define routes --- # 
 
 @app.route("/", methods=["GET"])

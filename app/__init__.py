@@ -16,7 +16,7 @@ app = Flask(__name__)
 # $ python -c 'import os; print(os.urandom(16))'
 # (This is the recommendation by the Flask documentation: https://flask.palletsprojects.com/en/2.0.x/quickstart/#sessions)
 app.config["SECRET KEY"] = "definite change this to some random value!".encode("utf-8")
-app.config["DATA_COLLECTION"] = "app/static/resources/data_collection"
+app.config["DATA_COLLECTION"] = "/data_collection"
 app.config["TASKS"] = "app/static/resources/tasks"
 app.config["AUDIO"] = "app/static/resources/audio"
 # enable cross-origin requests 
