@@ -235,8 +235,7 @@ $(document).ready(function () {
 		 */
 		start() {
 			// introduction
-			//TODO
-			//this.welcome();
+			this.welcome();
 			// start the task flow
 			this.currentTask = -2;
 			if (!this._loadTask()) {
@@ -366,7 +365,6 @@ $(document).ready(function () {
 		 */
 		abortAllMsgs() {
 			if (this._hasPendingMsg()) {
-				//TODO: make sure pending message msgEnded is run
 				this.msgQueue[0][1].pause();
 				this.msgQueue = new Array();
 			}

@@ -61,12 +61,13 @@ $(document).ready(function () {
 	// --- tasks and instruction giving view --- //
 	// randomly select one of the algorithms
 	const algorithms = ["IA", "RDT", "SE"];
-	//const randomAlg = document.randomFromArray(algorithms);
+	const randomAlg = document.randomFromArray(algorithms);
+	// for debugging
+	//const randomAlg = "SE";
 	// log what algorithm has been used
-	const randomAlg = "RDT";
 	logView.addData("algorithm", randomAlg);
 	const feedbackTimeInt = 10000;
-	const feedbackDistInt = 4;
+	const feedbackDistInt = 3;
 	let instructionGiver;
 	let tasks;
 	// load json file with tasks

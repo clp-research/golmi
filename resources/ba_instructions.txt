@@ -166,3 +166,5 @@ Yeah. the red X in the bottom of the board and above left of the gripper
 Yeah. the red X in the bottom of the board and above right of the gripper 
 Yeah. a gray I in the bottom right of the board and below  the gripper
 Yeah. the gray I in the bottom right of the board and below  the gripper
+Yeah. the blue W in the bottom of the board and above left of the gripper
+Yeah. the green Z in the bottom left of the board and above the gripper

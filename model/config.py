@@ -1,6 +1,5 @@
 import json
 
-#TODO: include option to read the config from a json file
 #Class to store settings such as board width, allowable actions, etc.
 class Config:
 	def __init__(self, type_config, width=20, height=20, snap_to_grid=False, prevent_overlap=True,
