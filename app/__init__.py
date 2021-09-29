@@ -48,8 +48,8 @@ def client_connect(auth):
 	join_room(room)
 
 	# send config and state
-	emit("update_config", model.config.to_dict())
-	emit("update_state", model.state.to_dict())
+	emit("update_config", client_models[request.sid].config.to_dict())
+	emit("update_state", client_models[request.sid].state.to_dict())
 
 # --- state --- #
 @socketio.on("load_state")

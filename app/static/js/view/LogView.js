@@ -246,5 +246,5 @@ $(document).ready(function () {
 		_addSnapshot(timestamp, data) {
 			this.data["log"].push([timestamp, data]);
 		}
-	}; // class LView end
+	}; // class LogView end
 }); // on document ready end
