@@ -1,8 +1,9 @@
-from app import app
-from flask import render_template, request, jsonify
+from app import app, socketio
+from flask import render_template, request, abort
 import json
 from time import time_ns
 import os
+
 # --- define routes --- # 
 
 @app.route("/", methods=["GET"])
@@ -19,15 +20,15 @@ def demo():
 @app.route("/save_log", methods=["POST"])
 def save_log():
 	if not request.data or not request.is_json:
-		return "1", 400
+		abort(400)
 	json_data = request.json
 	# as a filename that 
 	# (1) can not be manipulated by a client
 	# (2) has a negligible chance of collision
 	# a simple timestamp is used
-	filename = str(time_ns()) + ".json"
+	filename = str(time_ns()/100) + ".json"
 	# check if "data_collection" directory exists, create if necessary
-	savepath = os.path.join(app.config["DATA_COLLECTION"], "data_collection")
+	savepath = app.config["DATA_COLLECTION"]
 	if not os.path.exists(savepath):
 		os.mkdir(savepath)
 	file = open(os.path.join(savepath, filename), encoding="utf-8", mode="w")

@@ -126,7 +126,6 @@ $(document).ready(function () {
 				
 				// call drawing helper functions with additional infos (gripped, color)
 				let ctx = this.objCanvas.getContext("2d");
-				//TODO: size
 				let params = {
 					x: obj.x,
 					y: obj.y,

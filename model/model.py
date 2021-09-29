@@ -5,8 +5,9 @@ from math import floor, ceil
 import time, threading
 
 class Model:
-	def __init__(self, config, socket):
+	def __init__(self, config, socket, room):
 		self.socket = socket # to communicate with subscribed views
+		self.room = room
 		self.state = State()
 		self.config = config
 
@@ -66,7 +67,7 @@ class Model:
 		@param event_name 	str: event type, e.g. "update_grippers"
 		@param data 	serializable data to send to listeners
 		"""
-		self.socket.emit(event_name, data, include_self=True, broadcast=True)
+		self.socket.emit(event_name, data, room=self.room)
 
 	# --- Set up and configuration --- #
 

@@ -17,10 +17,15 @@ $(document).ready(function () {
 			this.keyAssignment = {
 				13: [this.grip, null, false],					// Enter
 				32: [this.grip, null, false],					// Space
-				37: [this.moveLeft, this.stopMove, false],		// arrow left
-				38: [this.moveUp, this.stopMove, false],		// arrow up
-				39: [this.moveRight, this.stopMove, false],		// arrow right
-				40: [this.moveDown, this.stopMove, false],		// arrow down
+				// hack as long as loops are not fixed for sockeio server
+				37: [this.moveLeft, null, false],		// arrow left
+				38: [this.moveUp, null, false],		// arrow up
+				39: [this.moveRight, null, false],		// arrow right
+				40: [this.moveDown, null, false],		// arrow down
+				// 37: [this.moveLeft, this.stopMove, false],		// arrow left
+				// 38: [this.moveUp, this.stopMove, false],		// arrow up
+				// 39: [this.moveRight, this.stopMove, false],		// arrow right
+				// 40: [this.moveDown, this.stopMove, false],		// arrow down
 				65: [this.rotateLeft, null, false],	// a
 				68: [this.rotateRight, null, false],	// d
 				83: [this.flip, null, false],					// s
@@ -138,7 +143,7 @@ $(document).ready(function () {
 		_moveGr(dx, dy) {
 			let loop = false;
 			this.models.forEach(([socket, grId]) => {
-				socket.emit("move", {"id": grId, "dx": dx, "dy": dy, "loop": loop, "step_size": 0.5});
+				socket.emit("move", {"id": grId, "dx": dx, "dy": dy, "loop": loop});
 			});
 		}
 
