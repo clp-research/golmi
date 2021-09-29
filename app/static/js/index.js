@@ -236,6 +236,7 @@ $(document).ready(function () {
 	// --- start --- //
 	// open the welcome dialog
 	welcome.showModal();
+	// for debugging
 	//start();
 
 	// --- unit tests --- //
