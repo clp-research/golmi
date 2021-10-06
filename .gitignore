@@ -139,3 +139,6 @@ dmypy.json
 
 # MacOS folder
 .DS_Store
+
+# Ignore PyCharm projects
+.idea
