@@ -6,37 +6,6 @@ $(document).ready(function () {
 
 	const MODEL = "127.0.0.1:5000";
 
-	// // generate a random state
-	// const N_OBJECTS = 15;
-	// const N_GRIPPERS = 1;
-	// const taskGenerator = new document.PentoGenerator(document.MODEL);
-	// let sample_state;
-	// taskGenerator.generateState(N_OBJECTS, N_GRIPPERS)
-	// .then(task => {
-	// 	sample_state = task;
-	// });
-	const TESTGAME = {
-		"objs": {
-			"1": {
-				"type": "I",
-				"x": 10,
-				"y": 8,
-				"width": 5,
-				"height": 5
-			},
-			"2": {
-				"type": "F",
-				"x": 3,
-				"y": 3,
-				"width": 5,
-				"height": 5,
-				"color": "yellow",
-				"mirrored": true,
-				"rotation": 0
-			}
-		} 
-	};
-
 	// --- create a socket --- //
 	// don't connect yet
 	var socket = io("http://" + MODEL, { autoConnect: false, auth: "GiveMeTheBigBluePasswordOnTheLeft" });
@@ -45,7 +14,7 @@ $(document).ready(function () {
 
 	// --- controller --- //
 	// create a controller, we still need to attach a gripper in the model to it
-	let controller = new document.LocalKeyController();
+	let controller = new document.LocalTalkativeKeyController();
 
 	// --- view --- // 
 	// Get references to the three canvas layers
@@ -57,33 +26,39 @@ $(document).ready(function () {
 	const layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
 
 	// --- logger --- //
-	const logView = new document.LogView(socket);
+	const logView = new document.LogView(socket, false);
+
+	// --- task generator --- //
+
+	const N_OBJECTS = 5;
+	const N_GRIPPERS = 0;
+	const taskGenerator = new document.PentoGenerator(socket);
+			
 
 	// --- socket communication --- //
 	var setup_complete = false;
+
 	socket.on("connect", () => {
 		console.log("Connected to model server");
-		// only do setup once (reconnections can occur, we don't want to reset the state every time)
+	});
+
+	//TODO: wait until manual config is complete
+	socket.on("update_config", (config) => {
+		// only do setup once when config is sent for the first time
 		if (!setup_complete) {
-			// send the initial task state
-			socket.emit("load_state", TESTGAME);
-			// subscribe the controller to some gripper (here we create a new gripper)
-			controller.attachModel(socket, "0");
+			// generate and send a random state
+			taskGenerator.initRandomState(N_OBJECTS, N_GRIPPERS, config)
+			.then(() => {
+				// subscribe the controller to some gripper (here we create a new gripper)
+				controller.attachModel(socket, "0");
+			});
 			setup_complete = true;
 		}
-	});
-	socket.on("disconnect", () => {
-		console.log("Disconnected from model server");
-		// demo of the logView: send the logged data to the server
-		logView.addData("test", true);
-		logView.sendData();
-	});
-	socket.onAny((eventName, ...args) => {
-		console.log(eventName, args);
 	});
 
 	// --- stop and start drawing --- //
 	function start() {
+		logView.clearLog();
 		// reset the controller in case any key is currently pressed
 		controller.resetKeys()
 		// manually establish a connection, connect the controller and load a state
@@ -93,10 +68,7 @@ $(document).ready(function () {
 	function stop() {
 		// reset the controller in case any key is currently pressed
 		controller.resetKeys();
-		// disconnect the controller
-		controller.detachModel(socket, "0");
-		// manually disconnect
-		socket.disconnect();
+		logView.sendData();
 	}
 
 	// --- buttons --- //
@@ -116,5 +88,4 @@ $(document).ready(function () {
 		console.log("Unit tests passed");
 		
 	}
-	
 }); // on document ready end

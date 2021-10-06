@@ -17,6 +17,14 @@ def index():
 def demo():
 	return render_template("demo.html")
 
+@app.route("/pento_fractions/record", methods=["GET"])
+def pento_fractions_record():
+	return render_template("pento_fractions_record.html")
+
+@app.route("/pento_fractions/replay", methods=["GET"])
+def pento_fractions_replay():
+	return render_template("pento_fractions_replay.html")
+
 @app.route("/save_log", methods=["POST"])
 def save_log():
 	if not request.data or not request.is_json:
@@ -26,7 +34,7 @@ def save_log():
 	# (1) can not be manipulated by a client
 	# (2) has a negligible chance of collision
 	# a simple timestamp is used
-	filename = str(time_ns()/100) + ".json"
+	filename = str(time_ns()) + ".json"
 	# check if "data_collection" directory exists, create if necessary
 	savepath = app.config["DATA_COLLECTION"]
 	if not os.path.exists(savepath):

@@ -42,7 +42,14 @@ $(document).ready(function () {
 					timeOffset = Date.now() - this.startTime;
 				}
 				this._addSnapshot(timeOffset, e.detail);
-			})
+			});
+			// TODO
+			document.addEventListener("startAction", e => {
+				console.log("received startAction event");
+			});
+			document.addEventListener("stopAction", e => {
+				console.log("received stopAction event");
+			});
 		}
 
 		/**
@@ -72,10 +79,12 @@ $(document).ready(function () {
 					this.currentGrippers = state["grippers"];
 					this._addSnapshot(timeOffset, this._getFullState());
 				}
-				// uncomment to log the state
-				//else {
-				//	this._addSnapshot(timeOffset, state);
-				//}
+				else {
+					// save snapshot of changes to the state
+					this._addSnapshot(timeOffset, this._getStateUpdates(state));
+					this.currentObjs = state["objs"];
+					this.currentGrippers = state["grippers"];
+				}
 			})
 			this.socket.on("update_grippers", (grippers) => {
 				if (this.startTime) {
@@ -84,20 +93,25 @@ $(document).ready(function () {
 						this.currentGrippers = grippers;
 						this._addSnapshot(timeOffset, this._getFullState());
 					} else {
+						// TODO: remove this, use gripper updates instead!
 						// reduce the log size if a gripper id is given
-						if (this.grId && grippers[this.grId]) {
-							if (grippers[this.grId].gripped) {
-								// log the id of the gripped object
-								this._addSnapshot(timeOffset, {"gripper": {
-									"gripped": Object.keys(grippers[this.grId].gripped)[0]}});
-							} else {
-								this._addSnapshot(timeOffset, {"gripper": {
+						if (this.grId) { 
+							if (grippers[this.grId]) {
+								let update = new Object();
+								update[this.grId] = {
 									"x": grippers[this.grId]["x"],
 									"y": grippers[this.grId]["y"]
-								}});
+								};
+								if (grippers[this.grId].gripped) {
+									update[this.grId]["gripped"] = 
+										Object.keys(grippers[this.grId].gripped)[0];
+								}
+								// log the id of the gripped object
+								this._addSnapshot(timeOffset, {"grippers": update});
 							}
 						} else {
-							this._addSnapshot(timeOffset, {"gripper": grippers});
+							this._addSnapshot(timeOffset, {"grippers": this._getGrUpdates(grippers)});
+							this.currentGrippers = grippers;
 						}
 					}
 				}
@@ -110,10 +124,10 @@ $(document).ready(function () {
 						this.currentObjs = objs;
 						this._addSnapshot(timeOffset, this._getFullState());
 					}
-					// uncomment this to log object changes
-					//else {
-					//	this._addSnapshot(timeOffset, {"objs": objs});
-					//}
+					else {
+						this._addSnapshot(timeOffset, {"objs": this._getObjUpdates(objs)});
+						this.currentObjs = objs;
+					}
 				}
 			});
 			this.socket.on("update_config", (config) => {
@@ -123,7 +137,8 @@ $(document).ready(function () {
 						this.currentConfig = config;
 						this._addSnapshot(timeOffset, this._getFullState());
 					} else {
-						this._addSnapshot(timeOffset, {"config": config});
+						this._addSnapshot(timeOffset, {"config": this._getConfigUpdates(config)});
+						this.currentConfig = config;
 					}
 				} else if (this.logFullState) {
 					// save the config for later in case it arrived before the first state
@@ -236,6 +251,84 @@ $(document).ready(function () {
 			return {"objs": this.currentObjs,
 					"grippers": this.currentGrippers,
 					"config": this.currentConfig};
+		}
+
+		/**
+		 * @return a state object containing only changed objs and grippers
+		 */
+		_getStateUpdates(newState) {
+			return {
+				"objs": this._getObjUpdates(newState["objs"]),
+				"grippers": this._getGrUpdates(newState["grippers"])};
+		}
+
+		/**
+		 * Currently has no way of detecting "deleted" objects.
+		 * Gripped objects have the "gripped" property set to true, so the
+		 * LayerView knows not to draw them on the object layer
+		 * @return object mapping obj ids to changed objs
+		 */
+		_getObjUpdates(newObjs) {
+			let updates = new Object();
+			for (let [id, obj] of Object.entries(newObjs)) {
+				if (this.currentObjs[id]) {
+					// check if any property changed
+					for (let [prop, value] of Object.entries(obj)) {
+						// skip arrays for now. Only occur for block_matrix
+						// which does not change without modification to other
+						// properties
+						if (!(value instanceof Array) &&
+							(this.currentObjs[id][prop] != value)) {
+							updates[id] = obj;
+							break;
+						}
+					}
+				} else {
+					// new object
+					updates[id] = obj;
+				}
+			}
+			return updates;
+		}
+
+		/**
+		 * @return object mapping gripper ids to changed grippers
+		 */
+		_getGrUpdates(newGrs) {
+			/*let updates = new Object();
+			for (let [id, gr] of Object.entries(newGrs)) {
+				if (this.currentGrippers[id]) {
+					// check if any property changed
+					for (let [prop, value] of Object.entries(obj)) {
+						if (prop == "gripped" && value != null) {
+							//TODO
+						}
+						// skip arrays for now. Only occur for block_matrix
+						// which does not change without modification to other
+						// properties
+						if (!(value instanceof Array) &&
+							(this.currentObjs[id][prop] != value)) {
+							updates[id] = obj;
+							break;
+						}
+					}
+				} else {
+					// new object
+					updates[id] = obj;
+				}
+			}
+			return updates;*/
+			return newGrs;
+		}
+
+		/**
+		 * TODO: not yet implemented
+		 * @return object containing changed configurations
+		 */
+		_getConfigUpdates(newConfig) {
+			//console.log("oldConf", this.currentConfig)
+			//console.log("newConf", newConfig)
+			return newConfig;
 		}
 
 		/**
