@@ -23,7 +23,10 @@ $(document).ready(function () {
 	let grLayer		= document.getElementById("gripper");
 
 	// Set up the view js, this also sets up key listeners
-	const layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
+	const layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer, {
+		bgGridShow: false,
+		bgColor: "white"
+	});
 
 	// --- logger --- //
 	const logView = new document.LogView(socket, false);
