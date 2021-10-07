@@ -19,11 +19,11 @@ def demo():
 
 @app.route("/pento_fractions/record", methods=["GET"])
 def pento_fractions_record():
-	return render_template("pento_fractions_record.html")
+	return render_template("pento_fractions/pento_fractions_record.html")
 
 @app.route("/pento_fractions/replay", methods=["GET"])
 def pento_fractions_replay():
-	return render_template("pento_fractions_replay.html")
+	return render_template("pento_fractions/pento_fractions_replay.html")
 
 @app.route("/save_log", methods=["POST"])
 def save_log():
