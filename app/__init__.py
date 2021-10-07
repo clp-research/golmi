@@ -26,7 +26,8 @@ socketio = SocketIO(app, logger=True, engineio_logger=True, cors_allowed_origins
 
 # --- create a data model --- #
 
-config = Config("app/static/resources/config/pentomino_types.json")
+config = Config("app/static/resources/config/pentomino_types.json",
+				width=40, height=40)
 # session ids mapped to Model instances
 client_models = dict()
 

@@ -30,7 +30,7 @@ $(document).ready(function () {
 
 	// --- task generator --- //
 
-	const N_OBJECTS = 5;
+	const N_OBJECTS = 20;
 	const N_GRIPPERS = 0;
 	const taskGenerator = new document.PentoGenerator(socket);
 			
