@@ -98,7 +98,7 @@ $(document).ready(function () {
 			ctx.fillRect(0,0, this.canvasWidth, this.canvasHeight);
 
 			if(this.settings.bgGridShow) {
-				ctx.lineStyle = this.settings.bgGridColor;
+				ctx.strokeStyle = this.settings.bgGridColor;
 				ctx.lineWidth = this.settings.bgGridWidth;
 				// horizontal lines
 				for (let row = 0; row <= this.rows; row++) {
@@ -186,7 +186,7 @@ $(document).ready(function () {
 					
 				// draw the gripper itself
 				// --- config ---
-				ctx.lineStyle = this.settings.grColor;
+				ctx.strokeStyle = this.settings.grColor;
 				ctx.lineWidth = this.settings.grWidth;
 				// draw. The gripper is a simple cross
 				ctx.beginPath();
@@ -252,7 +252,7 @@ $(document).ready(function () {
 			// shadowBlur is set to 0 if highlight is false, effectively making it invisible
 			ctx.shadowBlur = highlight ? 5 : 0;
 			ctx.shadowColor = highlight;
-			ctx.lineStyle = borderColor;
+			ctx.strokeStyle = borderColor;
 			ctx.lineWidth = borderWidth;
 
 			ctx.beginPath();
