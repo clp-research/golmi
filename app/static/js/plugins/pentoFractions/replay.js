@@ -25,22 +25,49 @@ $(document).ready(function () {
 	const replayer = new document.Replayer(20);
 	// TODO: where to load logs from? -> Golmi server? -> from files ? (cross-origin ...)
 	// Temporarily use hard-coded log
-	replayer.log = document.TESTLOG;
-
-	// Get start time. For now number field, should be some kind of scale
-	// convert to milliseconds
-	function getStartTime() {
-		return $("#starttime").val()*1000;
-	}
+	loadLog(document.TESTLOG);
 
 	// --- stop and start replaying --- //
 	function start() {
-		replayer.startTime = getStartTime();
 		replayer.start();
 	}
 
 	function stop() {
 		replayer.stop();
+	}
+
+	function loadLog(log) {
+		replayer.log = log;
+		// see https://api.jqueryui.com/slider/ for slider widget documentation
+		$( "#slider-range" ).slider({
+				range: true,
+				min: 0,
+				max: replayer.endTime / 1000,  // convert ms to seconds
+				values: [ 0, replayer.endTime ],
+				step: 0.1,
+				slide: function(event, ui) {
+					$( "#replayTimeRange" ).val(
+						prettyTime($("#slider-range").slider("values", 0)) + " - " + 
+						prettyTime($("#slider-range").slider("values", 1)) 
+					);
+				},
+				stop: function(event, ui) {
+					replayer.startTime = ui.values[0]*1000;
+					replayer.endTime = ui.values[1]*1000;
+				}
+			});
+		$("#replayTimeRange").val(
+			prettyTime($("#slider-range").slider("values", 0)) + " - " + 
+			prettyTime($("#slider-range").slider("values", 1)));
+	}
+
+	/**
+	 * Create a nicely readable string from a number of seconds.
+	 */
+	function prettyTime(seconds) {
+		return `${Math.floor(seconds/60)}:` +  // minutes followed by ":"
+			`${(seconds%60)<10?"0":""}` +  // insert 0 if seconds have only one digit
+			`${(seconds%60).toFixed(1)}`;  // seconds and one point milliseconds 
 	}
 
 	// --- buttons --- //
@@ -53,6 +80,14 @@ $(document).ready(function () {
 		stop();
 		// reactive the start button
 		$("#start").prop("disabled", false);
+	});
+	$("#reset").click(() => {
+		stop();
+		// reactive the start button
+		$("#start").prop("disabled", false);
+		// return to the start of the replay
+		console.log($("#slider-range").slider("values", 0));
+		replayer.startTime = $("#slider-range").slider("values", 0);
 	});
 
 	// --- unit tests --- //

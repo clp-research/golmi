@@ -14,6 +14,7 @@ $(document).ready(function () {
 			}
 			this.frameRate = frameRate;  // fps
 			this.currentTime = -1;
+			this._endTime;
 			this.replayLoop;
 			// state
 			this.grippers;
@@ -27,9 +28,9 @@ $(document).ready(function () {
 		set log(logData) {
 			// stop current replay, reset properties
 			this.stop();
-			this.currentTime = -1;
 			this._resetState();
 			this._log = logData;
+			this.startTime = 0;
 		}
 
 		get log() {
@@ -45,15 +46,24 @@ $(document).ready(function () {
 			this._emitStateUpdate();
 		}
 
+		set endTime(timeOffset) {
+			this._endTime = timeOffset;
+		}
+
 		/**
-		 * @return final timestamp of thelog or null if no log is loaded
+		 * @return set endTime, final timestamp of the log or null if both
+		 * 		are missing
 		 */
 		get endTime() {
-			if (this.log) {
+			if (this._endTime != undefined) {
+				if (this.log) {
+					return Math.min(this._endTime, this.log[this.log.length-1][0]);
+				}
+				return this._endTime;
+			} else if (this.log) {
 				return this.log[this.log.length-1][0];
-			} else {
-				return null;
 			}
+			return null;
 		}
 
 		/**
