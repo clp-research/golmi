@@ -19,17 +19,18 @@ $(document).ready(function () {
 	let grLayer		= document.getElementById("gripper");
 
 	// Set up the view js, this also sets up key listeners
-	const layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
+	const layerView = new document.LocalLayerView(bgLayer, objLayer, grLayer);
 
-	// Create a replayer
-	const replayer = new document.Replayer();
+	// Create a replayer with 20 fps
+	const replayer = new document.Replayer(20);
 	// TODO: where to load logs from? -> Golmi server? -> from files ? (cross-origin ...)
 	// Temporarily use hard-coded log
 	replayer.log = document.TESTLOG;
 
 	// Get start time. For now number field, should be some kind of scale
+	// convert to milliseconds
 	function getStartTime() {
-		return $("#starttime").val();
+		return $("#starttime").val()*1000;
 	}
 
 	// --- stop and start replaying --- //

@@ -93,7 +93,6 @@ $(document).ready(function () {
 						this.currentGrippers = grippers;
 						this._addSnapshot(timeOffset, this._getFullState());
 					} else {
-						// TODO: remove this, use gripper updates instead!
 						// reduce the log size if a gripper id is given
 						if (this.grId) { 
 							if (grippers[this.grId]) {
@@ -103,8 +102,7 @@ $(document).ready(function () {
 									"y": grippers[this.grId]["y"]
 								};
 								if (grippers[this.grId].gripped) {
-									update[this.grId]["gripped"] = 
-										Object.keys(grippers[this.grId].gripped)[0];
+									update[this.grId]["gripped"] = grippers[this.grId].gripped;
 								}
 								// log the id of the gripped object
 								this._addSnapshot(timeOffset, {"grippers": update});

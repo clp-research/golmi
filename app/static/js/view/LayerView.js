@@ -169,6 +169,7 @@ $(document).ready(function () {
 				// draw any gripped object first (i.e. 'below' the gripper)
 				if (gripper.gripped) {
 					for (const [grippedId, grippedObj] of Object.entries(gripper.gripped)) {
+
 						let blockMatrix = grippedObj.block_matrix;
 						
 						let params = {

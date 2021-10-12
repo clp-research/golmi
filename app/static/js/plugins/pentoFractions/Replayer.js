@@ -3,12 +3,18 @@ $(document).ready(function () {
 	/**
 	 * Reads the log and feeds updates back into views (or other components)
 	 * using document-wide events.
-	 * TODO: add framerate
+	 * @param {frames per second for replay rendering, default: 20} frameRate
 	 */
 	this.Replayer = class Replayer {
-		constructor() {
+		constructor(frameRate=20) {
 			this._log;
-			this.currentTime = 0;
+			if (frameRate > 100) {
+				console.log("Warning:",
+					" High frame rates may cause the replay to slow down.");
+			}
+			this.frameRate = frameRate;  // fps
+			this.currentTime = -1;
+			this.replayLoop;
 			// state
 			this.grippers;
 			this.objs;
@@ -21,7 +27,7 @@ $(document).ready(function () {
 		set log(logData) {
 			// stop current replay, reset properties
 			this.stop();
-			this.currentTime = 0;
+			this.currentTime = -1;
 			this._resetState();
 			this._log = logData;
 		}
@@ -30,12 +36,13 @@ $(document).ready(function () {
 			return this._log;
 		}
 
-		//TODO: Immediately display the state here or only once start() is called?
 		set startTime(timeOffset) {
-			// update internal state
-			timeOffset = Math.min(timeOffset, this.endTime);
-			this._fastForward(timeOffset);
-			this.currentTime = timeOffset;
+			// update internal state (at most up to endTime)
+			// do not emit events for every single log entry, instead
+			// emit "update_config" and "update_state once"
+			this._fastForward(this, timeOffset, false);
+			this._emitConfigUpdate();
+			this._emitStateUpdate();
 		}
 
 		/**
@@ -51,17 +58,17 @@ $(document).ready(function () {
 
 		/**
 		 * Start playing from the current point of time in the log.
-		 * @param optional: set a time to start playing from
+		 * @param {optional: set a time to start playing from} st
 		 */ 
-		start(startTime=null) {
+		start(fromTime=null) {
 			// stop any ongoing loop
 			this._stopReadingLog();
-			if (startTime != null) {
-				if (typeof(startTime) != "number") {
-					console.log("Error at start(): startTime must be numeric.",
-						` Got ${startTime}`);
+			if (fromTime != null) {
+				if (typeof(fromTime) != "number") {
+					console.log("Error at start(): fromTime must be numeric.",
+						` Got ${fromTime}`);
 				} else {
-					this.startTime = startTime;
+					this.startTime = fromTime;
 				}
 			}
 			this._startReadingLog();
@@ -81,14 +88,22 @@ $(document).ready(function () {
 		 * and emits update events when a timestamp in the log is reached.
 		 */
 		_startReadingLog() {
-			console.log("_startReadingLog(): not implemented.");
+			let frameOffset = Math.round(1000 / this.frameRate);
+			// Process at a certain frame rate until the log ends
+			this.replayLoop = setInterval(() => {
+				if (this.currentTime < this.endTime) {
+					this._fastForward(this, this.currentTime + frameOffset, true);
+				} else {
+					this._stopReadingLog();
+				}
+			}, frameOffset);
 		}
 
 		/**
 		 * Stop the update loop.
 		 */
 		_stopReadingLog() {
-			console.log("_stopReadingLog(): not implemented.");
+			clearInterval(this.replayLoop);
 		}
 
 		// --- Updating the state --- //
@@ -103,10 +118,99 @@ $(document).ready(function () {
 		}
 
 		/**
-		 * Update the internal state up to endTime without emitting any updates
+		 * Update the internal state up to toTime, but at most up to the last
+		 * log entry. Set notify to false to not emit update events.
 		 */
-		_fastForward(endTime) {
-			console.log("_fastForward(): not implemented.");
+		_fastForward(thisArg, toTime, notify=true) {
+			// restart if toTime was already passed in the log
+			if (toTime < thisArg.currentTime) {
+				thisArg.currentTime = -1;
+				thisArg._resetState();
+			}
+			// successively process log entries
+			for (let [updateTime, update] of thisArg.log) {
+				if (updateTime > toTime) {
+					break;
+				}
+				 // skip already processed updates
+				if (updateTime >= thisArg.currentTime) {
+				 	thisArg._makeUpdate(update, notify);
+				 	thisArg.currentTime = updateTime;
+				}
+			}
+			thisArg.currentTime = Math.min(toTime, thisArg.endTime);
+		}
+
+		// TODO: This assumes objects can be modified and added, but not 
+		// deleted! If we want to delete objects, we need to make sure 
+		// all sent updates are complete ... -> not so sparse logs
+		/**
+		 * Incorporate an update into the internal state. 
+		 * Set notify to false to not emit update events.
+		 */
+		_makeUpdate(update, notify=true) {
+			if (update["config"]) {
+				Object.assign(this.config, update["config"]);
+				if (notify) {
+					this._emitConfigUpdate();
+				}
+			}
+			if (update["objs"]) {
+				Object.assign(this.objs, update["objs"]);
+				if (notify) {
+					this._emitObjsUpdate();
+				}
+			}
+			if (update["grippers"]) {
+				Object.assign(this.grippers, update["grippers"]);
+				if (notify) {
+					this._emitGrippersUpdate();
+				}
+
+			}
+		}
+
+		/**
+		 * Emit an update to the document notifying of a state update, 
+		 * sending the current internal objects and grippers
+		 */
+		_emitStateUpdate() {
+			document.dispatchEvent(new CustomEvent("update_state", {
+				detail: {
+					"objs": this.objs,
+					"grippers": this.grippers
+				}
+			}));
+		}
+
+		/**
+		 * Emit an update to the document notifying of a config update, 
+		 * sending the current internal configuration.
+		 */
+		_emitConfigUpdate() {
+			document.dispatchEvent(new CustomEvent("update_config", {
+				detail: { "config": this.config }
+			}));
+		}
+
+		/**
+		 * Emit an update to the document notifying of an objects update, 
+		 * sending the current internal objects.
+		 */
+		_emitObjsUpdate() {
+			document.dispatchEvent(new CustomEvent("update_objs", {
+				detail: { "objs": this.objs }
+			}));
+		}
+
+		/**
+		 * Emit an update to the document notifying of a grippers update, 
+		 * sending the current internal grippers.
+		 */
+		_emitGrippersUpdate() {
+			document.dispatchEvent(new CustomEvent("update_grippers", {
+				detail: { "grippers": this.grippers }
+			}));
 		}
 
 	}; // class Replayer end
