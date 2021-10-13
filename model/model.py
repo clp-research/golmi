@@ -274,7 +274,7 @@ class Model:
 				
 				self.state.move_gr(id, dx, dy)
 				self.state.move_obj(self.get_gripped_obj(id), dx, dy)
-				# notify the views. A gripped object is implicitly redrawn. 
+				# notify the views. A gripped object is implicitly redrawn.
 				self._notify_views("update_grippers", self.get_gripper_dict())
 
 		# if no object is gripped, only move the gripper
@@ -480,14 +480,3 @@ class Model:
 		# monkey-patching?
 		while not stop_event.wait(next_time - time.time()) :
 		    next_time += interval
-		    fn(*args, **kwargs)
-
-if __name__ == "__main__":
-	# Unit tests
-	from config import Config
-	test_config = Config("../pentomino/pentomino_types.json")
-	test_model = Model(test_config)
-	assert len(test_model.get_obj_dict())
-
-	test_model.add_view("address:port")
-	assert test_model.views == ["address:port"]

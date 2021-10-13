@@ -1,14 +1,9 @@
 $(document).ready(function () {
 
-	// TODO:
-	// test this with multiple browser windows
-	// create model test cases
-	// fix looped actions
-
 	// --- define globals --- // 
 
 	// Set to false to skip unit tests
-	const SELFTEST = true;
+	const SELFTEST = false;
 
 	const MODEL = "127.0.0.1:5000";
 
@@ -119,8 +114,7 @@ $(document).ready(function () {
 
 	// --- unit tests --- //
 	if (SELFTEST) {
-		console.log("Unit tests passed");
-		
+		console.log("No unit tests implemented.");
 	}
 	
 }); // on document ready end

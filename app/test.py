@@ -1,78 +1,95 @@
-# TODO: update these for socketio
+""" tests for GOLMI's endpoints 
+Makes some tests for each of the served endpoints
+
+author: clpresearch, Karla Friedrichs
+"""
+
+from app import app, socketio, AUTH
+from os.path import join
+
+# directory html is served from
+TEMPLATE_DIR = "app/templates"
+
 
 def selftest(): 
-	with app.test_client() as c:
-		# --- attaching and detaching views --- #
-		dummy_view = "127.0.0.1:666"
-		rv = c.post("/attach-view", data=json.dumps({"url":dummy_view}))
-		assert rv.status == "200 OK" and dummy_view in model.views
-		# delete view again or there view be errors in the following tests
-		# when the model tries to notify the dummy view
-		c.delete("/attach-view", data=json.dumps({"url":dummy_view}))
-		assert dummy_view not in model.views
+	"""Tests the Flask app and the Flask-SocketIO app."""
 
-		# --- loading a state --- #
-		f = open("resources/state/pento_test2.json", mode="r", encoding="utf-8")
-		json_state = f.read()
-		f.close()
-		rv_state = c.post("/state", data=json_state)
-		test_state = json.loads(json_state)
+	# --- flask app / endpoints --- #
 
-		# --- gripper position --- #
-		rv2 = c.get("/gripper")
-		gripper = rv2.get_json()
-		assert float(gripper["1"]["x"]) == float(test_state["grippers"]["1"]["x"]) and \
-			float(gripper["1"]["y"]) == float(test_state["grippers"]["1"]["y"]), "Grippers should be at the same location: {} vs {}".format(gripper["1"], test_state["grippers"]["1"])
-		# move gripper once with default step size
-		rv_move_gripper = c.post("/gripper/position", data=json.dumps({"id":"1", "dx":3, "dy":0}))
-		assert rv_move_gripper.status == "200 OK"
-		assert model.get_gripper_coords("1")[0] > gripper["1"]["x"] and \
-			model.get_gripper_coords("1")[1] == gripper["1"]["y"]
-		# move gripper with custom step size
-		rv_move_gripper2 = c.post("/gripper/position", data=json.dumps({"id":"1", "dx":0, "dy":3, "step_size":1, "loop": True}))
-		assert rv_move_gripper2.status == "200 OK"
-		assert float(model.get_gripper_coords("1")[1]) == float(gripper["1"]["y"] + 3)
-		# stop moving the gripper
-		rv_stop_gripper = c.delete("/gripper/position", data=json.dumps({"id": "1"}))
-		assert rv_stop_gripper.status == "200 OK"
+	flask_test_client = app.test_client()
+	# --- html serving --- #
+	# check GET-only endpoints
+	for page in ["/", "/demo"]:
+		get_response = flask_test_client.get(page)
+		assert get_response.status == "200 OK"
+		# other methods could be checked here as well ...
+		post_response = flask_test_client.post(page)
+		assert post_response.status == "405 METHOD NOT ALLOWED"
 
-		# --- rotating the gripped object --- #
-		rv_rotate = c.post("/gripper/rotate", data=json.dumps({"id": "1", "direction": 1, "step_size": 45, "loop": True}))
-		# even if no object is gripped, should return OK
-		assert rv_rotate.status == "200 OK"
-		rv_stop_rotate = c.delete("/gripper/rotate", data=json.dumps({"id": "1"}))
-		assert rv_rotate.status == "200 OK"
+	# --- saving logs --- #
+	# posting without data or non-json data
+	savelog_invalid1 = flask_test_client.post("/save_log")
+	savelog_invalid2 = flask_test_client.post("/save_log", data="absolutely_not_json")
+	assert savelog_invalid1.status == "400 BAD REQUEST" and \
+		savelog_invalid2.status == "400 BAD REQUEST"
+	# sending valid log data is not tested here as is would create a file 
+	# with a hardly predictable filename at every test run
 
-		# --- flipping the gripped object --- # 
-		# flip once
-		rv_flip = c.post("/gripper/flip", data=json.dumps({"id": "1"}))
-		assert rv_flip.status == "200 OK"
+	# --- socketio tests --- # 
 
-		# --- gripping --- #
-		rv4 = c.get("/gripper/grip")
-		# both data structures show no object gripped or same object is gripped
-		if "gripped" not in test_state["grippers"]["1"] or test_state["grippers"]["1"]["gripped"] == None:
-			assert "1" not in rv4.get_json() or rv4.get_json()["1"] == None or len(rv4.get_json()["1"]) == 0, \
-				"test state gripper '1' has no object gripped but model seems to have one: {}".format(rv4.get_json()["1"]) 
-		else:
-			assert test_state["grippers"]["1"]["gripped"] in rv4.get_json()["1"].keys(), \
-				"test state gripper '1' and model gripper '1' do not have the same object gripped: {} vs {}".format(test_state["grippers"]["1"]["gripped"], rv4.get_json()["1"].keys())
+	# Note: All of these tests assume the client connecting to the
+	# defaul namespace "/"!
 
-		# bad request: missing gripper id
-		rv5_bad_request = c.post("/gripper/grip")
-		# valid request
-		assert rv5_bad_request.status == "400 BAD REQUEST"
-		rv5_start_gripping = c.post("/gripper/grip", data=json.dumps({"id":"1"}))
-		assert rv5_start_gripping.status == "200 OK"
+	# connect to Socket.IO without authentication
+	socketio_test_client = socketio.test_client(
+		app, flask_test_client=flask_test_client)
+	# make sure the server rejected the connection
+	assert not socketio_test_client.is_connected()
+	
+	# valid connection request
+	# (room id will be None, as the client has no session id)
+	socketio_test_client.connect(auth=AUTH)
+	assert socketio_test_client.is_connected()
 
-		# stop gripping
-		rv5_stop_gripping = c.delete("/gripper/grip", data=json.dumps({"id":"1"}))
-		assert rv5_stop_gripping.status == "200 OK"
+	# make sure the initial configuration and an empty state were sent
+	received_config = False
+	received_state = False
+	for event in socketio_test_client.get_received():
+		if event["name"] == "update_config":
+			received_config = True
+		elif event["name"] == "update_state":
+			received_state = True
+			# make sure state is empty
+			assert len(event["args"][0]["grippers"]) == 0 and len(event["args"][0]["objs"]) == 0, \
+				"Test failed: initially received state was not empty."
+	assert received_config, "Test failed: did not receive a configuration after connection."
+	assert received_state, "Test failed: did not receive a state after connection."
 
-		# --- objects --- #
-		rv6 = c.get("/objects")
-		assert rv6.get_json().keys() == test_state["objs"].keys()
+	# TODO
+	# --- loading a state --- #
+	# save received state
 
-		# --- deleting the state --- #
-		rv_reset = c.delete("/state")
-		assert rv_reset.status == "200 OK" and len(model.get_object_dict()) == 0
+	# --- gripper position --- #
+	# move gripper once with default step size
+	# move gripper with custom step size
+	# stop moving the gripper
+
+	# --- rotating the gripped object --- #
+	# even if no object is gripped, should return OK
+
+	# --- flipping the gripped object --- # 
+	# flip once
+
+	# --- gripping --- #
+	# both data structures show no object gripped or same object is gripped
+	
+	# bad request: missing gripper id
+	# valid request
+
+	# stop gripping
+
+	# --- objects --- #
+
+	# --- deleting the state --- #
+
+	# --- create more test cases for extensions below --- # 
