@@ -4,7 +4,8 @@ $(document).ready(function () {
 	// Set to false to skip unit tests
 	const SELFTEST = true;
 
-	const MODEL = "127.0.0.1:5000";
+	const MODEL = window.location.origin // expect same as backend e.g. the default "127.0.0.1:5000";
+	console.log("Connect to " + MODEL)
 
 	// // generate a random state
 	// const N_OBJECTS = 15;
@@ -39,7 +40,7 @@ $(document).ready(function () {
 
 	// --- create a socket --- //
 	// don't connect yet
-	var socket = io("http://" + MODEL, { autoConnect: false, auth: "GiveMeTheBigBluePasswordOnTheLeft" });
+	var socket = io(MODEL, { autoConnect: false, auth: "GiveMeTheBigBluePasswordOnTheLeft" });
 	// debug: print any messages to the console
 	localStorage.debug = 'socket.io-client:socket';
 
