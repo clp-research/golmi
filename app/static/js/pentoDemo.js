@@ -2,7 +2,7 @@ $(document).ready(function () {
 	// --- define globals --- // 
 
 	// Set to false to skip unit tests
-	const SELFTEST = true;
+	const SELFTEST = false;
 
 	const MODEL = window.location.origin // expect same as backend e.g. the default "127.0.0.1:5000";
 	console.log("Connect to " + MODEL)
@@ -114,8 +114,7 @@ $(document).ready(function () {
 
 	// --- unit tests --- //
 	if (SELFTEST) {
-		console.log("Unit tests passed");
-		
+		console.log("No unit tests implemented.");
 	}
 	
 }); // on document ready end
