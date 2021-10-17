@@ -2,7 +2,7 @@ from model.state import State
 from model.gripper import Gripper
 from model.obj import Obj
 from math import floor, ceil 
-import time, threading
+import eventlet
 
 class Model:
 	def __init__(self, config, socket, room):
@@ -11,9 +11,10 @@ class Model:
 		self.state = State()
 		self.config = config
 
-		# handles for loops will be saved in here to start / stop periodic actions
-		# the nested dicts map gripper ids to the loop handles
-		self.stop_events = {"move": dict(), "grip": dict(), "flip": dict(), "rotate": dict()}
+		# Contains a dictionary for each available action. The nested dicts map
+		# gripper ids to True or False, depending on whether the respective
+		# action is currently running (= repeatedly executed)
+		self.running_loops = {action: dict() for action in self.config.actions}
 
 	# --- getter --- #
 
@@ -96,6 +97,8 @@ class Model:
 		# config is a Config instance
 		else:
 			self.config = config
+		# in case the available actions changed, reset the looped actions
+		self.reset_loops()
 		self._notify_views("update_config", self.config.to_dict())
 
 	def reset(self):
@@ -103,6 +106,7 @@ class Model:
 		Reset the current state.
 		"""
 		self.state = State()
+		self.reset_loops()
 		self._notify_views("update_state", self.state.to_dict())
 
 	# TODO: make sure pieces are on the board! (at least emit warning)
@@ -459,24 +463,28 @@ class Model:
 	# --- Loop functionality ---
 
 	def start_loop(self, action_type, gripper, fn, *args, **kwargs):
-		# 
-		self.stop_events[action_type][gripper] = threading.Event()
-		self.socket.start_background_task(
-			self._setInterval, self.config.action_interval, self.stop_events[action_type][gripper],
-			fn, *args, **kwargs)
+		"""Spawn a greenthread.GreenThread instance that executes fn until stop_loop is called.
+
+		@param action_type	str, one of the action types defined by the config
+		"""
+		assert action_type in self.running_loops, \
+			"Error at Model.start_loop: action {} not registered".format(action_type)
+		self.running_loops[action_type][gripper] = True
+		e = eventlet.spawn(self._loop, action_type, gripper, fn, *args, **kwargs)
+
+	def _loop(self, action_type, gripper, fn, *args, **kwargs):
+		while(gripper in self.running_loops[action_type] and
+				self.running_loops[action_type][gripper]):
+			fn(*args, *kwargs)
+			eventlet.sleep(self.config.action_interval)
 
 	def stop_loop(self, action_type, gripper):
-		if gripper in self.stop_events[action_type] and \
-			not self.stop_events[action_type][gripper].is_set():
-			
-			self.stop_events[action_type][gripper].set()
+		"""Stop a running action for a specific gripper."""
+		assert action_type in self.running_loops, \
+			"Error at Model.stop_loop: action {} not registered".format(action_type)
+		if gripper in self.running_loops[action_type]:
+			self.running_loops[action_type][gripper] = False
 
-	def _setInterval(self, interval, stop_event, fn, *args, **kwargs):
-		# immediately execute once
-		fn(*args, **kwargs)
-		next_time = time.time() + interval
-		# wait for interval to pass or stop event
-		#TODO: This is currently blocking. Need to find gevent-friendly threading option.
-		# monkey-patching?
-		while not stop_event.wait(next_time - time.time()) :
-		    next_time += interval
+	def reset_loops(self):
+		"""Stop all running actions."""
+		self.running_loops = {action: dict() for action in self.config.actions}
