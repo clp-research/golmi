@@ -240,7 +240,6 @@ $(document).ready(function () {
 
 			$(document).keyup( e => {
 				// check if a function is assigned. Only execute if the key was remembered as "down"
-				console.log(this._upAssigned(e.keyCode), this._isDown(e.keyCode))
 				if (this._upAssigned(e.keyCode) && this._isDown(e.keyCode)) {
 					// execute the function assigned to the keyup event
 					this.keyAssignment[e.keyCode][1](this);
