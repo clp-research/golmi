@@ -1,42 +1,15 @@
 $(document).ready(function () {
-
 	// --- define globals --- // 
 
 	// Set to false to skip unit tests
-	const SELFTEST = false;
+	const SELFTEST = true;
 
 	const MODEL = "127.0.0.1:5000";
 
-	// // generate a random state
-	// const N_OBJECTS = 15;
-	// const N_GRIPPERS = 1;
-	// const taskGenerator = new document.PentoGenerator(document.MODEL);
-	// let sample_state;
-	// taskGenerator.generateState(N_OBJECTS, N_GRIPPERS)
-	// .then(task => {
-	// 	sample_state = task;
-	// });
-	const TESTGAME = {
-		"objs": {
-			"1": {
-				"type": "I",
-				"x": 10,
-				"y": 8,
-				"width": 5,
-				"height": 5
-			},
-			"2": {
-				"type": "F",
-				"x": 3,
-				"y": 3,
-				"width": 5,
-				"height": 5,
-				"color": "yellow",
-				"mirrored": true,
-				"rotation": 0
-			}
-		} 
-	};
+	// parameters for random initial state
+	// (state is generated once the configuration is received)
+	const N_OBJECTS = 5;
+	const N_GRIPPERS = 1;
 
 	// --- create a socket --- //
 	// don't connect yet
@@ -61,24 +34,33 @@ $(document).ready(function () {
 	const logView = new document.LogView(socket);
 
 	// --- socket communication --- //
-	var setup_complete = false;
 	socket.on("connect", () => {
 		console.log("Connected to model server");
-		// only do setup once (reconnections can occur, we don't want to reset the state every time)
-		if (!setup_complete) {
-			// send the initial task state
-			socket.emit("load_state", TESTGAME);
-			// subscribe the controller to some gripper (here we create a new gripper)
-			controller.attachModel(socket, "0");
-			setup_complete = true;
-		}
 	});
+
 	socket.on("disconnect", () => {
 		console.log("Disconnected from model server");
 		// demo of the logView: send the logged data to the server
 		logView.addData("test", true);
 		logView.sendData();
 	});
+
+	var setup_complete = false;
+	socket.on("update_config", (config) => {
+		// only do setup once (reconnections can occur, we don't want to reset the state every time)
+		if (!setup_complete) {
+			// create a random initial state with a gripper in the center
+			let taskGenerator = new document.PentoGenerator(MODEL);
+			let randomState = taskGenerator.generateState(N_OBJECTS, N_GRIPPERS, config, false);
+			// send the state to the model
+			socket.emit("load_state", randomState);
+			// subscribe the controller to the only generated gripper
+			controller.attachModel(socket, "0");
+			setup_complete = true;
+		}
+	});
+
+	// for debugging: log all events
 	socket.onAny((eventName, ...args) => {
 		console.log(eventName, args);
 	});
@@ -114,7 +96,10 @@ $(document).ready(function () {
 
 	// --- unit tests --- //
 	if (SELFTEST) {
-		console.log("No unit tests implemented.");
+		// test the PentoGenerator class
+		if (document.pentoGeneratorTest()) {
+			console.log("Unit tests passed.");
+		} 
 	}
 	
 }); // on document ready end

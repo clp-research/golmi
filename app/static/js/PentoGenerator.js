@@ -1,42 +1,43 @@
 $(document).ready(function () {
 
 	/**
-	 *
+	 * Class to generate random Pentomino states. Generated states can be 
+	 * sent to a model socket.
 	 */
 	this.PentoGenerator = class PentoGenerator {
-		constructor(modelAPI) {
-			this.modelAPI = modelAPI;
+		constructor(socket=null) {
+			this.socket = socket;
 		}
 
 		/**
 		 * Generate a random state and initialize the model.
 		 * @param {number of objects to generate} nObjs
+		 * @param {number of grippers to generate} nGrippers
+		 * @param {configuration received from model} config
 		 * @param {true to determine the gripper start position randomly, false to start in the center. default: false} randomGrPos
 		 * @return the generated state, null if something went wrong
 		 */
-		async initRandomState(nObjs, nGrippers, randomGrPos=false) {
-			let rState = await this.generateState(nObjs, nGrippers, randomGrPos);
+		initRandomState(nObjs, nGrippers, config, randomGrPos=false) {
+			let rState = this.generateState(nObjs, nGrippers, config, randomGrPos);
 			// something went wrong during state generation
 			if (!rState) { return null; }
-			// initialize the model with the random state
-			let loadResponse = await fetch(new Request(`http://${this.modelAPI}/state`, {method:"POST", body:JSON.stringify(rState)}));
-			return loadResponse.ok ? rState : null;
+			if (this.socket) {
+				this.socket.emit("load_state", rState);
+			} else {
+				console.log("Error: No model socket associated to this PentoGenerator instance.");
+			}
 		}
 
 		/**
 		 * Generate a random state following the model's configuration.
 		 * @param {number of objects to generate} nObjs
+		 * @param {number of grippers to generate} nGrippers
 		 * @param {true to determine the gripper start position randomly, false to start in the center. default: false} randomGrPos
+		 * @param {configuration received from model} config
 		 * @return State object that can be sent to a model, object ids are numbers. null if something went wrong.
 		 */
-		async generateState(nObjs, nGrippers, randomGrPos=false) {
+		generateState(nObjs, nGrippers, config, randomGrPos=false) {
 			let state = new Object();
-
-			// load the configuration from the model
-			let configResponse = await fetch(new Request(`http://${this.modelAPI}/config`, {method:"GET"}));
-			// configuration could not be fetched
-			if (!configResponse.ok) { return null; }
-			let config = await configResponse.json();
 
 			// grippers (they don't grip any object)
 			state.grippers = new Object();
@@ -116,19 +117,43 @@ $(document).ready(function () {
 	// Unit test function
 	/**
 	 * Performs some tests on the PentoGenerator class and outputs the results to the console.
+	 * Does not connect to a model, so the communication is not tested.
 	 * @return true if all tests have been passed, false if an error occurred
 	 */
-	document.pentoGeneratorTest = async function () {
+	document.pentoGeneratorTest = function () {
 		console.log("Performing tests for PentoGenerator...");
 		let diagnose = "";
-		let testGenerator = new document.PentoGenerator(document.MODEL_API);
+		// passing no socket here - functions communicating with the model can't be tested
+		let testGenerator = new document.PentoGenerator();
 		if (!testGenerator) {
 			console.log("Error: PentoGenerator could not be constructed");
 			return false;
 		}
+		let testConfig = {
+			"width": 40,
+			"height": 40,
+			"rotation_step": 90,
+			"colors": [ "red", "orange", "yellow", "green", "blue", "purple", "saddlebrown", "grey" ],
+			"actions": [ "move", "rotate", "flip", "grip" ],
+			// using just two types for testing here
+			"type_config": {
+				"F": [
+					[ 0, 0, 0, 0, 0 ], 
+					[ 0, 1, 1, 1, 0 ], 
+					[ 0, 0, 1, 1, 0 ], 
+					[ 0, 0, 1, 0, 0 ], 
+					[ 0, 0, 0, 0, 0 ]],
+				"I": [
+					[ 0, 0, 1, 0, 0 ],
+					[ 0, 0, 1, 0, 0 ],
+					[ 0, 0, 1, 0, 0 ],
+					[ 0, 0, 1, 0, 0 ],
+					[ 0, 0, 1, 0, 0 ]]
+			}
+		}
 		// generate a state and check the format
 		let nObjs = 2, nGrippers = 2;
-		let testState = await testGenerator.generateState(nObjs, nGrippers, true);
+		let testState = testGenerator.generateState(nObjs, nGrippers, testConfig, true);
 		if (!testState) {
 			diagnose += "Error: No state could be generated\n";
 		} else if (!testState.objs || !testState.grippers) {

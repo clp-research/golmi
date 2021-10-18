@@ -29,15 +29,18 @@
 		<canvas id="gripper" width="600" height="600"></canvas>
 	</div>
 
-	<script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
-	<!-- for production, use minimal version: -->
-	<!--<script src="https://cdn.socket.io/4.1.2/socket.io.min.js" integrity="sha384-toS6mmwu70G0fw54EGlWWeA4z3dyJ+dlXBtSURSKN4vyRFOcxd3Bzjj/AoOwY+Rg" crossorigin="anonymous"></script>-->
-	<script src="{{ url_for('static', filename='js/view/View.js') }}"></script>
+	<!-- jquery -->
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<!-- socketio -->
+	<script src="https://cdn.socket.io/4.1.2/socket.io.min.js" integrity="sha384-toS6mmwu70G0fw54EGlWWeA4z3dyJ+dlXBtSURSKN4vyRFOcxd3Bzjj/AoOwY+Rg" crossorigin="anonymous"></script>
+	<!-- General GOLMi functionality -->
+    <script src="{{ url_for('static', filename='js/view/View.js') }}"></script>
 	<script src="{{ url_for('static', filename='js/view/LayerView.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/view/LogView.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/view/LView.js') }}"></script>
 	<script src="{{ url_for('static', filename='js/controller/LocalKeyController.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/pentoDemo.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/PentoGenerator.js') }}"></script>
+	<!-- Interface specific functionality -->
+    <script src="{{ url_for('static', filename='js/pentoDemo.js') }}"></script>
 </body>
 
 </html>
