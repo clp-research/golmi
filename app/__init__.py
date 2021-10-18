@@ -111,7 +111,7 @@ def rotate(params):
 	# check the arguments and make sure the gripper exists
 	if type(params) == dict or "id" in params and "direction" in params and \
 		client_models[request.sid].get_gripper_by_id(str(params["id"])) != None:
-		
+
 		step_size = params["step_size"] if "step_size" in params else None
 		# continuous / looped action
 		if "loop" in params and params["loop"]:

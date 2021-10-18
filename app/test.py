@@ -116,26 +116,3 @@ def selftest():
 	assert received[0]["args"][0][test_gripper]["x"] == \
 		(test_state["grippers"][test_gripper]["x"] + test_step_size)
 
-	# move gripper with custom step size
-	
-	# test loop functionality?
-
-	# --- rotating the gripped object --- #
-	# even if no object is gripped, should return OK
-
-	# --- flipping the gripped object --- # 
-	# flip once
-
-	# --- gripping --- #
-	# both data structures show no object gripped or same object is gripped
-	
-	# bad request: missing gripper id
-	# valid request
-
-	# stop gripping
-
-	# --- objects --- #
-
-	# --- deleting the state --- #
-
-	# --- create more test cases for extensions below --- # 
