@@ -6,9 +6,12 @@ author: clpresearch, Karla Friedrichs
 
 from app import app, socketio, AUTH
 from os.path import join
+import json
 
 # directory html is served from
 TEMPLATE_DIR = "app/templates"
+# directory containing resources
+RESOURCE_DIR = "app/static/resources"
 
 
 def selftest(): 
@@ -65,14 +68,57 @@ def selftest():
 	assert received_config, "Test failed: did not receive a configuration after connection."
 	assert received_state, "Test failed: did not receive a state after connection."
 
-	# TODO
 	# --- loading a state --- #
-	# save received state
+	f = open(join(RESOURCE_DIR, "tasks/pento_test.json"), mode="r", encoding="utf-8")
+	test_state = f.read()
+	f.close()
+	# convert to json
+	test_state = json.loads(test_state)
+	socketio_test_client.emit("load_state", test_state)
+	received = socketio_test_client.get_received()
+	# make sure just one event was received
+	assert len(received) == 1
+	assert received[0]["name"] == "update_state"
+
+	# Check the received properties correspond to the sent properties
+	for gripper in received[0]["args"][0]["grippers"]:
+		assert gripper in test_state["grippers"], "Test failed: gripper {} missing".format(gripper)
+		for prop in received[0]["args"][0]["grippers"][gripper]:
+			if prop in test_state["grippers"][gripper]:
+				assert received[0]["args"][0]["grippers"][gripper][prop] == test_state["grippers"][gripper][prop], \
+					"Test failed: properties differ: received: {}, sent: {}".format(
+						received[0]["args"][0]["grippers"][gripper][prop],
+						test_state["grippers"][gripper][prop])
+	for obj in received[0]["args"][0]["objs"]:
+		assert obj in test_state["objs"], "Test failed: obj {} missing".format(obj)
+		for prop in received[0]["args"][0]["objs"][obj]:
+			if prop in test_state["objs"][obj]:
+				assert received[0]["args"][0]["objs"][obj][prop] == test_state["objs"][obj][prop], \
+					"Test failed: properties differ: received: {}, sent: {}".format(
+						received[0]["args"][0]["objs"][obj][prop],
+						test_state["objs"][obj][prop])
+
+	# --- loading a configuration --- # 
+	test_step_size = 0.5
+
+	# --- add / remove grippers --- #
 
 	# --- gripper position --- #
+	test_gripper = "0"
+
 	# move gripper once with default step size
+	socketio_test_client.emit("move", {"id":test_gripper, "dx":1, "dy":0})
+	received = socketio_test_client.get_received()
+	assert len(received) == 1
+	assert received[0]["name"] == "update_grippers"
+
+	# check the gripper was moved one block to the right
+	assert received[0]["args"][0][test_gripper]["x"] == \
+		(test_state["grippers"][test_gripper]["x"] + test_step_size)
+
 	# move gripper with custom step size
-	# stop moving the gripper
+	
+	# test loop functionality?
 
 	# --- rotating the gripped object --- #
 	# even if no object is gripped, should return OK
