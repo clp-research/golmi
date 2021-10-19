@@ -188,6 +188,18 @@ For instance, in the use case of keyboard controls (as in our ```LocalKeyControl
 
 * **Coordinates**: (0,0) is the upper left corner, so y-coordinates increase towards the bottom, x-coordinates increase towards the right
 
+## Tests
+To run all tests:
+```
+$ python -m unittest
+```
+
+To test only parts:
+```
+$ python -m unittest -k test_socketio
+$ python -m unittest -k test_flask_endpoints
+```
+
 ## Troubleshooting
 
 * The logging class LView.js was named LogView.js before because some adblockers would not load the skript trying to save you from evil data collection. If you encounter similar problems, try turning off the adblock for this site or rename the LogView class into something less suspicious.
