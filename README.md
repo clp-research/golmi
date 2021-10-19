@@ -30,13 +30,15 @@ For an example of a more complex GOLMI-based interface, see https://github.com/k
 
 GOLMI roughly follows a model-view-controller (MVC) architecture. The tasks of each component and the communication between components is sketched out in the following block diagram:
 
-TODO: FIGURE NEEDS TO BE UPDATED!
-
-![Image](./resources/img/block_diagram.png 'Block diagram of the MVC structure')
+![Image](./resources/img/MVC_architecture.png 'Block diagram of the MVC structure')
 
 Communication between server and client is realized through SocketIO. The events exchanged are described in the *Events* section below.
 
-## Model endpoints
+## Served endpoints
+In addition to the websocket communication between client and server, GOLMI is still a Flask
+app processing http requests, which is used to serve interface pages and save 
+log data to the server.
+
 The following endpoints are served (see `app/views.py`):
 
 **/** 
@@ -155,8 +157,10 @@ In the example View, rendering is split into three parts, *background, objects* 
 ### Controllers
 
 Depending on the setup, changes to the model might be initiated from different sources: it could be a single player pressing keys in their interface, someone giving spoken instructions to an NLU system or a artificial agent following some algorithm. 
-
-Each of these situations might require different controls, making the need for special controllers. As an example, `LocalKeyController.js` is provided. It interprets keyboard events on the client side and translates the key codes into gripper manipulation events sent to the model. The assigned keys are listed below:
+Each of these situations might require different controls, making the need for special controllers.
+ 
+##### LocalKeyController
+As an example, `LocalKeyController.js` is provided. It interprets keyboard events on the client side and translates the key codes into gripper manipulation events sent to the model. The assigned keys are listed below:
 
 | key code | key | assigned function |
 | --- | --- | --- |
