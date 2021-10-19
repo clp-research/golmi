@@ -21,9 +21,9 @@ class Config:
 		self.snap_to_grid		= snap_to_grid
 		self.prevent_overlap	= prevent_overlap
 		self.actions 			= actions
-		self.move_step			= 0.1#move_step
+		self.move_step			= move_step
 		self.rotation_step		= rotation_step
-		self.action_interval	= 0.1#action_interval
+		self.action_interval	= action_interval
 
 		if type(type_config) == str:
 			self.type_config = self._types_from_JSON(type_config)
