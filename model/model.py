@@ -3,6 +3,7 @@ from model.gripper import Gripper
 from model.obj import Obj
 from math import floor, ceil 
 import eventlet
+import json
 
 class Model:
 	def __init__(self, config, socket, room):
