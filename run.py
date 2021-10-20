@@ -3,7 +3,7 @@ from app import app, socketio
 
 # --- GOLMi's server --- #
 # author: clpresearch, Karla Friedrichs
-# usage: python3 run.py [-h] [--host HOST] [--port PORT] [--test]
+# usage: python3 run.py [-h] [--host HOST] [--port PORT]
 # Runs on host 127.0.0.1 and port 5000 per default
 
 # --- command line arguments ---
