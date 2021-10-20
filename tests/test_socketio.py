@@ -97,13 +97,10 @@ class SocketEventTest(unittest.TestCase):
         """
         test if loading a state from a configuration file works
         """
-        # read state file as string
+        # read state file as string and parse to dictionary
         file_path = Path(f"{RESOURCE_DIR}/tasks/test_state.json")
         with open(file_path, "r", encoding="utf-8") as f:
-            test_state_string = f.read()
-
-        # parse to dictionary
-        test_state_json = json.loads(test_state_string)
+            test_state_json = json.load(f)
 
         # send state as dictionary
         self.socketio_client.emit("load_state", test_state_json)
@@ -132,6 +129,30 @@ class SocketEventTest(unittest.TestCase):
             # sent should be a subset of received
             self.assertTrue(sent_obj.items() <= received_obj.items())
 
+    def test_reset_state(self):
+        """
+        Test resetting the model to an empty state.
+        """
+        # first send some state
+        # read state file as string
+        file_path = Path(f"{RESOURCE_DIR}/tasks/test_state.json")
+        with open(file_path, "r", encoding="utf-8") as f:
+            test_state = json.loads(f.read())
+        self.socketio_client.emit("load_state", test_state)
+        received = self.socketio_client.get_received()
+        self.assertEqual(len(received), 1)
+        self.assertEqual(received[0]["name"], "update_state")
+        # make sure there are some grippers and objects now
+        self.assertTrue(len(received[0]["args"][0]["grippers"]) > 0)
+        self.assertTrue(len(received[0]["args"][0]["objs"]) > 0)
+
+        # delete the state
+        self.socketio_client.emit("reset_state")
+        # make sure the received updated state is empty
+        received = self.socketio_client.get_received()
+        self.assertTrue(len(received[0]["args"][0]["grippers"]) == 0)
+        self.assertTrue(len(received[0]["args"][0]["objs"]) == 0)
+
     def test_load_config(self):
         """
         test sending a configuration
@@ -149,8 +170,11 @@ class SocketEventTest(unittest.TestCase):
         self.assertEqual(len(received), 1)
         self.assertEqual(received[0]["name"], "update_config")
 
-        # make sure the received config is equal to (or subset of) the sent one
-        #self.assertTrue(test_config.items() <= received[0]["args"][0].items())
+        # check the config was updated correctly. Here, the subset notion
+        # cannot be used because not all properties are sent back by the model.
+        for setting, value in test_config.items():
+            if setting in received[0]["args"][0]:
+                self.assertEqual(value, received[0]["args"][0][setting])
 
     def test_gripper_movement(self):
         """
@@ -207,7 +231,7 @@ class SocketEventTest(unittest.TestCase):
         self.assertEqual(new_y, old_y + test_step_size)
 
     def test_rotate_object(self):
-        # send a configuration
+        # send a state
         file_path = Path(f"{RESOURCE_DIR}/tasks/gripped_test.json")
         with open(file_path, "r", encoding="utf-8") as f:
             test_state_json = json.load(f)
@@ -266,7 +290,7 @@ class SocketEventTest(unittest.TestCase):
         self.assertEqual(len(received), 0)
 
     def test_flip_object(self):
-        # send a configuration
+        # send a state
         file_path = Path(f"{RESOURCE_DIR}/tasks/gripped_test.json")
         with open(file_path, "r", encoding="utf-8") as f:
             test_state_json = json.load(f)
@@ -298,18 +322,59 @@ class SocketEventTest(unittest.TestCase):
         flipped = original_flip != new_flip
         self.assertTrue(flipped)
 
-    # test loop functionality?
+    def test_grip_object(self):
+        """Test gripping and ungripping an object."""
+        # send a state were an object is already gripped
+        file_path = Path(f"{RESOURCE_DIR}/tasks/gripped_test.json")
+        with open(file_path, "r", encoding="utf-8") as f:
+            test_state_json = json.load(f)
+        
+        # send state as dictionary
+        self.socketio_client.emit("load_state", test_state_json)
+        received = self.socketio_client.get_received()
 
-    # --- gripping --- #
-    # both data structures show no object gripped or same object is gripped
+        # configuration
+        gr = "0"
+        obj = "4"
 
-    # bad request: missing gripper id
-    # valid request
+        # make sure the object is gripped right now
+        self.assertTrue(
+            list(received[0]["args"][0]["grippers"][gr]["gripped"].keys()) >= [obj]
+        )
+        self.assertTrue(received[0]["args"][0]["objs"][obj]["gripped"])
 
-    # stop gripping
+        # ungrip
+        self.socketio_client.emit("grip", {"id": gr})
+        received = self.socketio_client.get_received()
+        
+        # make sure object is not gripped anymore
+        self.assertEqual(len(received), 2)
+        obj_gripped = True
+        gr_has_gripped = True
+        for msg in received:
+            if msg["name"] == "update_objs":
+                obj_gripped = msg["args"][0][obj]["gripped"]
+            elif msg["name"] == "update_grippers":
+                gr_has_gripped = msg["args"][0][gr]["gripped"] is not None and \
+                    obj in msg["args"][0][gr]["gripped"].keys()
 
-    # --- objects --- #
+        self.assertFalse(obj_gripped)
+        self.assertFalse(gr_has_gripped)
 
-    # --- deleting the state --- #
+        # grip
+        self.socketio_client.emit("grip", {"id": gr})
+        received = self.socketio_client.get_received()
+        
+        # make sure object is not gripped anymore
+        self.assertEqual(len(received), 2)
+        for msg in received:
+            if msg["name"] == "update_objs":
+                obj_gripped = msg["args"][0][obj]["gripped"]
+            elif msg["name"] == "update_grippers":
+                gr_has_gripped = msg["args"][0][gr]["gripped"] is not None and \
+                    obj in msg["args"][0][gr]["gripped"].keys()
+
+        self.assertTrue(obj_gripped)
+        self.assertTrue(gr_has_gripped)
 
     # --- create more test cases for extensions below --- #
