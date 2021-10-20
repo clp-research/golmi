@@ -64,6 +64,11 @@ def client_disconnect():
 def load_state(json):
 	client_models[request.sid].set_state(json)
 
+@socketio.on("reset_state")
+def reset_state():
+	"""Reset the model's state."""
+	client_models[request.sid].reset()
+
 # --- configuration --- #
 @socketio.on("load_config")
 def load_config(json):
