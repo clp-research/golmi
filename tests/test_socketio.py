@@ -10,56 +10,47 @@ TEMPLATE_DIR = "app/templates"
 # directory containing resources
 RESOURCE_DIR = "app/static/resources"
 
-
-class Test(unittest.TestCase):
+class ConnectionTest(unittest.TestCase):
     """
-    Test socketio connections
+    Test connection and authentication to the server.
     """
-    def get_client(self, initialized=True):
+    def setUp(self):
         """
-        create a new client instance
-        if initialized is True the client will
-        establish a connection and remove the
-        received initial state
+        Create new flask and socketio test clients.
         """
-        flask_test_client = app.test_client()
-
-        socketio_test_client = socketio.test_client(
-            app, flask_test_client=flask_test_client
+        self.flask_client = app.test_client()
+        # create an unauthenticated client
+        self.socketio_client = socketio.test_client(
+            app, flask_test_client=self.flask_client
         )
 
-        # remove initial state
-        if initialized:
-            socketio_test_client.connect(auth={"password": AUTH})
-            socketio_test_client.get_received()
-
-        return socketio_test_client
+    def tearDown(self):
+        """
+        If necessary, disconnect the socketio test client.
+        """
+        if self.socketio_client.is_connected():
+            self.socketio_client.disconnect()
 
     def test_connection(self):
         """
-        test client connection
+        Test client connection with and without authentication.
         """
-        client = self.get_client(False)
+        self.assertFalse(self.socketio_client.is_connected())
 
-        # not connected yet
-        self.assertFalse(client.is_connected())
+        # provide authentication
+        self.socketio_client.connect(auth={"password": AUTH})
+        self.assertTrue(self.socketio_client.is_connected())
 
-        # establish connection
-        client.connect(auth={"password": AUTH})
-        self.assertTrue(client.is_connected())
-
-    def test_initial_configuration(self):
+    def test_initial_messages(self):
         """
-        make sure the initial configuration
-        and an empty state were sent
+        Make sure the initial configuration
+        and an empty state were sent.
         """
-        client = self.get_client(False)
-
-        # establish connection
-        client.connect(auth={"password": AUTH})
+        # connect the socketio test client
+        self.socketio_client.connect(auth={"password": AUTH})
 
         # obtain received objects
-        received = client.get_received()
+        received = self.socketio_client.get_received()
 
         received_config = False
         received_state = False
@@ -77,14 +68,37 @@ class Test(unittest.TestCase):
         self.assertTrue(received_state)
         self.assertTrue(received_config)
 
-    def test_load_config(self):
-        """
-        test sending a configuration
-        """
-        client = self.get_client(True)
 
-        # read config from a file
-        file_path = Path(f"{RESOURCE_DIR}/config/test_config.json")
+class SocketEventTest(unittest.TestCase):
+    """
+    Test event-based socket communication.
+    """
+    def setUp(self):
+        """
+        Create new flask and socketio test clients, connect to the server
+        and remove the initial messages.
+        """
+        self.flask_client = app.test_client()
+        # connect to the server
+        self.socketio_client = socketio.test_client(
+            app, flask_test_client=self.flask_client, auth={"password": AUTH}
+        )
+        # remove initially sent state and config
+        self.socketio_client.get_received()
+
+    def tearDown(self):
+        """
+        Disconnect the socketio test client.
+        """
+        if self.socketio_client.is_connected():
+            self.socketio_client.disconnect()
+
+    def test_load_state(self):
+        """
+        test if loading a state from a configuration file works
+        """
+        # read state file as string
+        file_path = Path(f"{RESOURCE_DIR}/tasks/test_state.json")
         with open(file_path, "r", encoding="utf-8") as f:
             test_state_string = f.read()
 
@@ -92,8 +106,8 @@ class Test(unittest.TestCase):
         test_state_json = json.loads(test_state_string)
 
         # send state as dictionary
-        client.emit("load_state", test_state_json)
-        received = client.get_received()
+        self.socketio_client.emit("load_state", test_state_json)
+        received = self.socketio_client.get_received()
 
         # make sure just one event was received
         self.assertEqual(len(received), 1)
@@ -118,47 +132,51 @@ class Test(unittest.TestCase):
             # sent should be a subset of received
             self.assertTrue(sent_obj.items() <= received_obj.items())
 
-    def test_load_state(self):
+    def test_load_config(self):
         """
-        test if loading a state from a configuration file works
+        test sending a configuration
         """
-        client = self.get_client(True)
-
-        # read state file as string
-        file_path = Path(f"{RESOURCE_DIR}/tasks/test_state.json")
+        # read config from a file and parse to dictionary
+        file_path = Path(f"{RESOURCE_DIR}/config/test_config.json")
         with open(file_path, "r", encoding="utf-8") as f:
-            test_config_string = f.read()
+            test_config = json.loads(f.read())
 
-        # parse to dictionary
-        test_config_json = json.loads(test_config_string)
+        # send state as dictionary
+        self.socketio_client.emit("load_config", test_config)
+        received = self.socketio_client.get_received()
+
+        # make sure just one event was received
+        self.assertEqual(len(received), 1)
+        self.assertEqual(received[0]["name"], "update_config")
+
+        # make sure the received config is equal to (or subset of) the sent one
+        #self.assertTrue(test_config.items() <= received[0]["args"][0].items())
 
     def test_gripper_movement(self):
         """
         test movements of grippers with normal
         and user defined step size
         """
-        client = self.get_client(True)
-
         # send a state
         file_path = Path(f"{RESOURCE_DIR}/tasks/test_state.json")
         with open(file_path, "r", encoding="utf-8") as f:
             test_state_json = json.load(f)
 
         # send state as dictionary
-        client.emit("load_state", test_state_json)
-        client.get_received()
+        self.socketio_client.emit("load_state", test_state_json)
+        self.socketio_client.get_received()
 
         # configuration
         test_gripper = "0"
         test_step_size = 0.5
 
         # send movement
-        client.emit("move", {
+        self.socketio_client.emit("move", {
             "id": test_gripper,
             "dx": 1,
             "dy": 0
         })
-        received = client.get_received()
+        received = self.socketio_client.get_received()
 
         # make sure we only received one object
         self.assertEqual(len(received), 1)
@@ -171,13 +189,13 @@ class Test(unittest.TestCase):
 
         # test bigger movement on y coordinate
         test_step_size = 4
-        client.emit("move", {
+        self.socketio_client.emit("move", {
             "id": test_gripper,
             "dx": 0,
             "dy": 1,
             "step_size": test_step_size
         })
-        received = client.get_received()
+        received = self.socketio_client.get_received()
 
         # make sure we only received one object
         self.assertEqual(len(received), 1)
@@ -189,28 +207,26 @@ class Test(unittest.TestCase):
         self.assertEqual(new_y, old_y + test_step_size)
 
     def test_rotate_object(self):
-        client = self.get_client(True)
-
         # send a configuration
         file_path = Path(f"{RESOURCE_DIR}/tasks/gripped_test.json")
         with open(file_path, "r", encoding="utf-8") as f:
             test_state_json = json.load(f)
 
         # send state as dictionary
-        client.emit("load_state", test_state_json)
-        client.get_received()
+        self.socketio_client.emit("load_state", test_state_json)
+        self.socketio_client.get_received()
 
         # configuration
         test_gripper = "0"
         rotation = -1
         obj = "4"
 
-        client.emit("rotate", {
+        self.socketio_client.emit("rotate", {
             "id": test_gripper,
             "direction": rotation
         })
 
-        received = client.get_received()
+        received = self.socketio_client.get_received()
         self.assertEqual(len(received), 1)
         self.assertEqual(received[0]["name"], "update_grippers")
 
@@ -226,52 +242,48 @@ class Test(unittest.TestCase):
         """
         rotation of an empty gripper
         """
-        client = self.get_client(True)
-
         # send a state
         file_path = Path(f"{RESOURCE_DIR}/tasks/test_state.json")
         with open(file_path, "r", encoding="utf-8") as f:
             test_state_json = json.load(f)
 
         # send state as dictionary
-        client.emit("load_state", test_state_json)
-        client.get_received()
+        self.socketio_client.emit("load_state", test_state_json)
+        self.socketio_client.get_received()
 
         # configuration
         test_gripper = "0"
         rotation = -1
 
-        client.emit("rotate", {
+        self.socketio_client.emit("rotate", {
             "id": test_gripper,
             "direction": rotation
         })
 
-        received = client.get_received()
+        received = self.socketio_client.get_received()
 
         # no update should have been sent
         self.assertEqual(len(received), 0)
 
     def test_flip_object(self):
-        client = self.get_client(True)
-
         # send a configuration
         file_path = Path(f"{RESOURCE_DIR}/tasks/gripped_test.json")
         with open(file_path, "r", encoding="utf-8") as f:
             test_state_json = json.load(f)
 
         # send state as dictionary
-        client.emit("load_state", test_state_json)
-        client.get_received()
+        self.socketio_client.emit("load_state", test_state_json)
+        self.socketio_client.get_received()
 
         # configuration
         test_gripper = "0"
         obj = "4"
 
-        client.emit("flip", {
+        self.socketio_client.emit("flip", {
             "id": test_gripper
         })
 
-        received = client.get_received()
+        received = self.socketio_client.get_received()
 
         # make sure only one object was sent
         self.assertEqual(len(received), 1)

@@ -1,6 +1,6 @@
 from flask import Flask, request, session
 from flask_cors import CORS, cross_origin
-from flask_socketio import SocketIO, send, emit, ConnectionRefusedError, join_room
+from flask_socketio import SocketIO, send, emit, ConnectionRefusedError, join_room, rooms
 from model.model import Model
 from model.config import Config
 
@@ -26,7 +26,7 @@ socketio = SocketIO(app, logger=True, engineio_logger=True, cors_allowed_origins
 
 # --- create a data model --- #
 
-config = Config("app/static/resources/config/pentomino_types.json")
+DEFAULT_CONFIG_FILE = "app/static/resources/config/pentomino_types.json"
 # session ids mapped to Model instances
 client_models = dict()
 
@@ -42,14 +42,22 @@ def client_connect(auth):
 		raise ConnectionRefusedError("unauthorized")
 
 	# add client to the list, for now each client gets their own room
-	# create a model for this client
-	client_models[request.sid] = Model(config, socketio, request.sid)
+	# create and model for this client
+	client_models[request.sid] = Model(
+		Config(DEFAULT_CONFIG_FILE), socketio, request.sid
+	)
 	room = session.get("room")
 	join_room(room)
 
 	# send config and state
 	emit("update_config", client_models[request.sid].config.to_dict())
 	emit("update_state", client_models[request.sid].state.to_dict())
+
+@socketio.on("disconnect")
+def client_disconnect():
+	# delete the client's model
+	for room in rooms(request.sid):
+		client_models.pop(room)
 
 # --- state --- #
 @socketio.on("load_state")
