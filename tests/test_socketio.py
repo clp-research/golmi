@@ -77,14 +77,14 @@ class Test(unittest.TestCase):
         self.assertTrue(received_state)
         self.assertTrue(received_config)
 
-    def test_load_state(self):
+    def test_load_config(self):
         """
-        test if loading a state from a configuration file works
+        test sending a configuration
         """
         client = self.get_client(True)
 
-        # read config file as string
-        file_path = Path(f"{RESOURCE_DIR}/tasks/pento_test.json")
+        # read config from a file
+        file_path = Path(f"{RESOURCE_DIR}/config/test_config.json")
         with open(file_path, "r", encoding="utf-8") as f:
             test_state_string = f.read()
 
@@ -118,6 +118,20 @@ class Test(unittest.TestCase):
             # sent should be a subset of received
             self.assertTrue(sent_obj.items() <= received_obj.items())
 
+    def test_load_state(self):
+        """
+        test if loading a state from a configuration file works
+        """
+        client = self.get_client(True)
+
+        # read state file as string
+        file_path = Path(f"{RESOURCE_DIR}/tasks/test_state.json")
+        with open(file_path, "r", encoding="utf-8") as f:
+            test_config_string = f.read()
+
+        # parse to dictionary
+        test_config_json = json.loads(test_config_string)
+
     def test_gripper_movement(self):
         """
         test movements of grippers with normal
@@ -125,8 +139,8 @@ class Test(unittest.TestCase):
         """
         client = self.get_client(True)
 
-        # send a configuration
-        file_path = Path(f"{RESOURCE_DIR}/tasks/pento_test.json")
+        # send a state
+        file_path = Path(f"{RESOURCE_DIR}/tasks/test_state.json")
         with open(file_path, "r", encoding="utf-8") as f:
             test_state_json = json.load(f)
 
@@ -214,8 +228,8 @@ class Test(unittest.TestCase):
         """
         client = self.get_client(True)
 
-        # send a configuration
-        file_path = Path(f"{RESOURCE_DIR}/tasks/pento_test.json")
+        # send a state
+        file_path = Path(f"{RESOURCE_DIR}/tasks/test_state.json")
         with open(file_path, "r", encoding="utf-8") as f:
             test_state_json = json.load(f)
 
@@ -234,7 +248,7 @@ class Test(unittest.TestCase):
 
         received = client.get_received()
 
-        # even if no object is gripped, should return OK (?)
+        # no update should have been sent
         self.assertEqual(len(received), 0)
 
     def test_flip_object(self):
