@@ -30,7 +30,7 @@ class Test(unittest.TestCase):
 
         # remove initial state
         if initialized:
-            socketio_test_client.connect(auth=AUTH)
+            socketio_test_client.connect(auth={"password": AUTH})
             socketio_test_client.get_received()
 
         return socketio_test_client
@@ -45,7 +45,7 @@ class Test(unittest.TestCase):
         self.assertFalse(client.is_connected())
 
         # establish connection
-        client.connect(auth=AUTH)
+        client.connect(auth={"password": AUTH})
         self.assertTrue(client.is_connected())
 
     def test_initial_configuration(self):
@@ -56,7 +56,7 @@ class Test(unittest.TestCase):
         client = self.get_client(False)
 
         # establish connection
-        client.connect(auth=AUTH)
+        client.connect(auth={"password": AUTH})
 
         # obtain received objects
         received = client.get_received()
@@ -95,7 +95,7 @@ class Test(unittest.TestCase):
         client.emit("load_state", test_state_json)
         received = client.get_received()
 
-        # # make sure just one event was received
+        # make sure just one event was received
         self.assertEqual(len(received), 1)
         self.assertEqual(received[0]["name"], "update_state")
 

@@ -38,7 +38,7 @@ from app import views
 @socketio.on("connect")
 def client_connect(auth):
 	# authenticate the client:
-	if auth != AUTH:
+	if type(auth) != dict or "password" not in auth or auth["password"]!= AUTH:
 		raise ConnectionRefusedError("unauthorized")
 
 	# add client to the list, for now each client gets their own room
