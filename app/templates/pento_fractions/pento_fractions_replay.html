@@ -28,6 +28,21 @@
 		<button id="start" autocomplete="off">Play</button> 
 		<button id="stop" autocomplete="off">Stop</button>
 		<button id="reset" autocomplete="off">Reset</button>
+
+		<p>
+		Replay Speed: <select id="Speed"></select>
+		<script>
+			var cuisines = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];     
+
+			var sel = document.getElementById('Speed');
+			for(var i = 0; i < cuisines.length; i++) {
+				var opt = document.createElement('option');
+				opt.innerHTML = cuisines[i].toString() + "x";
+				opt.value = cuisines[i];
+				sel.appendChild(opt);
+			}
+		</script>
+		</p>
 		<p>
 			<label for="replayStart">Replay time range:</label>
 			<input type="text" id="replayTimeRange" readonly style="border:0; color:darkgray; font-weight:bold;">
