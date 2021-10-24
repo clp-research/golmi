@@ -23,7 +23,8 @@ $(document).ready(function () {
 	const layerView = new document.LocalLayerView(bgLayer, objLayer, grLayer);
 
 	// Create a replayer with 20 fps
-	const replayer = new document.Replayer(20);
+	var replayspeed = document.getElementById("ReplaySpeed");
+	const replayer = new document.Replayer(20 * replayspeed.value);
 	// TODO: where to load logs from? -> Golmi server? -> from files ? (cross-origin ...)
 	// Temporarily use hard-coded log
 	loadLog(document.TESTLOG);
