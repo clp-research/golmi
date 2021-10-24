@@ -8,7 +8,7 @@ from app import app, socketio, test
 
 # --- command line arguments ---
 parser = argparse.ArgumentParser(description="Run GOLMI's model API.")
-parser.add_argument("--host", type=str, default="127.0.0.1", 
+parser.add_argument("--host", type=str, default="127.0.0.1",
 	help="Adress to run the API on. Default: localhost.")
 parser.add_argument("--port", type=str, default="5000", 
 	help="Port to run the API on. Default: 5000.")
@@ -21,4 +21,5 @@ if __name__ == "__main__":
 		# will throw errors if something fails
 		test.selftest()
 		print("All tests passed.")
+	print("Starting app on ", "{}:{}".format(args.host, args.port))
 	socketio.run(app, host=args.host, port=args.port)

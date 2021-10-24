@@ -7,11 +7,6 @@ $(document).ready(function () {
 	const MODEL = window.location.origin // expect same as backend e.g. the default "127.0.0.1:5000";
 	console.log("Connect to " + MODEL)
 
-	// parameters for random initial state
-	// (state is generated once the configuration is received)
-	const N_OBJECTS = 5;
-	const N_GRIPPERS = 1;
-
 	// --- create a socket --- //
 	// don't connect yet
 	var socket = io(MODEL, { autoConnect: false, auth: "GiveMeTheBigBluePasswordOnTheLeft" });
@@ -20,7 +15,7 @@ $(document).ready(function () {
 
 	// --- controller --- //
 	// create a controller, we still need to attach a gripper in the model to it
-	let controller = new document.LocalKeyController();
+	let controller = new document.LocalTalkativeKeyController();
 
 	// --- view --- // 
 	// Get references to the three canvas layers
@@ -29,45 +24,45 @@ $(document).ready(function () {
 	let grLayer		= document.getElementById("gripper");
 
 	// Set up the view js, this also sets up key listeners
-	const layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
+	const layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer, {
+		bgGridShow: false,
+		bgColor: "white"
+	});
 
 	// --- logger --- //
-	const logView = new document.LogView(socket);
+	const logView = new document.LogView(socket, false);
+
+	// --- task generator --- //
+
+	const N_OBJECTS = 20;
+	const N_GRIPPERS = 0;
+	const taskGenerator = new document.PentoGenerator(socket);
+			
 
 	// --- socket communication --- //
+	var setup_complete = false;
+
 	socket.on("connect", () => {
 		console.log("Connected to model server");
 	});
 
-	socket.on("disconnect", () => {
-		console.log("Disconnected from model server");
-		// demo of the logView: send the logged data to the server
-		logView.addData("test", true);
-		logView.sendData();
-	});
-
-	var setup_complete = false;
+	//TODO: wait until manual config is complete
 	socket.on("update_config", (config) => {
-		// only do setup once (reconnections can occur, we don't want to reset the state every time)
+		// only do setup once when config is sent for the first time
 		if (!setup_complete) {
-			// create a random initial state with a gripper in the center
-			let taskGenerator = new document.PentoGenerator(MODEL);
-			let randomState = taskGenerator.generateState(N_OBJECTS, N_GRIPPERS, config, false);
-			// send the state to the model
-			socket.emit("load_state", randomState);
-			// subscribe the controller to the only generated gripper
-			controller.attachModel(socket, "0");
+			// generate and send a random state
+			taskGenerator.initRandomState(N_OBJECTS, N_GRIPPERS, config)
+			.then(() => {
+				// subscribe the controller to some gripper (here we create a new gripper)
+				controller.attachModel(socket, "0");
+			});
 			setup_complete = true;
 		}
 	});
 
-	// for debugging: log all events
-	socket.onAny((eventName, ...args) => {
-		console.log(eventName, args);
-	});
-
 	// --- stop and start drawing --- //
 	function start() {
+		logView.clearLog();
 		// reset the controller in case any key is currently pressed
 		controller.resetKeys()
 		// manually establish a connection, connect the controller and load a state
@@ -77,10 +72,7 @@ $(document).ready(function () {
 	function stop() {
 		// reset the controller in case any key is currently pressed
 		controller.resetKeys();
-		// disconnect the controller
-		controller.detachModel(socket, "0");
-		// manually disconnect
-		socket.disconnect();
+		logView.sendData();
 	}
 
 	// --- buttons --- //
@@ -97,10 +89,7 @@ $(document).ready(function () {
 
 	// --- unit tests --- //
 	if (SELFTEST) {
-		// test the PentoGenerator class
-		if (document.pentoGeneratorTest()) {
-			console.log("Unit tests passed.");
-		} 
+		console.log("Unit tests passed");
+		
 	}
-	
 }); // on document ready end

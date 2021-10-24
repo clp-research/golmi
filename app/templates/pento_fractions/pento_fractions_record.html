@@ -1,0 +1,47 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+
+	<title>PentoFractions Recorder</title>
+
+	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+	<meta name="description" content="Record Pentomino clips">
+	<meta name="author" content="clpresearch, Karla Friedrichs">
+
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/layer_style.css') }}">
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
+</head>
+
+<body>
+	<div style="padding:10px;">
+		<button id="start" autocomplete="off">Start recording</button>
+		<button id="stop" autocomplete="off">Stop recording</button>
+	</div>
+	<!-- The "viewport" id and three stacked canvases of the same size are needed to 
+		properly render using the LayerView class -->
+	<div id="viewport" style="height: 600px; width: 600px; padding: 10px;">
+		<canvas id="background" width="600" height="600"></canvas>
+		<canvas id="objects" width="600" height="600"></canvas>
+		<canvas id="gripper" width="600" height="600"></canvas>
+	</div>
+
+	<!-- jquery -->
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<!-- socketio -->
+	<script src="https://cdn.socket.io/4.1.2/socket.io.min.js" integrity="sha384-toS6mmwu70G0fw54EGlWWeA4z3dyJ+dlXBtSURSKN4vyRFOcxd3Bzjj/AoOwY+Rg" crossorigin="anonymous"></script>
+	<!-- General GOLMi functionality -->
+    <script src="{{ url_for('static', filename='js/view/View.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/view/LayerView.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/view/LView.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/controller/LocalKeyController.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/controller/LocalTalkativeKeyController.js') }}"></script>
+    <!-- Experiment specific functionality -->
+	<script src="{{ url_for('static', filename='js/PentoGenerator.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/plugins/pentoFractions/record.js') }}"></script>
+</body>
+
+</html>

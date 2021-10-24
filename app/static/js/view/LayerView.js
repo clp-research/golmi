@@ -17,12 +17,22 @@ $(document).ready(function () {
 	 * @param {reference to the canvas DOM element to draw grippers and gripped objects to} grCanvas
 	 */
 	this.LayerView = class LayerView extends document.View {
-		constructor(modelSocket, bgCanvas, objCanvas, grCanvas) {
+		constructor(modelSocket, bgCanvas, objCanvas, grCanvas, options) {
 			super(modelSocket);
 			// Three overlapping canvas
 			this.bgCanvas	= bgCanvas;
 			this.objCanvas	= objCanvas;
 			this.grCanvas	= grCanvas;
+
+			// Merge default and optional settings
+			this.settings = $.extend({}, {
+				bgGridShow: true,
+				bgGridColor: "black",
+				bgGridWidth: 1,
+				bgColor: "white",
+				grColor: "red",
+				grWidth: 2
+			}, options);
 
 			// array holding the currently gripped objects
 			this.grippedObjs = new Array();
@@ -82,22 +92,24 @@ $(document).ready(function () {
 		drawBg() {
 			// set updates
 			let ctx = this.bgCanvas.getContext("2d");
-			ctx.fillStyle = "white";
-			ctx.lineStyle = "black";
-			ctx.lineWidth = 1;
+			ctx.fillStyle = this.settings.bgColor;
 
 			// white rectangle for background
 			ctx.fillRect(0,0, this.canvasWidth, this.canvasHeight);
 
-			// horizontal lines
-			for (let row = 0; row <= this.rows; row++) {
-				ctx.moveTo(0, row*this.blockSize);
-				ctx.lineTo(this.canvasWidth, row*this.blockSize);
-			}
-			// vertical lines
-			for (let col = 0; col <= this.cols; col++) {
-				ctx.moveTo(col*this.blockSize, 0);
-				ctx.lineTo(col*this.blockSize, this.canvasHeight);
+			if(this.settings.bgGridShow) {
+				ctx.strokeStyle = this.settings.bgGridColor;
+				ctx.lineWidth = this.settings.bgGridWidth;
+				// horizontal lines
+				for (let row = 0; row <= this.rows; row++) {
+					ctx.moveTo(0, row*this.blockSize);
+					ctx.lineTo(this.canvasWidth, row*this.blockSize);
+				}
+				// vertical lines
+				for (let col = 0; col <= this.cols; col++) {
+					ctx.moveTo(col*this.blockSize, 0);
+					ctx.lineTo(col*this.blockSize, this.canvasHeight);
+				}
 			}
 			// draw to the screen
 			ctx.stroke();
@@ -157,6 +169,7 @@ $(document).ready(function () {
 				// draw any gripped object first (i.e. 'below' the gripper)
 				if (gripper.gripped) {
 					for (const [grippedId, grippedObj] of Object.entries(gripper.gripped)) {
+
 						let blockMatrix = grippedObj.block_matrix;
 						
 						let params = {
@@ -174,8 +187,8 @@ $(document).ready(function () {
 					
 				// draw the gripper itself
 				// --- config ---
-				ctx.lineStyle = "red";
-				ctx.lineWidth = 2;
+				ctx.strokeStyle = this.settings.grColor;
+				ctx.lineWidth = this.settings.grWidth;
 				// draw. The gripper is a simple cross
 				ctx.beginPath();
 				ctx.moveTo(this._toPxl(gripper.x-grSize), this._toPxl(gripper.y-grSize));
@@ -240,7 +253,7 @@ $(document).ready(function () {
 			// shadowBlur is set to 0 if highlight is false, effectively making it invisible
 			ctx.shadowBlur = highlight ? 5 : 0;
 			ctx.shadowColor = highlight;
-			ctx.lineStyle = borderColor;
+			ctx.strokeStyle = borderColor;
 			ctx.lineWidth = borderWidth;
 
 			ctx.beginPath();

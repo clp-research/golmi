@@ -12,7 +12,7 @@ $(document).ready(function () {
 			this.socket = modelSocket;
 			this._initSocketEvents();
 
-			// Configuration. Is assigned at startDrawing()
+			// Configuration. Is assigned at _loadConfig()
 			this.cols;			// canvas width in blocks
 			this.rows;			// canvas height in blocks
 
@@ -150,10 +150,7 @@ $(document).ready(function () {
 
 		/**
 		 * Loads a configuration received from the model. The values are saved since the configuration is
-		 * not expected to change frequently. 
-		 * If no configuration is passed, it is requested from the model.
-		 * Implemented as an async function to make sure the configuration is complete before 
-		 * subsequent steps (i.e. drawing) are made.
+		 * not expected to change frequently.
 		 * @param {config object, obtained from the model} config
 		 */
 		_loadConfig(config) {

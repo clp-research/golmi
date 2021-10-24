@@ -1,0 +1,7 @@
+/**
+ * Inline labels
+ */
+label{
+	display: inline-block;
+	padding-right: 5px;
+}
