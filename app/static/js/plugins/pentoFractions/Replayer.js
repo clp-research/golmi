@@ -6,13 +6,14 @@ $(document).ready(function () {
 	 * @param {frames per second for replay rendering, default: 20} frameRate
 	 */
 	this.Replayer = class Replayer {
-		constructor(frameRate=20) {
+		constructor(frameRate=20, speed=1) {
 			this._log;
 			if (frameRate > 100) {
 				console.log("Warning:",
 					" High frame rates may cause the replay to slow down.");
 			}
 			this.frameRate = frameRate;  // fps
+			this.speed = speed;
 			this.currentTime = -1;
 			this._endTime;
 			this.replayLoop;
@@ -102,6 +103,7 @@ $(document).ready(function () {
 			// Process at a certain frame rate until the log ends
 			this.replayLoop = setInterval(() => {
 				if (this.currentTime < this.endTime) {
+					// load updates from currentTime to currentTime + offset
 					this._fastForward(this, this.currentTime + frameOffset, true);
 				} else {
 					this._stopReadingLog();
