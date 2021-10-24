@@ -9,7 +9,10 @@ $(document).ready(function () {
 
 	// --- create a socket --- //
 	// don't connect yet
-	var socket = io(MODEL, { autoConnect: false, auth: "GiveMeTheBigBluePasswordOnTheLeft" });
+	const socket = io(MODEL, {
+		autoConnect: false, 
+		auth: "GiveMeTheBigBluePasswordOnTheLeft"
+	});
 	// debug: print any messages to the console
 	localStorage.debug = 'socket.io-client:socket';
 
@@ -22,9 +25,14 @@ $(document).ready(function () {
 	// Set up the view js, this also sets up key listeners
 	const layerView = new document.LocalLayerView(bgLayer, objLayer, grLayer);
 
-	// Create a replayer with 20 fps
-	var replayspeed = document.getElementById("ReplaySpeed");
-	const replayer = new document.Replayer(20 * replayspeed.value);
+	// Create a replayer with 20 fps and default speed
+	const replaySpeed = $("#replaySpeed").val();
+	const replayer = new document.Replayer(20, replaySpeed);
+	// Update the replay speed when the UI value changes
+	$("#replaySpeed").change(() => {
+		// get the now selected option and assign use its value
+		replayer.speed = $("#replaySpeed option:selected")[0].value;
+	});
 	// TODO: where to load logs from? -> Golmi server? -> from files ? (cross-origin ...)
 	// Temporarily use hard-coded log
 	loadLog(document.TESTLOG);
@@ -38,6 +46,7 @@ $(document).ready(function () {
 		replayer.stop();
 	}
 
+	// --- load a new log and update the progress bar --- //
 	function loadLog(log) {
 		replayer.log = log;
 		// see https://api.jqueryui.com/slider/ for slider widget documentation
@@ -62,6 +71,8 @@ $(document).ready(function () {
 			prettyTime($("#slider-range").slider("values", 0)) + " - " + 
 			prettyTime($("#slider-range").slider("values", 1)));
 	}
+
+	// --- helper functions --- //
 
 	/**
 	 * Create a nicely readable string from a number of seconds.
