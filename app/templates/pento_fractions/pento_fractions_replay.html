@@ -32,10 +32,10 @@
 		<p>
 		Replay Speed: <select id="ReplaySpeed"></select>
 		<script>
-			var speeds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+			var speeds = [1, 2, 3, 4, 5];
 			var sel = document.getElementById('ReplaySpeed');
 
-			for(var i = 0; i < speeds.length; i++) {
+			for (var i = 0; i < speeds.length; i++){
 				var opt = document.createElement('option');
 				opt.innerHTML = speeds[i].toString() + "x";
 				opt.value = speeds[i];
