@@ -1,13 +1,8 @@
 class Obj:
-<<<<<<< HEAD
-	def __init__(self, obj_type, x, y, width, height, block_matrix, 
-		rotation=0, mirrored=False, color="blue", gripped=False): 
-=======
 	"""
 	Width and height are determined by the passed block matrix.
 	"""
 	def __init__(self, obj_type, x, y, block_matrix, rotation=0, mirrored=False, color="blue"):
->>>>>>> attempt to reduce block matrix size. rotation and gripping seems buggy
 		self.type			= obj_type
 		self.x				= x
 		self.y				= y
