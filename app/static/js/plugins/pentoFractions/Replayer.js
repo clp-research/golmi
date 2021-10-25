@@ -104,7 +104,7 @@ $(document).ready(function () {
 			this.replayLoop = setInterval(() => {
 				if (this.currentTime < this.endTime) {
 					// load updates from currentTime to currentTime + offset
-					this._fastForward(this, this.currentTime + frameOffset, true);
+					this._fastForward(this, this.currentTime + frameOffset*parseFloat(this.speed), true);
 				} else {
 					this._stopReadingLog();
 				}
