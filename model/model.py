@@ -114,23 +114,6 @@ class Model:
 		try:
 			# initialize an empty state
 			self.state = State()
-			if "grippers" in json_data and type(json_data["grippers"]) == dict:
-				for gr_name in json_data["grippers"]:
-					gr = str(gr_name) # use string identifiers only for consistency
-					self.state.grippers[gr] = Gripper(
-						float(json_data["grippers"][gr]["x"]),
-						float(json_data["grippers"][gr]["y"]))
-					# process optional info
-					if "gripped" in json_data["grippers"][gr]:
-						# cast object name to str, too
-						self.state.grippers[gr].gripped = str(json_data["grippers"][gr]["gripped"])
-					if "width" in json_data["grippers"][gr]:
-						self.state.grippers[gr].width = json_data["grippers"][gr]["width"]
-					elif "height" in json_data["grippers"][gr]:
-						self.state.grippers[gr].height = json_data["grippers"][gr]["height"]
-					elif "color" in json_data["grippers"][gr]:
-						self.state.grippers[gr].color = json_data["grippers"][gr]["color"]
-			
 			# construct objects
 			if "objs" in json_data and type(json_data["objs"]) == dict:
 				for obj_name in json_data["objs"]:
@@ -152,6 +135,25 @@ class Model:
 						self.state.flip_obj(obj)
 					if "color" in json_data["objs"][obj]:
 						self.state.objs[obj].color = json_data["objs"][obj]["color"]
+			# construct grippers
+			if "grippers" in json_data and type(json_data["grippers"]) == dict:
+				for gr_name in json_data["grippers"]:
+					gr = str(gr_name) # use string identifiers only for consistency
+					self.state.grippers[gr] = Gripper(
+						float(json_data["grippers"][gr]["x"]),
+						float(json_data["grippers"][gr]["y"]))
+					# process optional info
+					if "gripped" in json_data["grippers"][gr]:
+						# cast object name to str, too
+						gripped_id = str(json_data["grippers"][gr]["gripped"])
+						self.state.grippers[gr].gripped = gripped_id
+						self.state.objs[gripped_id].gripped = True
+					if "width" in json_data["grippers"][gr]:
+						self.state.grippers[gr].width = json_data["grippers"][gr]["width"]
+					elif "height" in json_data["grippers"][gr]:
+						self.state.grippers[gr].height = json_data["grippers"][gr]["height"]
+					elif "color" in json_data["grippers"][gr]:
+						self.state.grippers[gr].color = json_data["grippers"][gr]["color"]
 		except: 
 			raise SyntaxError("Error during state initialization: JSON data does not have the right format.\n" + \
 				"Please refer to the documentation.")

@@ -1,0 +1,55 @@
+{
+    "objs": {
+      "0": {
+        "type": "U",
+        "x": 6,
+        "y": 10,
+        "width": 5,
+        "height": 5,
+        "color": "#99BBDD",
+        "mirrored": false,
+        "rotation": 0
+      },
+      "2": {
+        "type": "V",
+        "x": 13,
+        "y": 5,
+        "width": 5,
+        "height": 5,
+        "color": "#408000",
+        "mirrored": false,
+        "rotation": 90
+      },
+      "3": {
+        "type": "W",
+        "x": 15,
+        "y": 14,
+        "width": 5,
+        "height": 5,
+        "color": "#5CD6D6",
+        "mirrored": false,
+        "rotation": 90
+      },
+      "4": {
+        "type": "X",
+        "x": 14,
+        "y": 1,
+        "width": 5,
+        "height": 5,
+        "color": "#336699",
+        "mirrored": false,
+        "rotation": 90
+      }
+    },
+    "grippers": {
+      "0": {
+        "x": 16.5,
+        "y": 3.5,
+        "gripped": "4"
+      },
+      "1": {
+        "x": 6,
+        "y": 9.5
+      }
+    }
+  }
