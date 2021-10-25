@@ -20,7 +20,7 @@ How to start the demo:
 
 0. (Activate your virtual environment, if using one)
 1. Install python dependencies: `pip install -r requirements.txt`
-2. Run the server: `python run.py [-h] [--host HOST] [--port PORT]`. Per default, it will run on `http://localhost:5000/`
+2. Run the server: `python run.py [-h] [--host HOST] [--port PORT]`. By default, it will run on `http://localhost:5000/`
 3. Navigate to  `http://localhost:5000/demo` in a browser. 
 4. Press the 'Start' button to begin rendering. You can move the gripper around using the arrow keys and grip using Space or Enter. Use 'Stop' to stop rendering and freeze the current state.
 

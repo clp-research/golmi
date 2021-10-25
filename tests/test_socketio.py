@@ -4,11 +4,11 @@ import unittest
 
 from app import app, socketio, AUTH
 
-
 # directory html is served from
 TEMPLATE_DIR = "app/templates"
 # directory containing resources
 RESOURCE_DIR = "app/static/resources"
+
 
 class ConnectionTest(unittest.TestCase):
     """
@@ -328,7 +328,7 @@ class SocketEventTest(unittest.TestCase):
         file_path = Path(f"{RESOURCE_DIR}/tasks/gripped_test.json")
         with open(file_path, "r", encoding="utf-8") as f:
             test_state_json = json.load(f)
-        
+
         # send state as dictionary
         self.socketio_client.emit("load_state", test_state_json)
         received = self.socketio_client.get_received()
@@ -346,7 +346,7 @@ class SocketEventTest(unittest.TestCase):
         # ungrip
         self.socketio_client.emit("grip", {"id": gr})
         received = self.socketio_client.get_received()
-        
+
         # make sure object is not gripped anymore
         self.assertEqual(len(received), 2)
         obj_gripped = True
@@ -356,7 +356,7 @@ class SocketEventTest(unittest.TestCase):
                 obj_gripped = msg["args"][0][obj]["gripped"]
             elif msg["name"] == "update_grippers":
                 gr_has_gripped = msg["args"][0][gr]["gripped"] is not None and \
-                    obj in msg["args"][0][gr]["gripped"].keys()
+                    msg["args"][0][gr]["gripped"].get(obj)
 
         self.assertFalse(obj_gripped)
         self.assertFalse(gr_has_gripped)
@@ -364,7 +364,7 @@ class SocketEventTest(unittest.TestCase):
         # grip
         self.socketio_client.emit("grip", {"id": gr})
         received = self.socketio_client.get_received()
-        
+
         # make sure object is not gripped anymore
         self.assertEqual(len(received), 2)
         for msg in received:
