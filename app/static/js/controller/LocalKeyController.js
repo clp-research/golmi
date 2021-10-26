@@ -3,7 +3,7 @@ $(document).ready(function () {
 	/**
 	 * Local controller. Can connect to one or more models. In each model, a gripper is created
 	 * at connection. If a gripperId is passed, an existing gripper with this id is assigned.
-	 * Otherwise a new gripper is added with the given id or alternatively the session id. 
+	 * Otherwise a new gripper is added with the given id or alternatively the session id.
 	 * The user's keystrokes are used to control the assigned gripper(s) and any gripped object.
 	 * @param {optional Array of [socket, gripperId], where gripperId can be null, default:null} modelSockets
 	 */
@@ -17,23 +17,15 @@ $(document).ready(function () {
 			this.keyAssignment = {
 				13: [this.grip, null, false],					// Enter
 				32: [this.grip, null, false],					// Space
-				// hack as long as loops are not fixed for sockeio server
-				37: [this.moveLeft, null, false],		// arrow left
-				38: [this.moveUp, null, false],		// arrow up
-				39: [this.moveRight, null, false],		// arrow right
-				40: [this.moveDown, null, false],		// arrow down
-				// 37: [this.moveLeft, this.stopMove, false],		// arrow left
-				// 38: [this.moveUp, this.stopMove, false],		// arrow up
-				// 39: [this.moveRight, this.stopMove, false],		// arrow right
-				// 40: [this.moveDown, this.stopMove, false],		// arrow down
-				65: [this.rotateLeft, null, false],	// a
-				68: [this.rotateRight, null, false],	// d
+				37: [this.moveLeft, this.stopMove, false],		// arrow left
+				38: [this.moveUp, this.stopMove, false],		// arrow up
+				39: [this.moveRight, this.stopMove, false],		// arrow right
+				40: [this.moveDown, this.stopMove, false],		// arrow down
+				65: [this.rotateLeft, this.stopRotate, false],	// a
+				68: [this.rotateRight, this.stopRotate, false],	// d
 				83: [this.flip, null, false],					// s
 				87: [this.flip, null, false]					// w
 			};
-
-			// Stores codes of pressed keys waiting for key release
-			this.activeKeys = new Set();
 
 			// Set up key listeners
 			this._initKeyListener();
@@ -92,9 +84,9 @@ $(document).ready(function () {
 		/**
 		 * Notifies all subscribed models that a "grip" should be attempted.
 		 * @param {reference to LocalKeyController instance (this)} thisArg
+		 * @param {set to true to request a looped action on the model side} loop
 		 */
-		grip(thisArg) {
-			let loop = false;
+		grip(thisArg, loop) {
 			// send an event to each model
 			thisArg.models.forEach(([socket, grId]) => {
 				socket.emit("grip", {"id": grId, "loop":loop});
@@ -102,7 +94,7 @@ $(document).ready(function () {
 		}
 
 		/**
-		 * Unused. Can be employed to stop a looped gripping action.
+		 * Request stopping ongoing looped gripping.
 		 */
 		stopGrip(thisArg) {
 			// send a request to each subscribed model
@@ -114,39 +106,46 @@ $(document).ready(function () {
 		/**
 		 * Notify models to move the gripper 1 unit to the left.
 		 * @param {reference to LocalKeyController instance (this)} thisArg
+		 * @param {set to true to request a looped action on the model side} loop
 		 */
-		moveLeft(thisArg) { thisArg._moveGr(-1, 0); }
+		moveLeft(thisArg, loop) { thisArg._moveGr(-1, 0, loop); }
 
 		/**
 		 * Notify models to move the gripper 1 unit up.
 		 * @param {reference to LocalKeyController instance (this)} thisArg
+		 * @param {set to true to request a looped action on the model side} loop
 		 */
-		moveUp(thisArg) { thisArg._moveGr(0, -1); }
+		moveUp(thisArg, loop) { thisArg._moveGr(0, -1, loop); }
 		
 		/**
 		 * Notify models to move the gripper 1 unit to the right.
 		 * @param {reference to LocalKeyController instance (this)} thisArg
+		 * @param {set to true to request a looped action on the model side} loop
 		 */
-		moveRight(thisArg) { thisArg._moveGr(1, 0); }
+		moveRight(thisArg, loop) { thisArg._moveGr(1, 0, loop); }
 
 		/**
 		 * Notify models to move the gripper 1 unit down.
 		 * @param {reference to LocalKeyController instance (this)} thisArg
+		 * @param {set to true to request a looped action on the model side} loop
 		 */
-		moveDown(thisArg) { thisArg._moveGr(0, 1); }
+		moveDown(thisArg, loop) { thisArg._moveGr(0, 1, loop); }
 
 		/**
 		 * Helper function to notify models to move the gripper 1 block in a specified direction.
 		 * @param {number of blocks to move in x direction} dx
 		 * @param {number of blocks to move in y direction} dy
+		 * @param {set to true to request a looped action on the model side} loop
  		 */
-		_moveGr(dx, dy) {
-			let loop = false;
+		_moveGr(dx, dy, loop) {
 			this.models.forEach(([socket, grId]) => {
 				socket.emit("move", {"id": grId, "dx": dx, "dy": dy, "loop": loop});
 			});
 		}
 
+		/**
+		 * Request stopping an ongoing looped movement.
+		 */
 		stopMove(thisArg) {
 			thisArg.models.forEach(([socket, grId]) => {
 				socket.emit("stop_move", {"id": grId});
@@ -156,26 +155,31 @@ $(document).ready(function () {
 		/**
 		 * 
 		 * @param {reference to LocalKeyController instance (this)} thisArg
+		 * @param {set to true to request a looped action on the model side} loop
 		 */
-		rotateLeft(thisArg) { thisArg._rotate(-1); }
+		rotateLeft(thisArg, loop) { thisArg._rotate(-1, loop); }
 
 		/**
 		 * 
 		 * @param {reference to LocalKeyController instance (this)} thisArg
+		 * @param {set to true to request a looped action on the model side} loop
 		 */
-		rotateRight(thisArg) { thisArg._rotate(1); }
+		rotateRight(thisArg, loop) { thisArg._rotate(1, loop); }
 
 		/**
 		 * Helper function to notify models to rotate a gripped object in a specified direction.
 		 * @param {number of units to turn. Pass negative value for leftwards rotation} direction
+		 * @param {set to true to request a looped action on the model side} loop
 		 */
-		_rotate(direction) {
-			let loop = false;
+		_rotate(direction, loop) {
 			this.models.forEach(([socket, grId]) => {
 				socket.emit("rotate", {"id":grId, "direction":direction, "loop":loop});
 			});
 		}
 
+		/**
+		 * Stop an ongoing looped rotation.
+		 */
 		stopRotate(thisArg) {
 			thisArg.models.forEach(([socket, grId]) => {
 				socket.emit("stop_rotate", {"id":grId});
@@ -185,14 +189,17 @@ $(document).ready(function () {
 		/**
 		 * Notify models to flip a gripped object on a specified axis.
 		 * @param {reference to LocalKeyController instance (this)} thisArg
+		 * @param {set to true to request a looped action on the model side} loop
 		 */
-		flip(thisArg) { 
-			let loop = false;
+		flip(thisArg, loop) {
 			thisArg.models.forEach(([socket, grId]) => {
 				socket.emit("flip", {"id":grId, "loop":loop});
 			});
 		}
 
+		/**
+		 * Request stopping ongoing looped mirroring.
+		 */
 		stopFlip(thisArg) {
 			thisArg.models.forEach(([socket, grId]) => {
 				socket.emit("stop_flip", {"id":grId});
@@ -220,12 +227,13 @@ $(document).ready(function () {
 				if (this._downAssigned(e.keyCode)) {
 					// only progress if the key is not already in state "down"
 					if (!this._isDown(e.keyCode)) {
-						// if a keyup-function is assigned, change the state to "down"
-						if (this._upAssigned(e.keyCode)) {
-							this.keyAssignment[e.keyCode][2] = true;
-						}
+						// Change the state to "down". This is done for all keys, not
+						// just loopable ones, to prevent the keydown event from
+						// firing repeatedly if the key is held.
+						this.keyAssignment[e.keyCode][2] = true;
 						// execute the function assigned to the keydown event
-						this.keyAssignment[e.keyCode][0](this);
+						let loopable = this._upAssigned(e.keyCode);
+						this.keyAssignment[e.keyCode][0](this, loopable);
 					}
 				}
 			});
@@ -235,10 +243,16 @@ $(document).ready(function () {
 				if (this._upAssigned(e.keyCode) && this._isDown(e.keyCode)) {
 					// execute the function assigned to the keyup event
 					this.keyAssignment[e.keyCode][1](this);
-					// change the state to "up"
+				}
+				// change the state to "up"
+				if (this._registered(e.keyCode)) {
 					this.keyAssignment[e.keyCode][2] = false;
 				}
 			});
+		}
+
+		_registered(keyCode) {
+			return this.keyAssignment[keyCode] ? true : false;
 		}
 
 		/** 
@@ -247,7 +261,7 @@ $(document).ready(function () {
 		 * @return bool, true signifying a function is assigned to keydown
 		 */
 		_downAssigned(keyCode) {
-			return this.keyAssignment[keyCode] && this.keyAssignment[keyCode][0];
+			return this._registered(keyCode) && this.keyAssignment[keyCode][0] ? true : false;
 		}
 
 		/** 
@@ -256,7 +270,7 @@ $(document).ready(function () {
 		 * @return bool, true signifying a function is assigned to keyup
 		 */
 		_upAssigned(keyCode) {
-			return this.keyAssignment[keyCode] && this.keyAssignment[keyCode][1];
+			return this._registered(keyCode) && this.keyAssignment[keyCode][1] ? true : false;
 		}
 
 		/**
@@ -264,9 +278,8 @@ $(document).ready(function () {
 		 * @return bool, true if the key is "down"
 		 */
 		_isDown(keyCode) {
-			return this.keyAssignment[keyCode][2];
+			return this._registered(keyCode) && this.keyAssignment[keyCode][2] ? true : false;
 		}
 
 	}; // class LocalKeyController end
-
 }); // on document ready end

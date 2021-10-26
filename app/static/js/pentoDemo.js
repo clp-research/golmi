@@ -9,7 +9,8 @@ $(document).ready(function () {
 
 	// parameters for random initial state
 	// (state is generated once the configuration is received)
-	const N_OBJECTS = 15;
+
+	const N_OBJECTS = 5;
 	const N_GRIPPERS = 1;
 
 	// --- create a socket --- //

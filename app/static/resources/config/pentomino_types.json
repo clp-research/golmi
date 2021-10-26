@@ -1,4 +1,6 @@
 {
+	"__comment1__": "Block matrices for the 12 Pentomino pieces.",
+	"__comment2__": "Block matrices should be square to support rotation",
 	"F": [
 			[0,0,0,0,0],
 			[0,1,1,0,0],

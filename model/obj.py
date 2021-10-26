@@ -36,14 +36,14 @@ class Obj:
 		@return dictionary containing all important properties
 		"""
 		return {
-			"type":			self.type,
-			"x":			self.x,
-			"y":			self.y,
-			"width":		self.width,
-			"height":		self.height,
-			"rotation":		self.rotation,
-			"mirrored":		self.mirrored,
-			"color":		self.color,
-			"block_matrix":	self.block_matrix,
-			"gripped":		self.gripped
+			"type": self.type,
+			"x": self.x,
+			"y": self.y,
+			"width": self.width,
+			"height": self.height,
+			"rotation": self.rotation,
+			"mirrored": self.mirrored,
+			"color": self.color,
+			"block_matrix": self.block_matrix,
+			"gripped": self.gripped
 			}

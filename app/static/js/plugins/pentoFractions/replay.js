@@ -10,9 +10,12 @@ $(document).ready(function () {
 
     // --- create a socket --- //
     // don't connect yet
-    var socket = io(MODEL, { autoConnect: false, auth: {
-        "password": "GiveMeTheBigBluePasswordOnTheLeft"
-    }});
+    var socket = io(MODEL, {
+        autoConnect: false, 
+        auth: {
+            "password": "GiveMeTheBigBluePasswordOnTheLeft"
+        }
+    });
     // debug: print any messages to the console
     localStorage.debug = 'socket.io-client:socket';
 
@@ -25,8 +28,14 @@ $(document).ready(function () {
     // Set up the view js, this also sets up key listeners
     const layerView = new document.LocalLayerView(bgLayer, objLayer, grLayer);
 
-    // Create a replayer with 20 fps
-    const replayer = new document.Replayer(20);
+    // Create a replayer with 20 fps and default speed
+    const replaySpeed = $("#replaySpeed").val();
+    const replayer = new document.Replayer(20, replaySpeed);
+    // Update the replay speed when the UI value changes
+    $("#replaySpeed").change(() => {
+        // get the now selected option and assign use its value
+        replayer.speed = $("#replaySpeed option:selected")[0].value;
+    });
     
     // load a log from the server
     // disable the start button until the log is loaded

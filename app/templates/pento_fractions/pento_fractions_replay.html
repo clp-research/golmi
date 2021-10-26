@@ -28,11 +28,29 @@
 		<button id="start" autocomplete="off">Play</button> 
 		<button id="stop" autocomplete="off">Stop</button>
 		<button id="reset" autocomplete="off">Reset</button>
+
+		<label style="padding-left:100px;" for="replaySpeed">Replay Speed:</label>
+		<select id="replaySpeed"></select>
+		<!-- create options -->
+		<script>
+			const defaultSpeed = 1;
+			const speeds = [0.25, 0.5, 0.75, 1, 1.5, 2, 5];
+			const speedSelect = document.getElementById("replaySpeed");
+			for (let speed of speeds) {
+				var opt = document.createElement("option");
+				opt.innerHTML = speed.toString() + "x";
+				opt.value = speed;
+				if (speed == defaultSpeed) {
+					opt.selected = true;
+				}
+				speedSelect.appendChild(opt);
+			}
+		</script>
 		<p>
-			<label for="replayStart">Replay time range:</label>
-			<input type="text" id="replayTimeRange" readonly style="border:0; color:darkgray; font-weight:bold;">
-		</p>
+		<label for="replayStart">Replay time range:</label>
+		<input type="text" id="replayTimeRange" readonly style="border:0; color:darkgray; font-weight:bold;">
 		<div id="slider-range"></div>
+		</p>
 	</div>
 	<!-- The "viewport" id and three stacked canvases of the same size are needed to 
 		properly render using the LayerView class -->

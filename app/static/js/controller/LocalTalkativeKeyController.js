@@ -39,12 +39,13 @@ $(document).ready(function () {
 						document.dispatchEvent(new CustomEvent("startAction", { detail: {
 							"type": this.keyEventNames[e.keyCode]
 						}}));
-						// if a keyup-function is assigned, change the state to "down"
-						if (this._upAssigned(e.keyCode)) {
-							this.keyAssignment[e.keyCode][2] = true;
-						}
+						// Change the state to "down". This is done for all keys, not
+						// just loopable ones, to prevent the keydown event from
+						// firing repeatedly if the key is held.
+						this.keyAssignment[e.keyCode][2] = true;
 						// execute the function assigned to the keydown event
-						this.keyAssignment[e.keyCode][0](this);
+						let loopable = this._upAssigned(e.keyCode);
+						this.keyAssignment[e.keyCode][0](this, loopable);
 					}
 				}
 			});
@@ -57,7 +58,9 @@ $(document).ready(function () {
 					}}));
 					// execute the function assigned to the keyup event
 					this.keyAssignment[e.keyCode][1](this);
-					// change the state to "up"
+				}
+				// change the state to "up"
+				if (this._registered(e.keyCode)) {
 					this.keyAssignment[e.keyCode][2] = false;
 				}
 			});
