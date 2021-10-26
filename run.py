@@ -1,5 +1,5 @@
 import argparse
-from app import app, socketio, test
+from app import app, socketio
 
 # --- GOLMi's server --- # 
 # author: clpresearch, Karla Friedrichs

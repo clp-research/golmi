@@ -9,7 +9,9 @@ $(document).ready(function () {
 
 	// --- create a socket --- //
 	// don't connect yet
-	var socket = io(MODEL, { autoConnect: false, auth: "GiveMeTheBigBluePasswordOnTheLeft" });
+	var socket = io(MODEL, { autoConnect: false, auth: {
+		"password": "GiveMeTheBigBluePasswordOnTheLeft"
+	}});
 	// debug: print any messages to the console
 	localStorage.debug = 'socket.io-client:socket';
 
@@ -51,11 +53,8 @@ $(document).ready(function () {
 		// only do setup once when config is sent for the first time
 		if (!setup_complete) {
 			// generate and send a random state
-			taskGenerator.initRandomState(N_OBJECTS, N_GRIPPERS, config)
-			.then(() => {
-				// subscribe the controller to some gripper (here we create a new gripper)
-				controller.attachModel(socket, "0");
-			});
+			taskGenerator.initRandomState(N_OBJECTS, N_GRIPPERS, config);
+			controller.attachModel(socket, "0");
 			setup_complete = true;
 		}
 	});
