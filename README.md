@@ -42,14 +42,27 @@ log data to the server.
 The following endpoints are served (see `app/views.py`):
 
 **/** 
-* GET: index page, might be the main page for projects building on GOLMI, this repository just serves a placeholder page
+* GET: Index page, might be the main page for projects building on GOLMI, this repository just serves a placeholder page.
 
 **/demo**
-* GET: simple demo of a Pentomino interface featuring two objects and a gripper
+* GET: Simple demo of a Pentomino interface featuring two objects and a gripper.
 
-**/save_log**
-* POST: send json-formatted data to log. Data will be saved in the server-side directory `app/static/resources/data_collection`, creating a file with a timestamp as the file name.
+**/record**
+* GET: Pentomino board with a randomly generated start state. Control the gripper
+using the arrow keys, flip pieces using W or S and rotate using A and D. 
+Press start to begin recording the actions on the board. The stop button will
+conclude the recording and post the recording to the `/logs` endpoint.
 
+**/replay**
+* GET: Watch a recording created at the `/record` endpoint.
+The interface offers controls to replay only a part of the log or adjust the speed.
+
+**/logs**
+* POST: Send json-formatted data to log. 
+Data will be saved in the server-side directory `app/static/resources/data_collection`, creating a file with a timestamp as the file name.
+
+**/logs/<string: logfile>**
+* GET: Retrieve one of the logs posted here beforehand.
 
 ## Events 
 ### client -> server

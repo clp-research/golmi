@@ -221,10 +221,10 @@ $(document).ready(function () {
 
 		/**
 		 * Save the data on the server.
-		 * @param {route to POST the collected data to, default: /save_log} endpoint
+		 * @param {route to POST the collected data to, default: /logs} endpoint
 		 * @return true at success
 		 */
-		sendData(endpoint="/save_log") {
+		sendData(endpoint="/logs") {
 			fetch(new Request(endpoint, {
 				method:"POST", 
 				headers: { "Content-Type": "application/json;charset=utf-8" },

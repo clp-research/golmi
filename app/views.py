@@ -1,45 +1,74 @@
-from app import app, socketio
+from app import app
 from flask import render_template, request, abort
 import json
 from time import time_ns
 import os
 
-# --- define routes --- # 
+
+# --- define routes --- #
 
 @app.route("/", methods=["GET"])
 def index():
-	"""
-	Interactive interface.
-	"""
-	return render_template("index.html")
+    """
+    Interactive interface.
+    """
+    return render_template("index.html")
+
 
 @app.route("/demo", methods=["GET"])
 def demo():
-	return render_template("demo.html")
+    return render_template("demo.html")
+
 
 @app.route("/pento_fractions/record", methods=["GET"])
 def pento_fractions_record():
-	return render_template("pento_fractions/pento_fractions_record.html")
+    return render_template("pento_fractions/pento_fractions_record.html")
+
 
 @app.route("/pento_fractions/replay", methods=["GET"])
 def pento_fractions_replay():
-	return render_template("pento_fractions/pento_fractions_replay.html")
+    return render_template("pento_fractions/pento_fractions_replay.html")
 
-@app.route("/save_log", methods=["POST"])
-def save_log():
-	if not request.data or not request.is_json:
-		abort(400)
-	json_data = request.json
-	# as a filename that 
-	# (1) can not be manipulated by a client
-	# (2) has a negligible chance of collision
-	# a simple timestamp is used
-	filename = str(time_ns()) + ".json"
-	# check if "data_collection" directory exists, create if necessary
-	savepath = app.config["DATA_COLLECTION"]
-	if not os.path.exists(savepath):
-		os.mkdir(savepath)
-	file = open(os.path.join(savepath, filename), encoding="utf-8", mode="w")
-	file.write(json.dumps(json_data, indent=2))
-	file.close
-	return "0", 200
+
+@app.route("/logs", methods=["POST"])
+def post_logs():
+    if not request.data or not request.is_json:
+        abort(400)
+    json_data = request.json
+    # as a filename that
+    # (1) can not be manipulated by a client
+    # (2) has a negligible chance of collision
+    # a simple timestamp is used
+    filename = str(time_ns()) + ".json"
+    # check if "data_collection" directory exists, create if necessary
+    savepath = app.config["DATA_COLLECTION"]
+    if not os.path.exists(savepath):
+        os.mkdir(savepath)
+    file = open(os.path.join(savepath, filename), encoding="utf-8", mode="w")
+    file.write(json.dumps(json_data, indent=2))
+    file.close
+    return "0", 200
+
+
+@app.route("/logs/<string:logfile>", methods=["GET"])
+def get_logs(logfile):
+    """Retrieve a log in json format.
+
+    @param logfile  name of the log file to retrieve
+    """
+    # WARNING: External users can retrieve any file stored in this directory.
+    logdir = app.config["DATA_COLLECTION"]
+    # Protection against directory traversal attacks:
+    # Compare the user input against a whitelist of permitted file names. We
+    # assume all files in the directory are accessible here
+    print(logfile)
+    if logfile in os.listdir(logdir):
+        # send the content
+        file = open(os.path.join(logdir, logfile), mode="r", encoding="utf-8")
+        tasks = file.read()
+        file.close()
+        return json.dumps(tasks)
+    else:
+        # Return "not found" because resource does not exist or is out of range
+        # for this endpoint (stays hidden from unauthorized users)
+        abort(404)
