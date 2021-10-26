@@ -4,7 +4,8 @@ $(document).ready(function () {
     // Set to false to skip unit tests
     const SELFTEST = true;
 
-    const MODEL = window.location.origin // expect same as backend e.g. the default "127.0.0.1:5000";
+    // expect same as backend e.g. the default "127.0.0.1:5000";
+    const MODEL = window.location.origin
     console.log("Connect to " + MODEL)
 
     // --- create a socket --- //
@@ -27,10 +28,26 @@ $(document).ready(function () {
     // Create a replayer with 20 fps
     const replayer = new document.Replayer(20);
     
-    // load a log from the server, 
+    // load a log from the server
     // disable the start button until the log is loaded
-    
-    loadLog(document.TESTLOG);
+    $("#start").prop("disabled", true);
+    replay_endpoint = "/logs"
+    replay_filename = "test_recording.json"
+    fetch(new Request(replay_endpoint + "/" + replay_filename, {
+        method:"GET", 
+        headers: { "Content-Type": "application/json;charset=utf-8" }}))
+    .then(response => {
+        if (!response.ok) {
+            console.log(`Error: Could not retrieve log ${replay_filename}!`);
+        } else {
+            response.json()
+            .then(json => {
+                loadLog(json["log"]);
+                // re-activate the start button
+                $("#start").prop("disabled", false);
+            });
+        }
+    });
 
     // --- stop and start replaying --- //
     function start() {
@@ -52,8 +69,9 @@ $(document).ready(function () {
                 step: 0.1,
                 slide: function(event, ui) {
                     $( "#replayTimeRange" ).val(
-                        prettyTime($("#slider-range").slider("values", 0)) + " - " + 
-                        prettyTime($("#slider-range").slider("values", 1)) 
+                        prettyTime($("#slider-range").slider("values", 0)) +
+                        " - " +
+                        prettyTime($("#slider-range").slider("values", 1))
                     );
                 },
                 stop: function(event, ui) {
@@ -62,7 +80,8 @@ $(document).ready(function () {
                 }
             });
         $("#replayTimeRange").val(
-            prettyTime($("#slider-range").slider("values", 0)) + " - " + 
+            prettyTime($("#slider-range").slider("values", 0)) +
+            " - " +
             prettyTime($("#slider-range").slider("values", 1)));
     }
 
@@ -72,13 +91,14 @@ $(document).ready(function () {
     function prettyTime(seconds) {
         return `${Math.floor(seconds/60)}:` +  // minutes followed by ":"
             `${(seconds%60)<10?"0":""}` +  // insert 0 if seconds have only one digit
-            `${(seconds%60).toFixed(1)}`;  // seconds and one point milliseconds 
+            `${(seconds%60).toFixed(1)}`;  // seconds and one point milliseconds
     }
 
     // --- buttons --- //
     $("#start").click(() => {
         start();
-        // disable this button, otherwise it is now in focus and Space/Enter will trigger the click again
+        // disable this button, otherwise it is now in focus and Space/Enter
+        // will trigger the click again
         $("#start").prop("disabled", true);
     });
     $("#stop").click(() => {
@@ -91,7 +111,6 @@ $(document).ready(function () {
         // reactive the start button
         $("#start").prop("disabled", false);
         // return to the start of the replay
-        console.log($("#slider-range").slider("values", 0));
         replayer.startTime = $("#slider-range").slider("values", 0);
     });
 

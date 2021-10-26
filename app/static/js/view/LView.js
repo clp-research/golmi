@@ -222,7 +222,6 @@ $(document).ready(function () {
 		/**
 		 * Save the data on the server.
 		 * @param {route to POST the collected data to, default: /logs} endpoint
-		 * @return true at success
 		 */
 		sendData(endpoint="/logs") {
 			fetch(new Request(endpoint, {
@@ -232,10 +231,8 @@ $(document).ready(function () {
 			.then(response => {
 				if (!response.ok) {
 					console.log("Error saving log data!");
-					return true;
 				} else {
 					console.log("Saved log data to the server.");
-					return false;
 				}
 			});
 		}

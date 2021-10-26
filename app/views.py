@@ -5,10 +5,10 @@ from time import time_ns
 import os
 
 # directory to store logs to
-LOG_DIR = app.config["DATA_COLLECTION"]
+LOG_DIR = app.config["RECORDINGS"]
 # directory that stores publicly available logs for replays
 # for now, just use the log storage
-REPLAY_DIR = app.config["DATA_COLLECTION"]
+REPLAY_DIR = app.config["RECORDINGS"]
 
 
 # --- define routes --- #

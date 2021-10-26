@@ -19,6 +19,7 @@ app = Flask(__name__)
 # https://flask.palletsprojects.com/en/2.0.x/quickstart/#sessions)
 app.config["SECRET KEY"] = "change this to some random value!".encode("utf-8")
 app.config["DATA_COLLECTION"] = "app/static/resources/data_collection"
+app.config["RECORDINGS"] = "app/static/resources/recordings"
 
 # enable cross-origin requests 
 # TODO: restrict sources
