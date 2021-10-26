@@ -4,6 +4,12 @@ import json
 from time import time_ns
 import os
 
+# directory to store logs to
+LOG_DIR = app.config["DATA_COLLECTION"]
+# directory that stores publicly available logs for replays
+# for now, just use the log storage
+REPLAY_DIR = app.config["DATA_COLLECTION"]
+
 
 # --- define routes --- #
 
@@ -41,12 +47,11 @@ def post_logs():
     # a simple timestamp is used
     filename = str(time_ns()) + ".json"
     # check if "data_collection" directory exists, create if necessary
-    savepath = app.config["DATA_COLLECTION"]
-    if not os.path.exists(savepath):
-        os.mkdir(savepath)
-    file = open(os.path.join(savepath, filename), encoding="utf-8", mode="w")
+    if not os.path.exists(LOG_DIR):
+        os.mkdir(LOG_DIR)
+    file = open(os.path.join(LOG_DIR, filename), encoding="utf-8", mode="w")
     file.write(json.dumps(json_data, indent=2))
-    file.close
+    file.close()
     return "0", 200
 
 
@@ -56,18 +61,14 @@ def get_logs(logfile):
 
     @param logfile  name of the log file to retrieve
     """
-    # WARNING: External users can retrieve any file stored in this directory.
-    logdir = app.config["DATA_COLLECTION"]
     # Protection against directory traversal attacks:
     # Compare the user input against a whitelist of permitted file names. We
     # assume all files in the directory are accessible here
-    print(logfile)
-    if logfile in os.listdir(logdir):
+    if logfile in os.listdir(REPLAY_DIR):
         # send the content
-        file = open(os.path.join(logdir, logfile), mode="r", encoding="utf-8")
-        tasks = file.read()
-        file.close()
-        return json.dumps(tasks)
+        with open(os.path.join(REPLAY_DIR, logfile), encoding="utf-8") as f:
+            tasks = f.read()
+        return json.loads(tasks)
     else:
         # Return "not found" because resource does not exist or is out of range
         # for this endpoint (stays hidden from unauthorized users)
