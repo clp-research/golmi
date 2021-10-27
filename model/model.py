@@ -3,6 +3,7 @@ from model.gripper import Gripper
 from model.obj import Obj
 from math import floor, ceil 
 import eventlet
+import json
 
 class Model:
 	def __init__(self, config, socket, room):
@@ -158,7 +159,7 @@ class Model:
 						self.state.grippers[gr].height = json_data["grippers"][gr]["height"]
 					elif "color" in json_data["grippers"][gr]:
 						self.state.grippers[gr].color = json_data["grippers"][gr]["color"]
-		except: 
+		except:
 			raise SyntaxError("Error during state initialization: JSON data does not have the right format.\n" + \
 				"Please refer to the documentation.")
 

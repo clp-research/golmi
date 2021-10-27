@@ -4,8 +4,9 @@ class Obj:
 		self.type			= obj_type
 		self.x				= x
 		self.y				= y
-		self.width			= width
-		self.height			= height
+		assert len(block_matrix) > 0, "Error: Empty block matrix passed to Obj constructor"
+		self.width			= len(block_matrix[0])
+		self.height			= len(block_matrix)
 		self.rotation		= rotation
 		self.mirrored		= mirrored
 		self.color			= color

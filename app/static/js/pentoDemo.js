@@ -9,15 +9,15 @@ $(document).ready(function () {
 
 	// parameters for random initial state
 	// (state is generated once the configuration is received)
-
 	const N_OBJECTS = 5;
 	const N_GRIPPERS = 1;
 
 	// --- create a socket --- //
 	// don't connect yet
-	var socket = io(MODEL, { autoConnect: false, auth: {
-		"password": "GiveMeTheBigBluePasswordOnTheLeft"
-	}});
+	let socket = io(MODEL, {
+	    autoConnect: false,
+	    auth: { "password": "GiveMeTheBigBluePasswordOnTheLeft" }
+	});
 	// debug: print any messages to the console
 	localStorage.debug = 'socket.io-client:socket';
 
@@ -103,7 +103,7 @@ $(document).ready(function () {
 		// test the PentoGenerator class
 		if (document.pentoGeneratorTest()) {
 			console.log("Unit tests passed.");
-		} 
+		}
 	}
 	
 }); // on document ready end
