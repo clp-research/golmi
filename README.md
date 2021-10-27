@@ -169,7 +169,7 @@ In the example View, rendering is split into three parts, *background, objects* 
 
 ### Controllers
 
-Depending on the setup, changes to the model might be initiated from different sources: it could be a single player pressing keys in their interface, someone giving spoken instructions to an NLU system or a artificial agent following some algorithm. 
+Depending on the setup, changes to the model might be initiated from different sources: it could be a single player pressing keys in their interface, someone giving spoken instructions to an NLU system or an artificial agent following some algorithm. 
 Each of these situations might require different controls, making the need for special controllers.
  
 ##### LocalKeyController
@@ -215,7 +215,7 @@ $ python -m unittest -k test_flask_endpoints
 
 ## Troubleshooting
 
-* The logging class LView.js was named LogView.js before because some adblockers would not load the skript trying to save you from evil data collection. If you encounter similar problems, try turning off the adblock for this site or rename the LogView class into something less suspicious.
+* The logging class LView.js was named LogView.js before because some adblockers would not load the script trying to save you from evil data collection. If you encounter similar problems, try turning off the adblock for this site or rename the LogView class into something less suspicious.
 
 
 [slurk]: https://clp.ling.uni-potsdam.de/publications/Schlangen-2018.pdf
