@@ -36,9 +36,6 @@ $(document).ready(function () {
 				if (this._downAssigned(e.keyCode)) {
 					// only progress if the key is not already in state "down"
 					if (!this._isDown(e.keyCode)) {
-						document.dispatchEvent(new CustomEvent("startAction", { detail: {
-							"type": this.keyEventNames[e.keyCode]
-						}}));
 						// Change the state to "down". This is done for all keys, not
 						// just loopable ones, to prevent the keydown event from
 						// firing repeatedly if the key is held.
@@ -46,6 +43,10 @@ $(document).ready(function () {
 						// execute the function assigned to the keydown event
 						let loopable = this._upAssigned(e.keyCode);
 						this.keyAssignment[e.keyCode][0](this, loopable);
+						document.dispatchEvent(new CustomEvent("startAction", { detail: {
+							"type": this.keyEventNames[e.keyCode],
+							"loop": loopable
+						}}));
 					}
 				}
 			});

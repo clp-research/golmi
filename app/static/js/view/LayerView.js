@@ -154,7 +154,6 @@ $(document).ready(function () {
 		 * and the old drawing needs to be removed first.
 		 */
 		redrawObjs() {
-			console.log("redrawing")
 			this.clearObj();
 			this.drawObjs();
 		}

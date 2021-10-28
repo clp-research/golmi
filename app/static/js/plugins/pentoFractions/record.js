@@ -43,7 +43,8 @@ $(document).ready(function () {
     // --- configuration --- //
     const record_config = {
         "width": 40,
-        "height": 40
+        "height": 40,
+        "action_interval": 0.1
     }
 
     // --- socket communication --- //
