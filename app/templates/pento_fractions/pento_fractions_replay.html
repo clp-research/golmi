@@ -3,75 +3,89 @@
 <html lang="en">
 
 <head>
-	<meta charset="utf-8">
+    <meta charset="utf-8">
 
-	<title>PentoFractions Replay</title>
+    <title>PentoFractions Replay</title>
 
-	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
-	<meta name="description" content="Replay recorded PentoFractions clips">
-	<meta name="author" content="clpresearch, Karla Friedrichs">
+    <meta name="description" content="Replay recorded PentoFractions clips">
+    <meta name="author" content="clpresearch, Karla Friedrichs">
 
-	<!-- for slider widget -->
-	<link rel="stylesheet" href="//code.jquery.com/ui/1.13.0/themes/base/jquery-ui.css">
+    <!-- for slider widget -->
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.0/themes/base/jquery-ui.css">
 
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
 
-	<!-- for overlapping canvas, used by LayerView -->
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/layer_style.css') }}">
+    <!-- for overlapping canvas, used by LayerView -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layer_style.css') }}">
 
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
 <body>
-	<div style="padding:10px;">
-		<button id="start" autocomplete="off">Play</button> 
-		<button id="stop" autocomplete="off">Stop</button>
-		<button id="reset" autocomplete="off">Reset</button>
+    <div style="padding:10px;">
+        <button id="start" autocomplete="off">Play</button> 
+        <button id="stop" autocomplete="off">Stop</button>
+        <button id="reset" autocomplete="off">Reset</button>
 
-		<label style="padding-left:100px;" for="replaySpeed">Replay Speed:</label>
-		<select id="replaySpeed"></select>
-		<!-- create options -->
-		<script>
-			const defaultSpeed = 1;
-			const speeds = [0.25, 0.5, 0.75, 1, 1.5, 2, 5];
-			const speedSelect = document.getElementById("replaySpeed");
-			for (let speed of speeds) {
-				var opt = document.createElement("option");
-				opt.innerHTML = speed.toString() + "x";
-				opt.value = speed;
-				if (speed == defaultSpeed) {
-					opt.selected = true;
-				}
-				speedSelect.appendChild(opt);
-			}
-		</script>
-		<p>
-		<label for="replayStart">Replay time range:</label>
-		<input type="text" id="replayTimeRange" readonly style="border:0; color:darkgray; font-weight:bold;">
-		<div id="slider-range"></div>
-		</p>
-	</div>
-	<!-- The "viewport" id and three stacked canvases of the same size are needed to 
-		properly render using the LayerView class -->
-	<div id="viewport" style="height: 600px; width: 600px; padding: 10px;">
-		<canvas id="background" width="600" height="600"></canvas>
-		<canvas id="objects" width="600" height="600"></canvas>
-		<canvas id="gripper" width="600" height="600"></canvas>
-	</div>
+        <label style="padding-left:100px;" for="replaySpeed">Replay Speed:</label>
+        <select id="replaySpeed"></select>
+        <!-- create options -->
+        <script>
+            const defaultSpeed = 1;
+            const speeds = [0.25, 0.5, 0.75, 1, 1.5, 2, 5];
+            const speedSelect = document.getElementById("replaySpeed");
+            for (let speed of speeds) {
+                var opt = document.createElement("option");
+                opt.innerHTML = speed.toString() + "x";
+                opt.value = speed;
+                if (speed == defaultSpeed) {
+                    opt.selected = true;
+                }
+                speedSelect.appendChild(opt);
+            }
+        </script>
+        <p style="margin: 0">
+        <label for="replayStart">Replay time range:</label>
+        <input type="text" id="replayTimeRange" readonly style="border:0; color:darkgray; font-weight:bold;">
+        </p>
+        <div id="slider-range"></div>
+    </div>
 
-	<!-- jquery -->
-	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-	<!-- for slider widget -->
-	<script src="https://code.jquery.com/ui/1.13.0/jquery-ui.js"></script>
-	<script src="https://cdn.socket.io/4.1.2/socket.io.min.js" integrity="sha384-toS6mmwu70G0fw54EGlWWeA4z3dyJ+dlXBtSURSKN4vyRFOcxd3Bzjj/AoOwY+Rg" crossorigin="anonymous"></script>
-	<!-- General GOLMi functionality -->
+    <div class="float-container">
+
+        <div class="float-child">
+        <!-- The "viewport" id and three stacked canvases of the same size are needed to 
+            properly render using the LayerView class -->
+        <div id="viewport" style="height: 550px; width: 550px;">
+            <canvas id="background" width="550" height="550"></canvas>
+            <canvas id="objects" width="550" height="550"></canvas>
+            <canvas id="gripper" width="550" height="550"></canvas>
+        </div>
+        </div>
+
+        <div class="float-child">
+            <h5>User actions:</h5>
+            <!-- Container for ScrollableDisplay displaying meta data -->
+            <div id="metadata"></div>
+        </div>
+
+</div>
+
+    <!-- jquery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- for slider widget -->
+    <script src="https://code.jquery.com/ui/1.13.0/jquery-ui.js"></script>
+    <script src="https://cdn.socket.io/4.1.2/socket.io.min.js" integrity="sha384-toS6mmwu70G0fw54EGlWWeA4z3dyJ+dlXBtSURSKN4vyRFOcxd3Bzjj/AoOwY+Rg" crossorigin="anonymous"></script>
+    <!-- General GOLMi functionality -->
     <script src="{{ url_for('static', filename='js/view/View.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/view/LayerView.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/view/LocalLayerView.js') }}"></script>
-	<!-- Experiment specific functionality -->
+    <script src="{{ url_for('static', filename='js/view/LayerView.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/view/LocalLayerView.js') }}"></script>
+    <!-- Experiment specific functionality -->
     <script src="{{ url_for('static', filename='js/plugins/pentoFractions/Replayer.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/plugins/pentoFractions/replay.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/plugins/pentoFractions/ScrollableDisplay.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/plugins/pentoFractions/replay.js') }}"></script>
 </body>
 
 </html>

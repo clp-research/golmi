@@ -2,6 +2,24 @@
  * Inline labels
  */
 label{
-	display: inline-block;
-	padding-right: 5px;
+    display: inline-block;
+    padding-right: 5px;
+}
+
+/**
+ * Scrollable message pane
+ */
+#metadata {
+    height: 500px;
+    overflow-y: auto;
+}
+
+.float-container {
+    padding: 10px;
+}
+
+.float-child {
+    width: 45%;
+    float: left;
+    padding: 20px;
 }

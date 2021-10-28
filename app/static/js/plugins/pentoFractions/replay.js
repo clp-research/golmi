@@ -28,9 +28,11 @@ $(document).ready(function () {
     // Set up the view js, this also sets up key listeners
     const layerView = new document.LocalLayerView(bgLayer, objLayer, grLayer);
 
+    const metaDataDisplay = new document.ScrollableDisplay("metadata");
+
     // Create a replayer with 20 fps and default speed
     const replaySpeed = $("#replaySpeed").val();
-    const replayer = new document.Replayer(20, replaySpeed);
+    const replayer = new document.Replayer(20, replaySpeed, metaDataDisplay);
     // Update the replay speed when the UI value changes
     $("#replaySpeed").change(() => {
         // get the now selected option and assign use its value
