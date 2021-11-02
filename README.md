@@ -98,34 +98,35 @@ objects and grippers. Leaves the config unchanged. |
 
 ### State format
 The following is an example state, including one gripper and two objects.
-```{
-		"grippers": {
-			"1": {
-				"x": 5.5,
-				"y": 5.5,
-				"gripped": "2"
-			}
+```
+{
+	"grippers": {
+		"1": {
+			"x": 5.5,
+			"y": 5.5,
+			"gripped": "2"
+		}
+	},
+	"objs": {
+		"1": {
+			"type": "I",
+			"x": 10,
+			"y": 8,
+			"width": 5,
+			"height": 5
 		},
-		"objs": {
-			"1": {
-				"type": "I",
-				"x": 10,
-				"y": 8,
-				"width": 5,
-				"height": 5
-			},
-			"2": {
-				"type": "F",
-				"x": 3,
-				"y": 3,
-				"width": 5,
-				"height": 5,
-				"color": "yellow",
-				"mirrored": true,
-				"rotation": 90
-			}
-		} 
-	}
+		"2": {
+			"type": "F",
+			"x": 3,
+			"y": 3,
+			"width": 5,
+			"height": 5,
+			"color": "yellow",
+			"mirrored": true,
+			"rotation": 90
+		}
+	} 
+}
 ```
 
 The table below provides details on the object / gripper properties:
