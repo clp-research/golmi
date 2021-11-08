@@ -70,8 +70,13 @@ Data will be saved in the server-side directory `app/static/resources/data_colle
 | event name | source/trigger | data | action |
 | --- | --- | --- | --- |
 | connect | client connects to server | --- | Assign client to a room / model instance, emit *update_config* and *update_state* to client. |
+| disconnect | client disconnects from server | --- | The model associated to
+the disconnecting client is deleted on the server to free the memory. |
 | load_state | client | state in json format | Initialize model in client's room with sent state. |
-| load_config | client | configuration in json format |  Model in client's room loads the configuration. |
+| load_config | client | configuration in json format | Model in client's room
+loads the configuration. |
+| reset_state | client | --- | Resets the current state, i.e. deletes all 
+objects and grippers. Leaves the config unchanged. |
 | add_gripper | client | optional: gripper id | Add gripper to model if it doesn't exist. If no id was sent, use the client's session id. Emit *attach_gripper* to client |
 | remove_gripper | client | optional: gripper id | Delete gripper from model if it exists. If no id was sent, use the client's session id. |
 | move | client | params: {"id": str, "dx": int/float, "dy": int/float \[, "loop": bool, "step_size": int/float\]}| Start continuous movement or move once with the specified gripper (see *One-time vs. looped gripper actions*). dx is the x direction (negative = leftwards), dy the y direction (negative = upwards). |
@@ -106,34 +111,35 @@ Data will be saved in the server-side directory `app/static/resources/data_colle
 
 ### State format
 The following is an example state, including one gripper and two objects.
-```{
-		"grippers": {
-			"1": {
-				"x": 5.5,
-				"y": 5.5,
-				"gripped": "2"
-			}
+```
+{
+	"grippers": {
+		"1": {
+			"x": 5.5,
+			"y": 5.5,
+			"gripped": "2"
+		}
+	},
+	"objs": {
+		"1": {
+			"type": "I",
+			"x": 10,
+			"y": 8,
+			"width": 5,
+			"height": 5
 		},
-		"objs": {
-			"1": {
-				"type": "I",
-				"x": 10,
-				"y": 8,
-				"width": 5,
-				"height": 5
-			},
-			"2": {
-				"type": "F",
-				"x": 3,
-				"y": 3,
-				"width": 5,
-				"height": 5,
-				"color": "yellow",
-				"mirrored": true,
-				"rotation": 90
-			}
-		} 
-	}
+		"2": {
+			"type": "F",
+			"x": 3,
+			"y": 3,
+			"width": 5,
+			"height": 5,
+			"color": "yellow",
+			"mirrored": true,
+			"rotation": 90
+		}
+	} 
+}
 ```
 
 The table below provides details on the object / gripper properties:
