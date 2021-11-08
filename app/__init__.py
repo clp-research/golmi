@@ -120,12 +120,10 @@ def move(params):
         step_size = params["step_size"] if "step_size" in params else None
         # continuous / looped action
         if "loop" in params and params["loop"]:
-            client_models[request.sid].start_moving(
-                str(params["id"]), params["dx"], params["dy"], step_size)
+            client_models[request.sid].start_moving(str(params["id"]), params["dx"], params["dy"], step_size)
         # one-time action
         else:
-            client_models[request.sid].move(
-                str(params["id"]), params["dx"], params["dy"], step_size)
+            client_models[request.sid].move(str(params["id"]), params["dx"], params["dy"], step_size)
 
 
 @socketio.on("stop_move")
@@ -145,12 +143,10 @@ def rotate(params):
         step_size = params["step_size"] if "step_size" in params else None
         # continuous / looped action
         if "loop" in params and params["loop"]:
-            client_models[request.sid].start_rotating(
-                str(params["id"]), params["direction"], step_size)
+            client_models[request.sid].start_rotating(str(params["id"]), params["direction"], step_size)
         # one-time action
         else:
-            client_models[request.sid].rotate(
-                str(params["id"]), params["direction"], step_size)
+            client_models[request.sid].rotate(str(params["id"]), params["direction"], step_size)
 
 
 @socketio.on("stop_rotate")
