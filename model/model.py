@@ -13,8 +13,8 @@ class Model:
 		self.config = config
 
 		# Contains a dictionary for each available action. The nested dicts map
-		# gripper ids to True or False, depending on whether the respective
-		# action is currently running (= repeatedly executed)
+		# gripper ids to an eventlet greenthread instance if the respective
+		# action is currently running (= repeatedly executed), else to None
 		self.running_loops = {action: dict() for action in self.config.actions}
 
 	# --- getter --- #
@@ -472,12 +472,13 @@ class Model:
 		"""
 		assert action_type in self.running_loops, \
 			"Error at Model.start_loop: action {} not registered".format(action_type)
-		self.running_loops[action_type][gripper] = True
-		e = eventlet.spawn(self._loop, action_type, gripper, fn, *args, **kwargs)
+		# create a thread executing the action infinitely
+		self.running_loops[action_type][gripper] = eventlet.spawn(
+			self._loop, action_type, gripper, fn, *args, **kwargs
+		)
 
 	def _loop(self, action_type, gripper, fn, *args, **kwargs):
-		while(gripper in self.running_loops[action_type] and
-				self.running_loops[action_type][gripper]):
+		while True:
 			fn(*args, *kwargs)
 			eventlet.sleep(self.config.action_interval)
 
@@ -485,9 +486,16 @@ class Model:
 		"""Stop a running action for a specific gripper."""
 		assert action_type in self.running_loops, \
 			"Error at Model.stop_loop: action {} not registered".format(action_type)
-		if gripper in self.running_loops[action_type]:
-			self.running_loops[action_type][gripper] = False
+		if gripper in self.running_loops[action_type] and isinstance(
+				self.running_loops[action_type][gripper], eventlet.greenthread.GreenThread):
+			self.running_loops[action_type][gripper].kill()
+			self.running_loops[action_type][gripper] = None
 
 	def reset_loops(self):
 		"""Stop all running actions."""
+		# kill any existing thread
+		for action in self.running_loops:
+			for thread in action.values():
+				if isinstance(thread, eventlet.greenthread.GreenThread):
+					thread.kill()
 		self.running_loops = {action: dict() for action in self.config.actions}
