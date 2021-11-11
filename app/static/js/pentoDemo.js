@@ -52,11 +52,8 @@ $(document).ready(function () {
 	socket.on("update_config", (config) => {
 		// only do setup once (reconnections can occur, we don't want to reset the state every time)
 		if (!setup_complete) {
-			// create a random initial state with a gripper in the center
-			let taskGenerator = new document.PentoGenerator(MODEL);
-			let randomState = taskGenerator.generateState(N_OBJECTS, N_GRIPPERS, config, false);
-			// send the state to the model
-			socket.emit("load_state", randomState);
+			// ask model to load a random state
+			socket.emit("random_init", {"n_objs": N_OBJECTS, "n_grip": N_GRIPPERS, "random_grip":false});
 			// subscribe the controller to the only generated gripper
 			controller.attachModel(socket, "0");
 			setup_complete = true;
