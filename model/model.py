@@ -306,7 +306,7 @@ class Model:
         """
         self.stop_loop("move", gr_id)
 
-    def move(self, id, x_steps, y_steps, step_size=None):
+    def move(self, gr_id, x_steps, y_steps, step_size=None):
         """
         If allowed, move the gripper x_steps steps in x direction
         and y_steps steps in y direction.
@@ -329,8 +329,8 @@ class Model:
         dy = y_steps*step_size
 
         # obtain coordinates and gripper
-        gripper_x, gripper_y = self.get_gripper_coords(id)
-        gr_obj_id = self.get_gripped_obj(id)
+        gripper_x, gripper_y = self.get_gripper_coords(gr_id)
+        gr_obj_id = self.get_gripped_obj(gr_id)
 
         new_gr_pos = {"x": gripper_x + dx, "y": gripper_y + dy}
         gr_can_move = new_gr_pos in self.grid
@@ -353,8 +353,8 @@ class Model:
                     self.grid.remove_obj(gr_obj)
 
                     # update state with new positions
-                    self.state.move_gr(id, dx, dy)
-                    self.state.move_obj(self.get_gripped_obj(id), dx, dy)
+                    self.state.move_gr(gr_id, dx, dy)
+                    self.state.move_obj(self.get_gripped_obj(gr_id), dx, dy)
 
                     # add moved object to grid
                     self.grid.add_obj(gr_obj)
@@ -367,7 +367,7 @@ class Model:
 
             # if no object is gripped, only move the gripper
             else:
-                self.state.move_gr(id, dx, dy)
+                self.state.move_gr(gr_id, dx, dy)
                 # notify the views. A gripped object is implicitly redrawn
                 self._notify_views("update_grippers", self.get_gripper_dict())
 
@@ -389,7 +389,7 @@ class Model:
         """
         self.stop_loop("rotate", gr_id)
 
-    def rotate(self, id, direction, step_size=None):
+    def rotate(self, gr_id, direction, step_size=None):
         """
         If the gripper 'id' currently grips some object,
         rotate this object one step.
@@ -401,7 +401,7 @@ class Model:
                             Default: use rotation_step of config
         """
         # check if an object is gripped
-        gr_obj_id = self.get_gripped_obj(id)
+        gr_obj_id = self.get_gripped_obj(gr_id)
         if gr_obj_id:
             gr_obj = self.get_obj_by_id(gr_obj_id)
 
