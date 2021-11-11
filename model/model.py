@@ -109,7 +109,7 @@ class Model:
         """
         # config is a JSON string or parsed JSON dictionary
         if isinstance(config, (str, dict)):
-            self._config_from_JSON(config)
+            self._config_from_json(config)
         else:
             # config is a Config instance
             self.config = config
