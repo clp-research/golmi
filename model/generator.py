@@ -87,7 +87,7 @@ class Generator:
 
             # if object does not overlap, add it
             if self.model.grid.can_move(obj.occupied(), None):
-                index = len(objects)
+                index = str(len(objects))
                 obj.id_n = index
                 self.model.grid.add_obj(obj)
                 objects[index] = obj
