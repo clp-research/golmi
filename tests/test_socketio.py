@@ -249,7 +249,6 @@ class SocketEventTest(unittest.TestCase):
             "id": test_gripper,
             "direction": rotation
         })
-
         received = self.socketio_client.get_received()
         self.assertEqual(len(received), 1)
         self.assertEqual(received[0]["name"], "update_grippers")
@@ -338,9 +337,10 @@ class SocketEventTest(unittest.TestCase):
         obj = "4"
 
         # make sure the object is gripped right now
-        self.assertTrue(
-            list(received[0]["args"][0]["grippers"][gr]["gripped"].keys()) >= [obj]
-        )
+        is_gripped = list(
+                received[0]["args"][0]["grippers"][gr]["gripped"].keys()
+            )
+        self.assertTrue(is_gripped >= [obj])
         self.assertTrue(received[0]["args"][0]["objs"][obj]["gripped"])
 
         # ungrip
@@ -355,8 +355,8 @@ class SocketEventTest(unittest.TestCase):
             if msg["name"] == "update_objs":
                 obj_gripped = msg["args"][0][obj]["gripped"]
             elif msg["name"] == "update_grippers":
-                gr_has_gripped = msg["args"][0][gr]["gripped"] is not None and \
-                    msg["args"][0][gr]["gripped"].get(obj)
+                gr_has_gripped = (msg["args"][0][gr]["gripped"] is not None and
+                                  msg["args"][0][gr]["gripped"].get(obj))
 
         self.assertFalse(obj_gripped)
         self.assertFalse(gr_has_gripped)
@@ -371,8 +371,8 @@ class SocketEventTest(unittest.TestCase):
             if msg["name"] == "update_objs":
                 obj_gripped = msg["args"][0][obj]["gripped"]
             elif msg["name"] == "update_grippers":
-                gr_has_gripped = msg["args"][0][gr]["gripped"] is not None and \
-                    obj in msg["args"][0][gr]["gripped"].keys()
+                gr_has_gripped = (msg["args"][0][gr]["gripped"] is not None and
+                                  obj in msg["args"][0][gr]["gripped"].keys())
 
         self.assertTrue(obj_gripped)
         self.assertTrue(gr_has_gripped)

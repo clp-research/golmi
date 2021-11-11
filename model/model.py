@@ -90,7 +90,7 @@ class Model:
 
         # state is a JSON string or parsed JSON dictionary
         if isinstance(state, (str, dict)):
-            self._state_from_JSON(state)
+            self._state_from_json(state)
         else:
             # state is a State instance
             self.state = state
@@ -143,6 +143,8 @@ class Model:
 
                     if "id_n" not in json_data["objs"][obj]:
                         id_n = obj
+                    else:
+                        id_n = json_data["objs"][obj]["id_n"]
 
                     # create object
                     this_obj = Obj(
@@ -179,7 +181,13 @@ class Model:
             if "grippers" in json_data and type(json_data["grippers"]) == dict:
                 for gr_name in json_data["grippers"]:
                     gr = str(gr_name)  # use string for consistency
+                    if "id_n" not in json_data["grippers"][gr]:
+                        id_n = gr
+                    else:
+                        id_n = json_data["grippers"][gr]["id_n"]
+
                     self.state.grippers[gr] = Gripper(
+                        gr,
                         float(json_data["grippers"][gr]["x"]),
                         float(json_data["grippers"][gr]["y"])
                     )
@@ -246,8 +254,9 @@ class Model:
 
     def start_gripping(self, gr_id):
         """
-        Start calling the function grip periodically until stop_gripping is called, essentially
-        repeatedly gripping / ungripping with a specified gripper.
+        Start calling the function grip periodically until stop_gripping
+        is called, essentially repeatedly gripping / ungripping
+         with a specified gripper.
         @param gr_id 	gripper id
         """
         self.stop_gripping(gr_id)
@@ -289,15 +298,21 @@ class Model:
 
     def start_moving(self, gr_id, x_steps, y_steps, step_size=None):
         """
-        Start calling the function move periodically until stop_moving is called.
-        @param gr_id 	gripper id
-        @param x_steps	steps to move in x direction. Step size is defined by model configuration
-        @param y_steps	steps to move in y direction. Step size is defined by model configuration
-        @param step_size 	Optional, size of step unit in blocks. Default: use move_step of config
+        Start calling the function move periodically
+        until stop_moving is called.
+        @param gr_id 	    gripper id
+        @param x_steps	    steps to move in x direction.
+                            Step size is defined by model configuration
+        @param y_steps	    steps to move in y direction.
+                            Step size is defined by model configuration
+        @param step_size 	Optional, size of step unit in blocks.
+                            Default: use move_step of config
         """
         # cancel any ongoing movement
         self.stop_moving(gr_id)
-        self.start_loop("move", gr_id, self.move, gr_id, x_steps, y_steps, step_size)
+        self.start_loop(
+            "move", gr_id, self.move, gr_id, x_steps, y_steps, step_size
+        )
 
     def stop_moving(self, gr_id):
         """
@@ -312,7 +327,7 @@ class Model:
         and y_steps steps in y direction.
         Only executes if the goal position is inside the game dimensions.
         Notifies views of change.
-        @param id 	        gripper id
+        @param gr_id 	        gripper id
         @param x_steps	    steps to move in x direction.
                             Step size is defined by model configuration
         @param y_steps	    steps to move in y direction.
@@ -373,14 +388,20 @@ class Model:
 
     def start_rotating(self, gr_id, direction, step_size=None):
         """
-        Start calling the function rotate periodically until stop_rotating is called.
-        @param gr_id 	id of the gripper whose gripped object should be rotated
-        @param direction	-1 for leftwards rotation, 1 for rightwards rotation
-        @param step_size	Optional, angle to rotate per step. Default: use rotation_step of config
+        Start calling the function rotate periodically
+        until stop_rotating is called.
+        @param gr_id 	    id of the gripper whose gripped
+                            object should be rotated
+        @param direction	-1 for leftwards rotation
+                            1 for rightwards rotation
+        @param step_size	Optional, angle to rotate per step.
+                            Default: use rotation_step of config
         """
         # cancel any ongoing rotation
         self.stop_rotating(gr_id)
-        self.start_loop("rotate", gr_id, self.rotate, gr_id, direction, step_size)
+        self.start_loop(
+            "rotate", gr_id, self.rotate, gr_id, direction, step_size
+        )
 
     def stop_rotating(self, gr_id):
         """
@@ -440,8 +461,10 @@ class Model:
 
     def start_flipping(self, gr_id):
         """
-        Start calling the function flip periodically until stop_flipping is called.
-        @param gr_id 	id of the gripper whose gripped object should be flipped
+        Start calling the function flip periodically
+        until stop_flipping is called.
+        @param gr_id 	id of the gripper whose gripped
+                        object should be flipped
         """
         # cancel any ongoing flipping
         self.stop_flipping(gr_id)
@@ -486,7 +509,6 @@ class Model:
                 # notify the views. The gripped object is implicitly redrawn.
                 self._notify_views("update_grippers", self.get_gripper_dict())
 
-
     def _get_grippable(self, gr_id):
         """
         Find an object that is in the range of the gripper.
@@ -505,16 +527,20 @@ class Model:
     # --- Loop functionality ---
 
     def start_loop(self, action_type, gripper, fn, *args, **kwargs):
-        """Spawn a greenthread.GreenThread instance that executes fn until stop_loop is called.
+        """
+        Spawn a greenthread.GreenThread instance that executes
+        fn until stop_loop is called.
 
         @param action_type	str, one of the action types defined by the config
-        @param gripper  id of the gripper to perform the action with
-        @param fn    function to loop
+        @param gripper      id of the gripper to perform the action with
+        @param fn           function to loop
         """
         assert action_type in self.running_loops, \
-            "Error at Model.start_loop: action {} not registered".format(action_type)
+            f"Error at Model.start_loop: action {action_type} not registered"
         # create a thread executing the action infinitely
-        self.running_loops[action_type][gripper] = eventlet.spawn(self._loop, fn, *args, **kwargs)
+        self.running_loops[action_type][gripper] = eventlet.spawn(
+            self._loop, fn, *args, **kwargs
+        )
 
     def _loop(self, fn, *args, **kwargs):
         while True:
@@ -522,11 +548,16 @@ class Model:
             eventlet.sleep(self.config.action_interval)
 
     def stop_loop(self, action_type, gripper):
-        """Stop a running action for a specific gripper."""
+        """
+        Stop a running action for a specific gripper.
+        """
         assert action_type in self.running_loops, \
-            "Error at Model.stop_loop: action {} not registered".format(action_type)
+            f"Error at Model.stop_loop: action {action_type} not registered"
+
         if gripper in self.running_loops[action_type] and isinstance(
-                self.running_loops[action_type][gripper], eventlet.greenthread.GreenThread):
+                self.running_loops[action_type][gripper],
+                eventlet.greenthread.GreenThread
+                ):
             self.running_loops[action_type][gripper].kill()
             self.running_loops[action_type][gripper] = None
 
