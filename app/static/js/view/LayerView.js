@@ -117,6 +117,23 @@ $(document).ready(function () {
 		 * Draw the (static) objects.
 		 */
 		drawObjs() {
+			// first draw targets
+			for (const obj of Object.values(this.targets))	{
+				// skip any gripped object here
+				if (obj.gripped) { continue; }
+
+				let blockMatrix = obj.block_matrix;
+				
+				// call drawing helper functions with additional infos (gripped, color)
+				let ctx = this.objCanvas.getContext("2d");
+				let params = {
+					x: obj.x,
+					y: obj.y,
+					color: "Cornsilk",
+					highlight: true
+				}
+				this._drawBlockObj(ctx, blockMatrix, params);
+			}
 			// draw each object
 			for (const obj of Object.values(this.objs))	{
 				// skip any gripped object here
@@ -131,23 +148,6 @@ $(document).ready(function () {
 					y: obj.y,
 					color: obj.color,
 					highlight: false
-				}
-				this._drawBlockObj(ctx, blockMatrix, params);
-			}
-			
-			for (const obj of Object.values(this.targets))	{
-				// skip any gripped object here
-				if (obj.gripped) { continue; }
-
-				let blockMatrix = obj.block_matrix;
-				
-				// call drawing helper functions with additional infos (gripped, color)
-				let ctx = this.objCanvas.getContext("2d");
-				let params = {
-					x: obj.x,
-					y: obj.y,
-					color: "white",
-					highlight: true
 				}
 				this._drawBlockObj(ctx, blockMatrix, params);
 			}

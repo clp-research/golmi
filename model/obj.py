@@ -87,7 +87,7 @@ class Obj:
                     occupied.append({"y": cell_y, "x": cell_x})
         return occupied
 
-    def is_on_target(self):
+    def on_target(self):
         """
         check whether the object is on target
         """
