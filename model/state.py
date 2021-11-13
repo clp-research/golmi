@@ -5,12 +5,19 @@ class State:
     def __init__(self):
         self.objs = dict()  # maps ids to Objs
         self.grippers = dict()
+        self.targets = dict()
 
     def get_obj_dict(self):
         """
         @return Dictionary mapping object ids to object dictionaries
         """
         return {obj_id: obj.to_dict() for obj_id, obj in self.objs.items()}
+
+    def get_target_dict(self):
+        """
+        @return Dictionary mapping object ids to object dictionaries
+        """
+        return {obj_id: obj.to_dict() for obj_id, obj in self.targets.items()}
 
     def get_object_ids(self):
         return self.objs.keys()
@@ -194,4 +201,5 @@ class State:
         state_dict = dict()
         state_dict["grippers"] = self.get_gripper_dict()
         state_dict["objs"] = self.get_obj_dict()
+        state_dict["targets"] = self.get_target_dict()
         return state_dict

@@ -134,6 +134,23 @@ $(document).ready(function () {
 				}
 				this._drawBlockObj(ctx, blockMatrix, params);
 			}
+			
+			for (const obj of Object.values(this.targets))	{
+				// skip any gripped object here
+				if (obj.gripped) { continue; }
+
+				let blockMatrix = obj.block_matrix;
+				
+				// call drawing helper functions with additional infos (gripped, color)
+				let ctx = this.objCanvas.getContext("2d");
+				let params = {
+					x: obj.x,
+					y: obj.y,
+					color: "white",
+					highlight: true
+				}
+				this._drawBlockObj(ctx, blockMatrix, params);
+			}
 		}
 
 		/**

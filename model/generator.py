@@ -41,8 +41,55 @@ class Generator:
 
         return grippers
 
-    def _generate_objects(self, n_objs):
+    def _generate_target(self, index, piece_type, width, height, block_matrix):
+        """
+        this function generates a target block for the object mantaining:
+            - index
+            - piece type
+            - width
+            - height
+            - block matrix
+        parameters that will be changed:
+            - x and y coordinates
+            - rotation
+            - if flipped
+        """
+        # generate random coordinates
+        x = random.randint(0, self.model.config.width - width)
+        y = random.randint(0, self.model.config.height - height)
+
+        # randomize rotation and mirrored
+        rotation = 0
+        mirrored = False
+        if "rotation" in self.model.config.actions:
+            random_rot = random.randint(
+                0, math.floor(360/self.model.config.rotation_step)
+            )
+            rotation = self.model.config.rotation_step * random_rot
+
+        if "flip" in self.model.config.actions:
+            mirrored = bool(random.randint(0, 1))
+
+        # create target object
+        target_obj = Obj(
+            id_n=index,
+            obj_type=piece_type,
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            block_matrix=block_matrix,
+            rotation=rotation,
+            mirrored=mirrored,
+            color=None,
+            is_target=True
+        )
+
+        return target_obj
+
+    def _generate_objects(self, n_objs, target=True):
         objects = dict()
+        targets = dict()
         attempt = 0
         while len(objects) < n_objs:
             # pick a random type and its height and width
@@ -90,25 +137,39 @@ class Generator:
                 index = str(len(objects))
                 obj.id_n = index
                 self.model.grid.add_obj(obj)
+
+                # create a target
+                if target:
+                    target_obj = self._generate_target(
+                        index, piece_type, width, height, block_matrix
+                    )
+                    obj.target = target_obj
+                    targets[index] = target_obj
+
                 objects[index] = obj
                 attempt = 0
             else:
+                # object overlaps, try again until number of
+                # maximum attempts is reached
                 if self.model.config.prevent_overlap:
                     attempt += 1
                     if attempt > self.attempts:
                         break
 
-        return objects
+        return objects, targets
 
     def load_random_state(self, n_objs, n_grippers, random_gr_position=False):
         # get grippers
         grippers = self._generate_grippers(n_grippers, random_gr_position)
 
         # get objects
-        objects = self._generate_objects(n_objs)
+        objects, targets = self._generate_objects(n_objs)
 
-        # create state and load it
+        # create state
         state = State()
         state.grippers = grippers
         state.objs = objects
+        state.targets = targets
+
+        # load state
         self.model.set_state(state)
