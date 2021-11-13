@@ -91,11 +91,11 @@ class Generator:
                 obj.id_n = index
                 self.model.grid.add_obj(obj)
                 objects[index] = obj
+                attempt = 0
             else:
                 if self.model.config.prevent_overlap:
                     attempt += 1
                     if attempt > self.attempts:
-                        print(attempt)
                         break
 
         return objects
