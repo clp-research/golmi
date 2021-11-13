@@ -68,14 +68,25 @@ class Generator:
             # randomize rotation and mirrored
             rotation = 0
             mirrored = False
-            if "rotation" in self.model.config.actions:
+            if "rotate" in self.model.config.actions:
+                # generate random angle for rotation
                 random_rot = random.randint(
                     0, math.floor(360/self.model.config.rotation_step)
                 )
                 rotation = self.model.config.rotation_step * random_rot
 
+                # rotate matrix
+                block_matrix = self.model.state.rotate_block_matrix(
+                    block_matrix, rotation
+                )
+
             if "flip" in self.model.config.actions:
                 mirrored = bool(random.randint(0, 1))
+                if mirrored:
+                    # flip matrix
+                    block_matrix = self.model.state.flip_block_matrix(
+                        block_matrix
+                    )
 
             # create target object
             target_obj = Obj(
@@ -120,14 +131,21 @@ class Generator:
             rotation = 0
             mirrored = False
 
-            if "rotation" in self.model.config.actions:
+            if "rotate" in self.model.config.actions:
                 random_rot = random.randint(
                     0, math.floor(360/self.model.config.rotation_step)
                 )
                 rotation = self.model.config.rotation_step * random_rot
+                block_matrix = self.model.state.rotate_block_matrix(
+                    block_matrix, rotation
+                )
 
             if "flip" in self.model.config.actions:
                 mirrored = bool(random.randint(0, 1))
+                if mirrored:
+                    block_matrix = self.model.state.flip_block_matrix(
+                        block_matrix
+                    )
 
             # generate object
             obj = Obj(
