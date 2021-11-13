@@ -10,6 +10,7 @@ random states to initialize a model based on 3 parameters:
 import random
 import math
 
+from model.grid import Grid
 from model.obj import Obj
 from model.state import State
 from model.gripper import Gripper
@@ -19,6 +20,11 @@ class Generator:
     def __init__(self, model, attempts=100):
         self.model = model
         self.attempts = attempts
+        self.target_grid = Grid(
+            self.model.config.width,
+            self.model.config.height,
+            self.model.config.move_step
+        )
 
     def _generate_grippers(self, n_grippers, random_gr_position):
         grippers = dict()
@@ -54,36 +60,41 @@ class Generator:
             - rotation
             - if flipped
         """
-        # generate random coordinates
-        x = random.randint(0, self.model.config.width - width)
-        y = random.randint(0, self.model.config.height - height)
+        while True:
+            # generate random coordinates
+            x = random.randint(0, self.model.config.width - width)
+            y = random.randint(0, self.model.config.height - height)
 
-        # randomize rotation and mirrored
-        rotation = 0
-        mirrored = False
-        if "rotation" in self.model.config.actions:
-            random_rot = random.randint(
-                0, math.floor(360/self.model.config.rotation_step)
+            # randomize rotation and mirrored
+            rotation = 0
+            mirrored = False
+            if "rotation" in self.model.config.actions:
+                random_rot = random.randint(
+                    0, math.floor(360/self.model.config.rotation_step)
+                )
+                rotation = self.model.config.rotation_step * random_rot
+
+            if "flip" in self.model.config.actions:
+                mirrored = bool(random.randint(0, 1))
+
+            # create target object
+            target_obj = Obj(
+                id_n=index,
+                obj_type=piece_type,
+                x=x,
+                y=y,
+                width=width,
+                height=height,
+                block_matrix=block_matrix,
+                rotation=rotation,
+                mirrored=mirrored,
+                color=None,
+                is_target=True
             )
-            rotation = self.model.config.rotation_step * random_rot
 
-        if "flip" in self.model.config.actions:
-            mirrored = bool(random.randint(0, 1))
-
-        # create target object
-        target_obj = Obj(
-            id_n=index,
-            obj_type=piece_type,
-            x=x,
-            y=y,
-            width=width,
-            height=height,
-            block_matrix=block_matrix,
-            rotation=rotation,
-            mirrored=mirrored,
-            color=None,
-            is_target=True
-        )
+            if self.target_grid.can_move(target_obj.occupied(), index):
+                self.target_grid.add_obj(target_obj)
+                break
 
         return target_obj
 
