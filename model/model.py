@@ -362,7 +362,7 @@ class Model:
                     gr_obj.x + dx, gr_obj.y + dy, gr_obj.block_matrix
                 )
                 ob_can_move = self.grid.can_move(new_coordinates, gr_obj_id)
-
+                # TODO: block item once on target! if not gr_obj.on_target():
                 if self.config.prevent_overlap and ob_can_move:
                     # remove object from grid
                     self.grid.remove_obj(gr_obj)

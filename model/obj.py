@@ -1,7 +1,8 @@
 class Obj:
     def __init__(
             self, id_n, obj_type, x, y, width, height, block_matrix,
-            rotation=0, mirrored=False, color="blue", gripped=False):
+            rotation=0, mirrored=False, color="blue", gripped=False,
+            is_target=False):
         self.id_n = id_n
         self.type = obj_type
         self.x = x
@@ -15,6 +16,7 @@ class Obj:
         self.color = color
         self.block_matrix = block_matrix
         self.gripped = gripped
+        self.target = None
 
     def __repr__(self):
         return f"Object({self.type})"
@@ -84,3 +86,15 @@ class Obj:
                     cell_y = obj_y + y
                     occupied.append({"y": cell_y, "x": cell_x})
         return occupied
+
+    def on_target(self):
+        """
+        check whether the object is on target
+        """
+        if self.target is not None:
+            target_coordinates = self.target.occupied()
+            current_coordinates = self.occupied()
+            if target_coordinates == current_coordinates:
+                return True
+
+        return False
