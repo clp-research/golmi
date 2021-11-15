@@ -174,9 +174,6 @@ class Model:
                         color = json_data["objs"][obj]["color"]
                         self.state.objs[obj].color = color
 
-                    # plot object to grid
-                    self.grid.add_obj(this_obj)
-
             # construct grippers
             if "grippers" in json_data and type(json_data["grippers"]) == dict:
                 for gr_name in json_data["grippers"]:
