@@ -32,6 +32,13 @@ class Config:
         @param action_interval	frequency of repeating looped actions in seconds
                                 default: 0.5
         """
+        # make sure step size is allowed
+        if not (1/move_step).is_integer():
+            raise ValueError(
+                f"Selected step size of {move_step} is not allowed\n"
+                "Plese select a step size that satisfies the following "
+                "condition: (1/step size) must be a whole number"
+            )
         self.width = width
         self.height = height
         self.snap_to_grid = snap_to_grid
