@@ -564,8 +564,8 @@ class Model:
     def reset_loops(self):
         """Stop all running actions."""
         # kill any existing thread
-        for action in self.running_loops:
-            for thread in action.values():
+        for action_dict in self.running_loops.values():
+            for thread in action_dict.values():
                 if isinstance(thread, eventlet.greenthread.GreenThread):
                     thread.kill()
         self.running_loops = {action: dict() for action in self.config.actions}
