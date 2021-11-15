@@ -47,7 +47,52 @@ class Generator:
 
         return grippers
 
-    def _generate_target(self, index, piece_type, width, height, block_matrix):
+    def _restricted_coordinates(self, area):
+        """
+        given an area restrict the possible spawning positions
+        for objects and targets
+        """
+        possible_positions = {
+            "all", "top", "bottom", "left", "right"
+        }
+
+        if area not in possible_positions:
+            raise ValueError("Spawn position not valid")
+
+        if area == "all":
+            x_start = 0
+            x_end = self.model.config.width
+            y_start = 0
+            y_end = self.model.config.height
+
+        elif area == "bottom":
+            x_start = 0
+            x_end = self.model.config.width
+            y_start = self.model.config.height//2
+            y_end = self.model.config.height
+
+        elif area == "top":
+            x_start = 0
+            x_end = self.model.config.width
+            y_start = 0
+            y_end = self.model.config.height//2
+
+        elif area == "left":
+            x_start = 0
+            x_end = self.model.config.width//2
+            y_start = 0
+            y_end = self.model.config.height
+
+        elif area == "right":
+            x_start = self.model.config.width//2
+            x_end = self.model.config.width
+            y_start = 0
+            y_end = self.model.config.height
+
+        return ((x_start, x_end), (y_start, y_end))
+
+    def _generate_target(
+            self, index, piece_type, width, height, block_matrix, area):
         """
         this function generates a target block for the object mantaining:
             - index
@@ -60,10 +105,12 @@ class Generator:
             - rotation
             - if flipped
         """
+        (x_start, x_end), (y_start, y_end) = self._restricted_coordinates(area)
+
         while True:
             # generate random coordinates
-            x = random.randint(0, self.model.config.width - width)
-            y = random.randint(0, self.model.config.height - height)
+            x = random.randint(x_start, x_end - width)
+            y = random.randint(y_start, y_end - height)
 
             # randomize rotation and mirrored
             rotation = 0
@@ -109,10 +156,15 @@ class Generator:
 
         return target_obj
 
-    def _generate_objects(self, n_objs, target=True):
+    def _generate_objects(self, n_objs, area_block, area_target, target=True):
         objects = dict()
         targets = dict()
         attempt = 0
+
+        (x_start, x_end), (y_start, y_end) = self._restricted_coordinates(
+            area_block
+        )
+
         while len(objects) < n_objs:
             # pick a random type and its height and width
             piece_type = random.choice(
@@ -123,8 +175,8 @@ class Generator:
             width = len(block_matrix[0])
 
             # generate random coordinates
-            x = random.randint(0, self.model.config.width - width)
-            y = random.randint(0, self.model.config.height - height)
+            x = random.randint(x_start, x_end - width)
+            y = random.randint(y_start, y_end - height)
 
             # generate random attributes
             color = random.choice(self.model.config.colors)
@@ -170,7 +222,11 @@ class Generator:
                 # create a target
                 if target:
                     target_obj = self._generate_target(
-                        index, piece_type, width, height, block_matrix
+                        index,
+                        piece_type,
+                        width, height,
+                        block_matrix,
+                        area_target
                     )
                     obj.target = target_obj
                     targets[index] = target_obj
@@ -187,12 +243,16 @@ class Generator:
 
         return objects, targets
 
-    def load_random_state(self, n_objs, n_grippers, random_gr_position=False):
+    def load_random_state(
+            self, n_objs, n_grippers, area_block,
+            area_target, random_gr_position=False):
         # get grippers
         grippers = self._generate_grippers(n_grippers, random_gr_position)
 
         # get objects
-        objects, targets = self._generate_objects(n_objs)
+        objects, targets = self._generate_objects(
+            n_objs, area_block, area_target
+        )
 
         # create state
         state = State()

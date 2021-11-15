@@ -95,12 +95,17 @@ def init_from_Random(random_parameters):
     n_objects = random_parameters["n_objs"]
     n_grip = random_parameters["n_grip"]
     random_grip = random_parameters["random_grip"]
+    area_block = random_parameters["area_block"]
+    area_target = random_parameters["area_target"]
 
     # generate a random state and load it
     model.generator.load_random_state(
-        n_objects, n_grip, random_grip
+        n_objects,
+        n_grip,
+        area_block,
+        area_target,
+        random_grip
     )
-
 
 # --- gripper --- #
 @socketio.on("add_gripper")
