@@ -32,7 +32,7 @@ $(document).ready(function () {
 				if (state["grippers"] && state["objs"]) {
 					this.grippers = state["grippers"];
 					this.objs = state["objs"];
-					this.targets = state["targets"]
+					this.targets = state["targets"];
 					this.redrawGr();
 					this.redrawObjs();
 				} else {
