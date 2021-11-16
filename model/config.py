@@ -80,17 +80,15 @@ class Config:
         a 0 signifies the absence.
         @param filename 	path to json file
         """
-        file = open(filename, mode="r", encoding="utf-8")
-        types = json.loads(file.read())
-        file.close()
-        # remove entries with underscores (comments?)
-        comments = list()
-        for type_name in types.keys():
-            if type_name.startswith("_"):
-                comments.append(type_name)
-        for type_name in comments:
-            types.pop(type_name)
-        return types
+        with open(filename, "r", encoding="utf-8") as infile:
+            types = json.load(infile)
+
+        # remove comments from dictionary
+        # comments are keys starting with __
+        return {
+            key: value for key, value in types.items()
+            if not key.startswith("_")
+        }
 
     def to_dict(self):
         """
