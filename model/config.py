@@ -36,8 +36,8 @@ class Config:
         if not (1/move_step).is_integer():
             raise ValueError(
                 f"Selected step size of {move_step} is not allowed\n"
-                "Plese select a step size that satisfies the following "
-                "condition: (1/step size) must be a whole number"
+                "Please select a step size that satisfies the following "
+                "condition: (1/step size) must be an integer"
             )
         self.width = width
         self.height = height
