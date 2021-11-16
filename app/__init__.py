@@ -41,6 +41,22 @@ client_models = dict()
 # import views
 from app import views
 
+
+def check_parameters(params, model, keys):
+    """
+    Function to make sure the passed parameters are valid.
+    Checks:
+        - parameters are passed as dictionary
+        - some keys are present in the dictionary
+        - the gripper is not None
+    """
+    good_param = isinstance(params, dict)
+    keys_in_param = keys.issubset(set(params.keys()))
+    gripper_not_none = model.get_gripper_by_id(str(params["id"])) is not None
+
+    return good_param and keys_in_param and gripper_not_none
+
+
 # --- socketio events --- #
 # --- connection --- #
 @socketio.on("connect")
@@ -135,14 +151,12 @@ def remove_gripper(gr_id=None):
 def move(params):
     model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
-    good_param = isinstance(params, dict)
-    keys_in_param = {"id", "dx", "dy"}.issubset(set(params.keys()))
-    gripper_not_none = model.get_gripper_by_id(str(params["id"])) is not None
+    good_params = check_parameters(params, model, {"id", "dx", "dy"})
 
-    if good_param and keys_in_param and gripper_not_none:
+    if good_params:
         step_size = params["step_size"] if "step_size" in params else None
         # continuous / looped action
-        if "loop" in params and params["loop"]:
+        if params.get("loop"):
             client_models[request.sid].start_moving(
                 str(params["id"]), params["dx"], params["dy"], step_size)
         # one-time action
@@ -153,9 +167,11 @@ def move(params):
 
 @socketio.on("stop_move")
 def stop_move(params):
+    model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
-    if isinstance(params, dict) and "id" in params and \
-            client_models[request.sid].get_gripper_by_id(str(params["id"])):
+    good_params = check_parameters(params, model, {"id"})
+
+    if good_params:
         client_models[request.sid].stop_moving(str(params["id"]))
 
 
@@ -163,14 +179,12 @@ def stop_move(params):
 def rotate(params):
     model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
-    good_param = isinstance(params, dict)
-    keys_in_param = {"id", "direction"}.issubset(set(params.keys()))
-    gripper_not_none = model.get_gripper_by_id(str(params["id"])) is not None
+    good_params = check_parameters(params, model, {"id", "direction"})
 
-    if good_param and keys_in_param and gripper_not_none:
+    if good_params:
         step_size = params["step_size"] if "step_size" in params else None
         # continuous / looped action
-        if "loop" in params and params["loop"]:
+        if params.get("loop"):
             model.start_rotating(
                 str(params["id"]), params["direction"], step_size
             )
@@ -185,11 +199,9 @@ def rotate(params):
 def stop_rotate(params):
     model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
-    good_param = isinstance(params, dict)
-    keys_in_param = {"id"}.issubset(set(params.keys()))
-    gripper_not_none = model.get_gripper_by_id(str(params["id"])) is not None
+    good_params = check_parameters(params, model, {"id"})
 
-    if good_param and keys_in_param and gripper_not_none:
+    if good_params:
         model.stop_rotating(str(params["id"]))
 
 
@@ -197,13 +209,11 @@ def stop_rotate(params):
 def flip(params):
     model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
-    good_param = isinstance(params, dict)
-    keys_in_param = {"id"}.issubset(set(params.keys()))
-    gripper_not_none = model.get_gripper_by_id(str(params["id"])) is not None
+    good_params = check_parameters(params, model, {"id"})
 
-    if good_param and keys_in_param and gripper_not_none:
+    if good_params:
         # continuous / looped action
-        if "loop" in params and params["loop"]:
+        if params.get("loop"):
             model.start_flipping(str(params["id"]))
         # one-time action
         else:
@@ -214,11 +224,9 @@ def flip(params):
 def stop_flip(params):
     model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
-    good_param = isinstance(params, dict)
-    keys_in_param = {"id"}.issubset(set(params.keys()))
-    gripper_not_none = model.get_gripper_by_id(str(params["id"])) is not None
+    good_params = check_parameters(params, model, {"id"})
 
-    if good_param and keys_in_param and gripper_not_none:
+    if good_params:
         model.stop_flipping(str(params["id"]))
 
 
@@ -226,13 +234,11 @@ def stop_flip(params):
 def grip(params):
     model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
-    good_param = isinstance(params, dict)
-    keys_in_param = {"id"}.issubset(set(params.keys()))
-    gripper_not_none = model.get_gripper_by_id(str(params["id"])) is not None
+    good_params = check_parameters(params, model, {"id"})
 
-    if good_param and keys_in_param and gripper_not_none:
+    if good_params:
         # continuous / looped action
-        if "loop" in params and params["loop"]:
+        if params.get("loop"):
             client_models[request.sid].start_gripping(str(params["id"]))
         # one-time action
         else:
@@ -243,9 +249,7 @@ def grip(params):
 def stop_grip(params):
     model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
-    good_param = isinstance(params, dict)
-    keys_in_param = {"id"}.issubset(set(params.keys()))
-    gripper_not_none = model.get_gripper_by_id(str(params["id"])) is not None
+    good_params = check_parameters(params, model, {"id"})
 
-    if good_param or keys_in_param and gripper_not_none:
+    if good_params:
         model.stop_gripping(str(params["id"]))
