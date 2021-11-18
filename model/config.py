@@ -83,8 +83,7 @@ class Config:
         with open(filename, "r", encoding="utf-8") as infile:
             types = json.load(infile)
 
-        # remove comments from dictionary
-        # comments are keys starting with __
+        # Ignore keys with underscores (used for comments)
         return {
             key: value for key, value in types.items()
             if not key.startswith("_")
