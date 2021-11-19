@@ -33,7 +33,7 @@ class Config:
                                 default: 0.5
         """
         # make sure step size is allowed
-        if not (1/move_step).is_integer():
+        if not (1/move_step).is_integer() and not isinstance(move_step, int):
             raise ValueError(
                 f"Selected step size of {move_step} is not allowed\n"
                 "Please select a step size that satisfies the following "

@@ -28,14 +28,14 @@ class Tile:
         return self.__repr__()
 
 
-class Magnifier:
+class Converter:
     """
     class used to convert integer coordinates x, y
     to float ones given the step size used by the model
     """
     def __init__(self, step):
         self.factor = step
-        self.multiplier = math.floor(1 / step)
+        self.multiplier = max(1, math.floor(1 / step))
 
     def __call__(self, coordinate):
         if self.factor == 1:
@@ -67,15 +67,17 @@ class Grid:
         self.step = step
         self.prevent_overlap = prevent_overlap
         self.clear_grid()
-        self.magnifier = Magnifier(step)
+        self.converter = Converter(step)
 
     def clear_grid(self):
         """
         generate an empty grid
         """
+        step = min(1, self.step)
+
         self.grid = [
-            [Tile(j, i) for j in np.arange(0, self.width, self.step)]
-            for i in np.arange(0, self.heigth, self.step)
+            [Tile(j, i) for j in np.arange(0, self.width, step)]
+            for i in np.arange(0, self.heigth, step)
         ]
 
     def __repr__(self):
@@ -91,35 +93,41 @@ class Grid:
             -by giving a dictionary dict = {"x": x, "y": y}
         """
         if isinstance(i, int) or isinstance(i, float):
-            i = int(i * self.magnifier.multiplier)
+            i = int(i * self.converter.multiplier)
             return self.grid[i]
 
         elif isinstance(i, dict):
-            x = int(i["x"] * self.magnifier.multiplier)
-            y = int(i["y"] * self.magnifier.multiplier)
+            x = int(i["x"] * self.converter.multiplier)
+            y = int(i["y"] * self.converter.multiplier)
             return self.grid[y][x]
 
     def __contains__(self, coordinates):
+        """
+        expected coordinates should be already onverted
+        """
         x = coordinates["x"]
         y = coordinates["y"]
 
-        if 0 <= x < self.width and 0 <= y < self.heigth:
+        width = len(self.grid)
+        heigth = len(self.grid[0])
+
+        if 0 <= x < width and 0 <= y < heigth:
             return True
         return False
 
     def add_obj(self, obj):  # change to coordinates
         for cell in obj.occupied():
-            for new_cell in self.magnifier(cell):
+            for new_cell in self.converter(cell):
                 self[new_cell].objects.append(obj.id_n)
 
     def remove_obj(self, obj):  # change to coordinates
         for cell in obj.occupied():
-            for new_cell in self.magnifier(cell):
+            for new_cell in self.converter(cell):
                 self[new_cell].objects.remove(obj.id_n)
 
     def can_move(self, coordinates, id_n):
         for cell in coordinates:
-            for new_cell in self.magnifier(cell):
+            for new_cell in self.converter(cell):
                 # cell must be on grid
                 if new_cell not in self:
                     return False
