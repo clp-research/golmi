@@ -23,7 +23,8 @@ class Generator:
         self.target_grid = Grid(
             self.model.config.width,
             self.model.config.height,
-            self.model.config.move_step
+            self.model.config.move_step,
+            self.model.config.prevent_overlap
         )
 
     def _generate_grippers(self, n_grippers, random_gr_position):

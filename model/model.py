@@ -15,7 +15,12 @@ class Model:
         self.state = State()
         self.config = config
         self.generator = Generator(self)
-        self.grid = Grid(config.width, config.height, config.move_step)
+        self.grid = Grid(
+            config.width,
+            config.height,
+            config.move_step,
+            config.prevent_overlap
+        )
         # Contains a dictionary for each available action. The nested dicts map
         # gripper ids to True or False, depending on whether the respective
         # action is currently running (= repeatedly executed)

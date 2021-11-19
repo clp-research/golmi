@@ -61,10 +61,11 @@ class Grid:
     """
     a grid is a 2D-Array of Tiles
     """
-    def __init__(self, width, height, step):
+    def __init__(self, width, height, step, prevent_overlap):
         self.width = width
         self.heigth = height
         self.step = step
+        self.prevent_overlap = prevent_overlap
         self.clear_grid()
         self.magnifier = Magnifier(step)
 
@@ -123,16 +124,17 @@ class Grid:
                 if new_cell not in self:
                     return False
 
-                # return false if cell is not occupied by
-                # the same block that is trying to move
-                if (len(self[new_cell].objects) > 0 and
-                        self[new_cell].objects != [id_n]):
-                    return False
+                if self.prevent_overlap is True:
+                    # return false if cell is occupied by
+                    # another object
+                    if (len(self[new_cell].objects) > 0 and
+                            self[new_cell].objects != [id_n]):
+                        return False
         return True
 
 
 if __name__ == "__main__":
-    g = Grid(width=5, height=5, step=0.5)
+    g = Grid(width=5, height=5, step=0.5, prevent_overlap=True)
     o1 = Obj(1, "L", 0, 0, 5, 5, block_matrix=[
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
