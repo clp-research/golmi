@@ -10,7 +10,7 @@ class Config:
             self, type_config, width=20, height=20,
             snap_to_grid=False, prevent_overlap=True,
             actions=["move", "rotate", "flip", "grip"],
-            move_step=0.5, rotation_step=90, action_interval=0.5):
+            move_step=0.5, rotation_step=90, action_interval=0.1):
         """
         Constructor.
         @param type_config	    json file or object mapping types

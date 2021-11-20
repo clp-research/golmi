@@ -557,9 +557,17 @@ class Model:
         )
 
     def _loop(self, fn, *args, **kwargs):
+        # rotations and flips can be slow (0.5)
+        # movements should be as fast as in config
+        if fn.__name__ == "move":
+            action_interval = self.config.action_interval
+        else:
+            action_interval = 0.5
+
+        # start loop
         while True:
             fn(*args, *kwargs)
-            eventlet.sleep(self.config.action_interval)
+            eventlet.sleep(action_interval)
 
     def stop_loop(self, action_type, gripper):
         """
