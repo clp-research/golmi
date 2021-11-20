@@ -58,6 +58,17 @@ class Mover:
 
         return new_coordinates, new_matrix, d_angle
 
+    def _is_legal_move(self, new_coordinates, gr_obj_id):
+        """
+        check if the movement is allowed
+        """
+        # tiles are free
+        obj_can_move = self.model.object_grid.can_move(
+            new_coordinates, gr_obj_id
+        )
+
+        return obj_can_move
+
     def _move(self, gr_id, dx, dy):
         """
         move an object and a gripper
@@ -125,12 +136,10 @@ class Mover:
                 new_coordinates, new_matrix, d_angle = movement_result
 
                 # check if coordinates are legal
-                obj_can_move = self.model.object_grid.can_move(
-                    new_coordinates, gr_obj_id
-                )
+                good_move = self._is_legal_move(new_coordinates, gr_obj_id)
 
                 # apply movement
-                if self.model.config.prevent_overlap and obj_can_move:
+                if self.model.config.prevent_overlap and good_move:
                     # remove object from grid
                     self.model.object_grid.remove_obj(gr_obj)
 
