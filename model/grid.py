@@ -108,10 +108,7 @@ class Grid:
         x = coordinates["x"]
         y = coordinates["y"]
 
-        width = len(self.grid)
-        heigth = len(self.grid[0])
-
-        if 0 <= x < width and 0 <= y < heigth:
+        if 0 <= x < self.width and 0 <= y < self.heigth:
             return True
         return False
 

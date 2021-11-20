@@ -157,15 +157,15 @@ def move(params):
         step_size = params["step_size"] if "step_size" in params else None
         # continuous / looped action
         if params.get("loop"):
-            client_models[request.sid].start_moving(
+            model.start_moving(
                 str(params["id"]), params["dx"], params["dy"], step_size)
         # one-time action
         else:
-            client_models[request.sid].mover.apply_movement(
+            model.mover.apply_movement(
                 "move",
                 str(params["id"]),
-                dx=params["dx"],
-                dy=params["dy"],
+                x_steps=params["dx"],
+                y_steps=params["dy"],
                 step_size=step_size
             )
 

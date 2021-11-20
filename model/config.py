@@ -10,7 +10,8 @@ class Config:
             self, type_config, width=20, height=20,
             snap_to_grid=False, prevent_overlap=True,
             actions=["move", "rotate", "flip", "grip"],
-            move_step=0.5, rotation_step=90, action_interval=0.1):
+            move_step=0.5, rotation_step=90,
+            action_interval=0.1, verbose=False):
         """
         Constructor.
         @param type_config	    json file or object mapping types
@@ -47,6 +48,7 @@ class Config:
         self.move_step = move_step
         self.rotation_step = rotation_step
         self.action_interval = action_interval
+        self.verbose = verbose
 
         if type(type_config) == str:
             self.type_config = self._types_from_JSON(type_config)

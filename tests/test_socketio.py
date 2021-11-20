@@ -285,8 +285,8 @@ class SocketEventTest(unittest.TestCase):
 
         received = self.socketio_client.get_received()
 
-        # no update should have been sent
-        self.assertEqual(len(received), 0)
+        # mover always sends an update
+        self.assertEqual(len(received), 1)
 
     def test_flip_object(self):
         # send a state

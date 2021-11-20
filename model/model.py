@@ -112,7 +112,7 @@ class Model:
         # add objects
         for obj in self.state.objs.values():
             self.object_grid.add_obj(obj)
-        
+
         # add targets
         for target in self.state.targets.values():
             self.target_grid.add_obj(target)

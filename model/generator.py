@@ -10,7 +10,6 @@ random states to initialize a model based on 3 parameters:
 import random
 import math
 
-from model.grid import Grid
 from model.obj import Obj
 from model.state import State
 from model.gripper import Gripper

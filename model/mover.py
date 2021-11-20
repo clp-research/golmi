@@ -10,6 +10,7 @@ class Mover:
         """
         gripper_x, gripper_y = self.model.get_gripper_coords(gr_id)
         new_gr_pos = {"x": gripper_x + dx, "y": gripper_y + dy}
+
         return new_gr_pos in self.model.object_grid
 
     def _get_new_coordinates(self, gr_obj, **kwargs):
@@ -89,6 +90,8 @@ class Mover:
             # if step size is not defined, use standard from config
             if "step_size" not in kwargs or kwargs["step_size"] is None:
                 step_size = self.model.config.move_step
+            else:
+                step_size = kwargs["step_size"]
 
             dx = kwargs["x_steps"] * step_size
             dy = kwargs["y_steps"] * step_size
@@ -144,9 +147,8 @@ class Mover:
                     # add element to grid
                     self.model.object_grid.add_obj(gr_obj)
 
-                    # if self.model.verbose is True:
-                    #     print(self.model.object_grid)
-                    print(self.model.object_grid)
+                    if self.model.config.verbose is True:
+                        print(self.model.object_grid)
 
             else:
                 # only move the gripper
