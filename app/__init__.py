@@ -161,8 +161,13 @@ def move(params):
                 str(params["id"]), params["dx"], params["dy"], step_size)
         # one-time action
         else:
-            client_models[request.sid].move(
-                str(params["id"]), params["dx"], params["dy"], step_size)
+            client_models[request.sid].mover.apply_movement(
+                "move",
+                str(params["id"]),
+                dx=params["dx"],
+                dy=params["dy"],
+                step_size=step_size
+            )
 
 
 @socketio.on("stop_move")
@@ -190,8 +195,11 @@ def rotate(params):
             )
         # one-time action
         else:
-            model.rotate(
-                str(params["id"]), params["direction"], step_size
+            model.mover.apply_movement(
+                "rotate",
+                str(params["id"]),
+                direction=params["direction"],
+                rotation_step=step_size
             )
 
 
@@ -217,7 +225,10 @@ def flip(params):
             model.start_flipping(str(params["id"]))
         # one-time action
         else:
-            model.flip(str(params["id"]))
+            model.apply_movement(
+                "flip",
+                str(params["id"])
+            )
 
 
 @socketio.on("stop_flip")

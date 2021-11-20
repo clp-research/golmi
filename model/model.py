@@ -6,6 +6,7 @@ from model.grid import Grid
 from model.gripper import Gripper
 from model.obj import Obj
 from model.state import State
+from model.mover import Mover
 
 
 class Model:
@@ -15,6 +16,7 @@ class Model:
         self.state = State()
         self.config = config
         self.generator = Generator(self)
+        self.mover = Mover(self)
         self.object_grid = Grid(
             config.width,
             config.height,
@@ -335,71 +337,6 @@ class Model:
         """
         self.stop_loop("move", gr_id)
 
-    def move(self, gr_id, x_steps, y_steps, step_size=None):
-        """
-        If allowed, move the gripper x_steps steps in x direction
-        and y_steps steps in y direction.
-        Only executes if the goal position is inside the game dimensions.
-        Notifies views of change.
-        @param gr_id 	        gripper id
-        @param x_steps	    steps to move in x direction.
-                            Step size is defined by model configuration
-        @param y_steps	    steps to move in y direction.
-                            Step size is defined by model configuration
-        @param step_size 	Optional: size of step unit in blocks.
-                            Default: use move_step of config
-        """
-        # if no step_size was given, query the config
-        if not step_size:
-            step_size = self.config.move_step
-
-        # calculate distance in each direction
-        dx = x_steps*step_size
-        dy = y_steps*step_size
-
-        # obtain coordinates and gripper
-        gripper_x, gripper_y = self.get_gripper_coords(gr_id)
-        gr_obj_id = self.get_gripped_obj(gr_id)
-
-        new_gr_pos = {"x": gripper_x + dx, "y": gripper_y + dy}
-        gr_can_move = new_gr_pos in self.object_grid
-
-        # gripper must be able to move
-        if gr_can_move:
-            # gripper is gripping an object
-            if gr_obj_id:
-                # get gripped object
-                gr_obj = self.get_obj_by_id(gr_obj_id)
-
-                # make sure object can move
-                new_coordinates = gr_obj.occupied(
-                    gr_obj.x + dx, gr_obj.y + dy, gr_obj.block_matrix
-                )
-                ob_can_move = self.object_grid.can_move(new_coordinates, gr_obj_id)
-                # TODO: block item once on target! if not gr_obj.on_target():
-                if self.config.prevent_overlap and ob_can_move:
-                    # remove object from grid
-                    self.object_grid.remove_obj(gr_obj)
-
-                    # update state with new positions
-                    self.state.move_gr(gr_id, dx, dy)
-                    self.state.move_obj(self.get_gripped_obj(gr_id), dx, dy)
-
-                    # add moved object to grid
-                    self.object_grid.add_obj(gr_obj)
-                    print(self.object_grid)
-
-                    # notify the views. A gripped object is implicitly redrawn.
-                    self._notify_views(
-                        "update_grippers", self.get_gripper_dict()
-                    )
-
-            # if no object is gripped, only move the gripper
-            else:
-                self.state.move_gr(gr_id, dx, dy)
-                # notify the views. A gripped object is implicitly redrawn
-                self._notify_views("update_grippers", self.get_gripper_dict())
-
     def start_rotating(self, gr_id, direction, step_size=None):
         """
         Start calling the function rotate periodically
@@ -424,55 +361,6 @@ class Model:
         """
         self.stop_loop("rotate", gr_id)
 
-    def rotate(self, gr_id, direction, step_size=None):
-        """
-        If the gripper 'id' currently grips some object,
-        rotate this object one step.
-        @param id 	        id of the gripper whose gripped
-                            object should be rotated
-        @param direction	-1 for leftwards rotation,
-                            1 for rightwards rotation
-        @param step_size	Optional: angle to rotate per step.
-                            Default: use rotation_step of config
-        """
-        # check if an object is gripped
-        gr_obj_id = self.get_gripped_obj(gr_id)
-        if gr_obj_id:
-            gr_obj = self.get_obj_by_id(gr_obj_id)
-
-            # if not step_size was given
-            # use the default from the configuration
-            if not step_size:
-                step_size = self.config.rotation_step
-
-            # determine the turning angle
-            d_angle = direction * step_size
-
-            # rotate the matrix and check whether the new
-            # block positions are legal (-> no overlaps)
-            rotated_matrix = self.state.rotate_block_matrix(
-                gr_obj.block_matrix, d_angle
-            )
-
-            new_coordinates = gr_obj.occupied(
-                gr_obj.x, gr_obj.y, rotated_matrix
-            )
-            obj_can_move = self.object_grid.can_move(new_coordinates, gr_obj_id)
-
-            if self.config.prevent_overlap and obj_can_move:
-                # remove old object from grid
-                self.object_grid.remove_obj(gr_obj)
-
-                # update state
-                self.state.rotate_obj(gr_obj_id, d_angle, rotated_matrix)
-
-                # add rotated object to grid
-                self.object_grid.add_obj(gr_obj)
-                print(self.object_grid)
-
-                # notify the views. The gripped object is implicitly redrawn
-                self._notify_views("update_grippers", self.get_gripper_dict())
-
     def start_flipping(self, gr_id):
         """
         Start calling the function flip periodically
@@ -490,38 +378,6 @@ class Model:
         @param gr_id 	gripper id
         """
         self.stop_loop("flip", gr_id)
-
-    def flip(self, id):
-        """
-        Mirror the object currently gripped by some gripper.
-        @param id 	gripper id
-        """
-        # check if an object is gripped
-        gr_obj_id = self.get_gripped_obj(id)
-        if gr_obj_id:
-            gr_obj = self.get_obj_by_id(gr_obj_id)
-
-            # flip the matrix
-            flipped_matrix = self.state.flip_block_matrix(gr_obj.block_matrix)
-
-            new_coordinates = gr_obj.occupied(
-                gr_obj.x, gr_obj.y, flipped_matrix
-            )
-            obj_can_move = self.object_grid.can_move(new_coordinates, gr_obj_id)
-
-            if self.config.prevent_overlap and obj_can_move:
-                # remove old object
-                self.object_grid.remove_obj(gr_obj)
-
-                # update state
-                self.state.flip_obj(gr_obj_id, flipped_matrix)
-
-                # add flipped object to grid
-                self.object_grid.add_obj(gr_obj)
-                print(self.object_grid)
-
-                # notify the views. The gripped object is implicitly redrawn.
-                self._notify_views("update_grippers", self.get_gripper_dict())
 
     def _get_grippable(self, gr_id):
         """
