@@ -15,7 +15,13 @@ class Model:
         self.state = State()
         self.config = config
         self.generator = Generator(self)
-        self.grid = Grid(
+        self.object_grid = Grid(
+            config.width,
+            config.height,
+            config.move_step,
+            config.prevent_overlap
+        )
+        self.target_grid = Grid(
             config.width,
             config.height,
             config.move_step,
@@ -90,8 +96,9 @@ class Model:
         Initialize the model's (game) state.
         @param state	State object or dict or JSON string
         """
-        # reset grid
-        self.grid.clear_grid()
+        # reset grids
+        self.object_grid.clear_grid()
+        self.target_grid.clear_grid()
 
         # state is a JSON string or parsed JSON dictionary
         if isinstance(state, (str, dict)):
@@ -100,8 +107,13 @@ class Model:
             # state is a State instance
             self.state = state
 
+        # add objects
         for obj in self.state.objs.values():
-            self.grid.add_obj(obj)
+            self.object_grid.add_obj(obj)
+        
+        # add targets
+        for target in self.state.targets.values():
+            self.target_grid.add_obj(target)
 
         # update views
         self._notify_views("update_state", self.state.to_dict())
@@ -350,7 +362,7 @@ class Model:
         gr_obj_id = self.get_gripped_obj(gr_id)
 
         new_gr_pos = {"x": gripper_x + dx, "y": gripper_y + dy}
-        gr_can_move = new_gr_pos in self.grid
+        gr_can_move = new_gr_pos in self.object_grid
 
         # gripper must be able to move
         if gr_can_move:
@@ -363,19 +375,19 @@ class Model:
                 new_coordinates = gr_obj.occupied(
                     gr_obj.x + dx, gr_obj.y + dy, gr_obj.block_matrix
                 )
-                ob_can_move = self.grid.can_move(new_coordinates, gr_obj_id)
+                ob_can_move = self.object_grid.can_move(new_coordinates, gr_obj_id)
                 # TODO: block item once on target! if not gr_obj.on_target():
                 if self.config.prevent_overlap and ob_can_move:
                     # remove object from grid
-                    self.grid.remove_obj(gr_obj)
+                    self.object_grid.remove_obj(gr_obj)
 
                     # update state with new positions
                     self.state.move_gr(gr_id, dx, dy)
                     self.state.move_obj(self.get_gripped_obj(gr_id), dx, dy)
 
                     # add moved object to grid
-                    self.grid.add_obj(gr_obj)
-                    print(self.grid)
+                    self.object_grid.add_obj(gr_obj)
+                    print(self.object_grid)
 
                     # notify the views. A gripped object is implicitly redrawn.
                     self._notify_views(
@@ -445,18 +457,18 @@ class Model:
             new_coordinates = gr_obj.occupied(
                 gr_obj.x, gr_obj.y, rotated_matrix
             )
-            obj_can_move = self.grid.can_move(new_coordinates, gr_obj_id)
+            obj_can_move = self.object_grid.can_move(new_coordinates, gr_obj_id)
 
             if self.config.prevent_overlap and obj_can_move:
                 # remove old object from grid
-                self.grid.remove_obj(gr_obj)
+                self.object_grid.remove_obj(gr_obj)
 
                 # update state
                 self.state.rotate_obj(gr_obj_id, d_angle, rotated_matrix)
 
                 # add rotated object to grid
-                self.grid.add_obj(gr_obj)
-                print(self.grid)
+                self.object_grid.add_obj(gr_obj)
+                print(self.object_grid)
 
                 # notify the views. The gripped object is implicitly redrawn
                 self._notify_views("update_grippers", self.get_gripper_dict())
@@ -495,18 +507,18 @@ class Model:
             new_coordinates = gr_obj.occupied(
                 gr_obj.x, gr_obj.y, flipped_matrix
             )
-            obj_can_move = self.grid.can_move(new_coordinates, gr_obj_id)
+            obj_can_move = self.object_grid.can_move(new_coordinates, gr_obj_id)
 
             if self.config.prevent_overlap and obj_can_move:
                 # remove old object
-                self.grid.remove_obj(gr_obj)
+                self.object_grid.remove_obj(gr_obj)
 
                 # update state
                 self.state.flip_obj(gr_obj_id, flipped_matrix)
 
                 # add flipped object to grid
-                self.grid.add_obj(gr_obj)
-                print(self.grid)
+                self.object_grid.add_obj(gr_obj)
+                print(self.object_grid)
 
                 # notify the views. The gripped object is implicitly redrawn.
                 self._notify_views("update_grippers", self.get_gripper_dict())
@@ -520,7 +532,7 @@ class Model:
         # Gripper position. It is just a point.
         x, y = self.get_gripper_coords(gr_id)
 
-        tile = self.grid[{"x": x, "y": y}]
+        tile = self.object_grid[{"x": x, "y": y}]
         # if there is an object on tile, return last object
         if tile.objects:
             return tile.objects[-1]

@@ -20,12 +20,6 @@ class Generator:
     def __init__(self, model, attempts=100):
         self.model = model
         self.attempts = attempts
-        self.target_grid = Grid(
-            self.model.config.width,
-            self.model.config.height,
-            self.model.config.move_step,
-            self.model.config.prevent_overlap
-        )
 
     def _generate_grippers(self, n_grippers, random_gr_position):
         grippers = dict()
@@ -151,8 +145,8 @@ class Generator:
                 is_target=True
             )
 
-            if self.target_grid.can_move(target_obj.occupied(), index):
-                self.target_grid.add_obj(target_obj)
+            if self.model.target_grid.can_move(target_obj.occupied(), index):
+                self.model.target_grid.add_obj(target_obj)
                 break
 
         return target_obj
@@ -215,10 +209,10 @@ class Generator:
             )
 
             # if object does not overlap, add it
-            if self.model.grid.can_move(obj.occupied(), None):
+            if self.model.object_grid.can_move(obj.occupied(), None):
                 index = str(len(objects))
                 obj.id_n = index
-                self.model.grid.add_obj(obj)
+                self.model.object_grid.add_obj(obj)
 
                 # create a target
                 if target:
