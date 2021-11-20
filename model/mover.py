@@ -28,7 +28,8 @@ class Mover:
             new_matrix = gr_obj.block_matrix
 
         elif kwargs["type"] == "rotate":
-            if "rotation_step" not in kwargs or kwargs["rotation_step"] is None:
+            if ("rotation_step" not in kwargs or
+                    kwargs["rotation_step"] is None):
                 step_size = self.model.config.rotation_step
 
             direction = kwargs["direction"]
@@ -56,6 +57,27 @@ class Mover:
 
         return new_coordinates, new_matrix, d_angle
 
+    def _move(self, gr_id, dx, dy):
+        """
+        move an object and a gripper
+        """
+        self.model.state.move_gr(gr_id, dx, dy)
+        self.model.state.move_obj(self.model.get_gripped_obj(gr_id), dx, dy)
+
+    def _rotate(self, gr_obj_id, d_angle, new_matrix):
+        """
+        rotation an object
+        """
+        # update state
+        self.model.state.rotate_obj(gr_obj_id, d_angle, new_matrix)
+
+    def _flip(self, gr_obj_id, new_matrix):
+        """
+        flip an object
+        """
+        # update state
+        self.model.state.flip_obj(gr_obj_id, new_matrix)
+
     def apply_movement(self, movement_type, gr_id, **kwargs):
         """
         This class applies one of the movements
@@ -82,14 +104,14 @@ class Mover:
                 # initialize empty variables for kwargs
                 direction = None
                 rotation_step = None
-                
+
                 if "direction" in kwargs:
                     direction = kwargs["direction"]
 
                 if "rotation_step" in kwargs:
                     rotation_step = kwargs["rotation_step"]
 
-                new_coordinates, new_matrix, d_angle = self._get_new_coordinates(
+                movement_result = self._get_new_coordinates(
                     gr_obj,
                     type=movement_type,
                     dx=dx,
@@ -97,6 +119,7 @@ class Mover:
                     direction=direction,
                     rotation_step=rotation_step
                 )
+                new_coordinates, new_matrix, d_angle = movement_result
 
                 # check if coordinates are legal
                 obj_can_move = self.model.object_grid.can_move(
@@ -130,25 +153,7 @@ class Mover:
                 self.model.state.move_gr(gr_id, dx, dy)
 
         # send update to views
-        self.model._notify_views("update_grippers", self.model.get_gripper_dict())
-
-    def _move(self, gr_id, dx, dy):
-        """
-        movement on grid
-        """
-        self.model.state.move_gr(gr_id, dx, dy)
-        self.model.state.move_obj(self.model.get_gripped_obj(gr_id), dx, dy)
-
-    def _rotate(self, gr_obj_id, d_angle, new_matrix):
-        """
-        rotation
-        """
-        # update state
-        self.model.state.rotate_obj(gr_obj_id, d_angle, new_matrix)
-
-    def _flip(self, gr_obj_id, new_matrix):
-        """
-        flip
-        """
-        # update state
-        self.model.state.flip_obj(gr_obj_id, new_matrix)
+        self.model._notify_views(
+            "update_grippers",
+            self.model.get_gripper_dict()
+        )
