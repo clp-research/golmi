@@ -327,7 +327,14 @@ class Model:
         # cancel any ongoing movement
         self.stop_moving(gr_id)
         self.start_loop(
-            "move", gr_id, self.move, gr_id, x_steps, y_steps, step_size
+            "move",
+            gr_id,
+            self.mover.apply_movement,
+            "move",
+            gr_id,
+            x_steps=x_steps,
+            y_steps=y_steps,
+            step_size=step_size
         )
 
     def stop_moving(self, gr_id):
@@ -351,7 +358,13 @@ class Model:
         # cancel any ongoing rotation
         self.stop_rotating(gr_id)
         self.start_loop(
-            "rotate", gr_id, self.rotate, gr_id, direction, step_size
+            "rotate",
+            gr_id,
+            self.mover.apply_movement,
+            "rotate",
+            gr_id,
+            direction=direction,
+            step_size=step_size
         )
 
     def stop_rotating(self, gr_id):
@@ -370,7 +383,13 @@ class Model:
         """
         # cancel any ongoing flipping
         self.stop_flipping(gr_id)
-        self.start_loop("flip", gr_id, self.flip, gr_id)
+        self.start_loop(
+            "flip",
+            gr_id,
+            self.mover.apply_movement,
+            "flip",
+            gr_id
+        )
 
     def stop_flipping(self, gr_id):
         """
@@ -408,6 +427,7 @@ class Model:
         assert action_type in self.running_loops, \
             f"Error at Model.start_loop: action {action_type} not registered"
         # create a thread executing the action infinitely
+
         self.running_loops[action_type][gripper] = eventlet.spawn(
             self._loop, fn, *args, **kwargs
         )
@@ -415,14 +435,14 @@ class Model:
     def _loop(self, fn, *args, **kwargs):
         # rotations and flips can be slow (0.5)
         # movements should be as fast as in config
-        if fn.__name__ == "move":
+        if args[0] == "move":
             action_interval = self.config.action_interval
         else:
             action_interval = 0.5
 
         # start loop
         while True:
-            fn(*args, *kwargs)
+            fn(*args, **kwargs)
             eventlet.sleep(action_interval)
 
     def stop_loop(self, action_type, gripper):

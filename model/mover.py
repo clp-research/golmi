@@ -8,9 +8,9 @@ class Mover:
         if the movement type is not move this function
         will always return True as dx and dy will be zero
         """
-        gripper_x, gripper_y = self.get_gripper_coords(gr_id)
+        gripper_x, gripper_y = self.model.get_gripper_coords(gr_id)
         new_gr_pos = {"x": gripper_x + dx, "y": gripper_y + dy}
-        return new_gr_pos in self.object_grid
+        return new_gr_pos in self.model.object_grid
 
     def _get_new_coordinates(self, gr_obj, **kwargs):
         """
@@ -28,7 +28,7 @@ class Mover:
             new_matrix = gr_obj.block_matrix
 
         elif kwargs["type"] == "rotate":
-            if "rotation_step" not in kwargs:
+            if "rotation_step" not in kwargs or kwargs["rotation_step"] is None:
                 step_size = self.model.config.rotation_step
 
             direction = kwargs["direction"]
@@ -36,7 +36,7 @@ class Mover:
             d_angle = direction * step_size
 
             # obtain rotated matrix
-            new_matrix = self.state.rotate_block_matrix(
+            new_matrix = self.model.state.rotate_block_matrix(
                 gr_obj.block_matrix, d_angle
             )
 
@@ -63,9 +63,9 @@ class Mover:
         # gripper only moves if we have a move type movement
         dx = 0
         dy = 0
-        if kwargs["type"] == "move":
+        if movement_type == "move":
             # if step size is not defined, use standard from config
-            if "step_size" not in kwargs:
+            if "step_size" not in kwargs or kwargs["step_size"] is None:
                 step_size = self.model.config.move_step
 
             dx = kwargs["x_steps"] * step_size
@@ -75,9 +75,9 @@ class Mover:
 
         if gripper_can_move:
             # check if gripper has an object
-            gr_obj_id = self.get_gripped_obj(gr_id)
+            gr_obj_id = self.model.get_gripped_obj(gr_id)
             if gr_obj_id:
-                gr_obj = self.get_obj_by_id(gr_obj_id)
+                gr_obj = self.model.get_obj_by_id(gr_obj_id)
 
                 # initialize empty variables for kwargs
                 direction = None
@@ -99,7 +99,7 @@ class Mover:
                 )
 
                 # check if coordinates are legal
-                obj_can_move = self.object_grid.can_move(
+                obj_can_move = self.model.object_grid.can_move(
                     new_coordinates, gr_obj_id
                 )
 
@@ -119,7 +119,7 @@ class Mover:
                         self._rotate(gr_obj_id, d_angle, new_matrix)
 
                     # add element to grid
-                    self.object_grid.add_obj(gr_obj)
+                    self.model.object_grid.add_obj(gr_obj)
 
                     # if self.model.verbose is True:
                     #     print(self.model.object_grid)
@@ -127,10 +127,10 @@ class Mover:
 
             else:
                 # only move the gripper
-                self.state.move_gr(gr_id, dx, dy)
+                self.model.state.move_gr(gr_id, dx, dy)
 
         # send update to views
-        self._notify_views("update_grippers", self.get_gripper_dict())
+        self.model._notify_views("update_grippers", self.model.get_gripper_dict())
 
     def _move(self, gr_id, dx, dy):
         """

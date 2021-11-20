@@ -225,7 +225,7 @@ def flip(params):
             model.start_flipping(str(params["id"]))
         # one-time action
         else:
-            model.apply_movement(
+            model.mover.apply_movement(
                 "flip",
                 str(params["id"])
             )
