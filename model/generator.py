@@ -88,7 +88,7 @@ class Generator:
     def _generate_target(
             self, index, piece_type, width, height, block_matrix, area):
         """
-        this function generates a target block for the object mantaining:
+        this function generates a target block for the object maintaining:
             - index
             - piece type
             - width

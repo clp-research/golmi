@@ -272,7 +272,7 @@ class Model:
         """
         Start calling the function grip periodically until stop_gripping
         is called, essentially repeatedly gripping / ungripping
-         with a specified gripper.
+        with a specified gripper.
         @param gr_id 	gripper id
         """
         self.stop_gripping(gr_id)
