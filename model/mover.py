@@ -1,3 +1,11 @@
+"""
+The Mover module implements all movements
+(flip, move, rotate) in a single function
+All helpers function needed to make a movement
+are also implemented here.
+"""
+
+
 class Mover:
     def __init__(self, model):
         self.model = model
@@ -61,7 +69,7 @@ class Mover:
         """
         check if the movement is allowed
         """
-        # tiles are free
+        # tiles are free and within limits
         obj_can_move = self.model.object_grid.can_move(
             new_coordinates, gr_obj_id
         )
@@ -70,14 +78,14 @@ class Mover:
 
     def _move(self, gr_id, dx, dy):
         """
-        move an object and a gripper
+        move a gripper and the gripped object
         """
         self.model.state.move_gr(gr_id, dx, dy)
         self.model.state.move_obj(self.model.get_gripped_obj(gr_id), dx, dy)
 
     def _rotate(self, gr_obj_id, d_angle, new_matrix):
         """
-        rotation an object
+        rotate an object
         """
         # update state
         self.model.state.rotate_obj(gr_obj_id, d_angle, new_matrix)
@@ -91,7 +99,21 @@ class Mover:
 
     def apply_movement(self, movement_type, gr_id, **kwargs):
         """
-        This class applies one of the movements
+        this method applies a movement.
+        Parameters:
+            - movement type {"move", "flip", "rotate"}
+            - gr_id: id of the gripper
+
+        based on the movement type the function expects
+        keyword arguments:
+            - move:     - x_steps
+                        - y_steps
+                        - step_size (optional)
+
+            - rotate:   - direction
+                        - rotation_step (optional)
+
+            - flip:     does not require extra arguments
         """
         # gripper only moves if we have a move type movement
         dx = 0
