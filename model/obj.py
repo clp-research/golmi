@@ -16,7 +16,6 @@ class Obj:
         self.color = color
         self.block_matrix = block_matrix
         self.gripped = gripped
-        self.target = None
 
     def __repr__(self):
         return f"Object({self.type})"
@@ -86,15 +85,3 @@ class Obj:
                     cell_y = obj_y + y
                     occupied.append({"y": cell_y, "x": cell_x})
         return occupied
-
-    def on_target(self):
-        """
-        check whether the object is on target
-        """
-        if self.target is not None:
-            target_coordinates = self.target.occupied()
-            current_coordinates = self.occupied()
-            if target_coordinates == current_coordinates:
-                return True
-
-        return False

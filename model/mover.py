@@ -65,6 +65,28 @@ class Mover:
 
         return new_coordinates, new_matrix, d_angle
 
+    def _obj_on_target(self, obj):
+        objs_on_target = list()
+        for position in obj.occupied():
+            # TODO: implement a function on grid side to get
+            # converted coordinates from converter
+            for new_position in self.model.object_grid.converter(position):
+                tile = self.model.target_grid[new_position]
+                if len(tile.objects) == 0:
+                    # empty tile, return False
+                    return False
+                else:
+                    objs_on_target += tile.objects
+
+        # every position on target grid had only 1 element
+        if len(set(objs_on_target)) == 1:
+            target_id = objs_on_target[0]
+            target_obj = self.model.state.targets[target_id]
+
+            # last check: same object
+            if target_obj.type == obj.type:
+                return True
+
     def _is_legal_move(self, new_coordinates, gr_obj_id):
         """
         check if the movement is allowed
@@ -74,7 +96,14 @@ class Mover:
             new_coordinates, gr_obj_id
         )
 
-        return obj_can_move
+        # check if object is on a target
+        if self.model.config.block_on_target is True:
+            obj = self.model.get_obj_by_id(gr_obj_id)
+            on_target = self._obj_on_target(obj)
+        else:
+            on_target = False
+
+        return obj_can_move and not on_target
 
     def _move(self, gr_id, dx, dy):
         """

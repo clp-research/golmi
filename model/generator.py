@@ -223,7 +223,7 @@ class Generator:
                         block_matrix,
                         area_target
                     )
-                    obj.target = target_obj
+
                     targets[index] = target_obj
 
                 objects[index] = obj
