@@ -303,9 +303,6 @@ class Model:
             new_gripped = self._get_grippable(gr_id)
             # changes to object and gripper
             if new_gripped is not None:
-                # convert to string
-                # new_gripped = str(new_gripped)
-                print(new_gripped, type(new_gripped))
                 self.state.grip(gr_id, new_gripped)
 
                 # notify view of object and gripper change
