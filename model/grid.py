@@ -122,7 +122,7 @@ class Grid:
             for new_cell in self.converter(cell):
                 self[new_cell].objects.remove(obj.id_n)
 
-    def can_move(self, coordinates, id_n):
+    def is_legal_position(self, coordinates, id_n):
         for cell in coordinates:
             for new_cell in self.converter(cell):
                 # cell must be on grid

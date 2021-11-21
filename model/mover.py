@@ -70,7 +70,7 @@ class Mover:
         check if the movement is allowed
         """
         # tiles are free and within limits
-        obj_can_move = self.model.object_grid.can_move(
+        obj_can_move = self.model.object_grid.is_legal_position(
             new_coordinates, gr_obj_id
         )
 

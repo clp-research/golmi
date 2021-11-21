@@ -144,7 +144,7 @@ class Generator:
                 is_target=True
             )
 
-            if self.model.target_grid.can_move(target_obj.occupied(), index):
+            if self.model.target_grid.is_legal_position(target_obj.occupied(), index):
                 self.model.target_grid.add_obj(target_obj)
                 break
 
@@ -208,7 +208,7 @@ class Generator:
             )
 
             # if object does not overlap, add it
-            if self.model.object_grid.can_move(obj.occupied(), None):
+            if self.model.object_grid.is_legal_position(obj.occupied(), None):
                 index = str(len(objects))
                 obj.id_n = index
                 self.model.object_grid.add_obj(obj)
