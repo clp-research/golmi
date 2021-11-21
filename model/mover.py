@@ -29,8 +29,7 @@ class Mover:
             new_matrix = gr_obj.block_matrix
 
         elif kwargs["type"] == "rotate":
-            if ("rotation_step" not in kwargs or
-                    kwargs["rotation_step"] is None):
+            if kwargs.get("rotation_step") is None:
                 step_size = self.model.config.rotation_step
 
             direction = kwargs["direction"]
@@ -100,7 +99,7 @@ class Mover:
 
         # calculate the distance if the movement is a move
         if movement_type == "move":
-            if "step_size" not in kwargs or kwargs["step_size"] is None:
+            if kwargs.get("step_size") is None:
                 step_size = self.model.config.move_step
             else:
                 step_size = kwargs["step_size"]
@@ -118,16 +117,10 @@ class Mover:
                 # obtain gripped object
                 gr_obj = self.model.get_obj_by_id(gr_obj_id)
 
-                # initialize empty variables for kwargs
-                direction = None
-                rotation_step = None
-
-                # overwrite placeholders with actual value
-                if "direction" in kwargs:
-                    direction = kwargs["direction"]
-
-                if "rotation_step" in kwargs:
-                    rotation_step = kwargs["rotation_step"]
+                # obtain direction and rotation step
+                # if nor present they will be initialized to None
+                direction = kwargs.get("direction")
+                rotation_step = kwargs.get("rotaion_step")
 
                 # obtain coordinates after movement
                 movement_result = self._get_new_coordinates(
