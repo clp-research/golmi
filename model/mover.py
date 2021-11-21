@@ -97,8 +97,9 @@ class Mover:
         # gripper only moves if we have a move type movement
         dx = 0
         dy = 0
+
+        # calculate the distance if the movement is a move
         if movement_type == "move":
-            # if step size is not defined, use standard from config
             if "step_size" not in kwargs or kwargs["step_size"] is None:
                 step_size = self.model.config.move_step
             else:
@@ -107,24 +108,28 @@ class Mover:
             dx = kwargs["x_steps"] * step_size
             dy = kwargs["y_steps"] * step_size
 
+        # make sure gripper can move
         gripper_can_move = self._gripper_can_move(gr_id, dx, dy)
 
         if gripper_can_move:
             # check if gripper has an object
             gr_obj_id = self.model.get_gripped_obj(gr_id)
             if gr_obj_id:
+                # obtain gripped object
                 gr_obj = self.model.get_obj_by_id(gr_obj_id)
 
                 # initialize empty variables for kwargs
                 direction = None
                 rotation_step = None
 
+                # overwrite placeholders with actual value
                 if "direction" in kwargs:
                     direction = kwargs["direction"]
 
                 if "rotation_step" in kwargs:
                     rotation_step = kwargs["rotation_step"]
 
+                # obtain coordinates after movement
                 movement_result = self._get_new_coordinates(
                     gr_obj,
                     type=movement_type,
@@ -156,6 +161,7 @@ class Mover:
                     # add element to grid
                     self.model.object_grid.add_obj(gr_obj)
 
+                    # print grid to terminal if verbose
                     if self.model.config.verbose is True:
                         print(self.model.object_grid)
 
@@ -163,8 +169,8 @@ class Mover:
                 # only move the gripper
                 self.model.state.move_gr(gr_id, dx, dy)
 
-        # send update to views
-        self.model._notify_views(
-            "update_grippers",
-            self.model.get_gripper_dict()
-        )
+            # send update to views
+            self.model._notify_views(
+                "update_grippers",
+                self.model.get_gripper_dict()
+            )
