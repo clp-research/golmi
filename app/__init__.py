@@ -52,7 +52,15 @@ def check_parameters(params, model, keys):
     """
     good_param = isinstance(params, dict)
     keys_in_param = keys.issubset(set(params.keys()))
-    gripper_not_none = model.get_gripper_by_id(str(params["id"])) is not None
+    if "id" in params:
+        gripper_not_none = model.get_gripper_by_id(
+            str(params["id"])
+        ) is not None
+    else:
+        # if the gripper is not needed (es. random init)
+        # set it to True so that only other 2 checks
+        # need to be True
+        gripper_not_none = True
 
     return good_param and keys_in_param and gripper_not_none
 
@@ -105,23 +113,30 @@ def load_config(json):
 
 # --- pieces --- #
 @socketio.on("random_init")
-def init_from_Random(random_parameters):
+def init_from_Random(params):
     model = client_models[request.sid]
-    # obtain random parameters from view
-    n_objects = random_parameters["n_objs"]
-    n_grip = random_parameters["n_grip"]
-    random_grip = random_parameters["random_grip"]
-    area_block = random_parameters["area_block"]
-    area_target = random_parameters["area_target"]
-
-    # generate a random state and load it
-    model.generator.load_random_state(
-        n_objects,
-        n_grip,
-        area_block,
-        area_target,
-        random_grip
+    good_params = check_parameters(
+        params,
+        model,
+        {"n_objs", "n_grip", "area_block", "area_target"}
     )
+
+    if good_params:
+        # obtain random parameters from view
+        n_objects = params["n_objs"]
+        n_grip = params["n_grip"]
+        random_grip = params["random_grip"]
+        area_block = params["area_block"]
+        area_target = params["area_target"]
+
+        # generate a random state and load it
+        model.generator.load_random_state(
+            n_objects,
+            n_grip,
+            area_block,
+            area_target,
+            random_grip
+        )
 
 # --- gripper --- #
 @socketio.on("add_gripper")
