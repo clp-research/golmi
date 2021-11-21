@@ -138,7 +138,7 @@ class Mover:
                 good_move = self._is_legal_move(new_coordinates, gr_obj_id)
 
                 # apply movement
-                if self.model.config.prevent_overlap and good_move:
+                if good_move:
                     # remove object from grid
                     self.model.object_grid.remove_obj(gr_obj)
 
