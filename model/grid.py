@@ -64,10 +64,10 @@ class Grid:
     def __init__(self, width, height, step, prevent_overlap):
         self.width = width
         self.heigth = height
-        self.step = step
+        self.step = step % 1
         self.prevent_overlap = prevent_overlap
         self.clear_grid()
-        self.converter = Converter(step)
+        self.converter = Converter(self.step)
 
     def clear_grid(self):
         """
@@ -139,7 +139,7 @@ class Grid:
 
 
 if __name__ == "__main__":
-    g = Grid(width=5, height=5, step=0.5, prevent_overlap=True)
+    g = Grid(width=5, height=5, step=0.25, prevent_overlap=True)
     o1 = Obj(1, "L", 0, 0, 5, 5, block_matrix=[
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
@@ -159,5 +159,5 @@ if __name__ == "__main__":
     g.add_obj(o1)
     g.add_obj(o2)
     print(g)
-    new_c = o1.occupied(o1.x, o1.y + 1)
+    new_c = o2.occupied(o1.x, o1.y)
     print(g.can_move(new_c, 1))
