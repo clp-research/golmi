@@ -144,7 +144,8 @@ class Generator:
                 is_target=True
             )
 
-            if self.model.target_grid.is_legal_position(target_obj.occupied(), index):
+            if self.model.target_grid.is_legal_position(
+                    target_obj.occupied(), index):
                 self.model.target_grid.add_obj(target_obj)
                 break
 
