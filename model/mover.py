@@ -99,10 +99,11 @@ class Mover:
 
         # calculate the distance if the movement is a move
         if movement_type == "move":
-            if kwargs.get("step_size") is None:
+            step_size = kwargs.get("step_size")
+
+            # overwrite with default if step size is not defined
+            if step_size is None:
                 step_size = self.model.config.move_step
-            else:
-                step_size = kwargs["step_size"]
 
             dx = kwargs["x_steps"] * step_size
             dy = kwargs["y_steps"] * step_size
