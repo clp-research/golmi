@@ -30,8 +30,8 @@ class Model:
             config.prevent_overlap
         )
         # Contains a dictionary for each available action. The nested dicts map
-        # gripper ids to True or False, depending on whether the respective
-        # action is currently running (= repeatedly executed)
+        # gripper ids to an eventlet greenthread instance if the respective
+        # action is currently running (= repeatedly executed), else to None
         self.running_loops = {action: dict() for action in self.config.actions}
 
     def __repr__(self):
