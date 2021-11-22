@@ -86,9 +86,10 @@ class Mover:
             target_id = objs_on_target[0]
             target_obj = self.model.state.targets[target_id]
 
-            # last check: same object
+            # object and target must have same form and color
             if target_obj.type == obj.type:
-                return True
+                if target_obj.color == obj.color:
+                    return True
 
     def _is_legal_move(self, new_coordinates, gr_obj_id):
         """

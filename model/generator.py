@@ -86,7 +86,7 @@ class Generator:
         return ((x_start, x_end), (y_start, y_end))
 
     def _generate_target(
-            self, index, piece_type, width, height, block_matrix, area):
+            self, index, piece_type, width, height, block_matrix, area, color):
         """
         this function generates a target block for the object maintaining:
             - index
@@ -140,7 +140,7 @@ class Generator:
                 block_matrix=block_matrix,
                 rotation=rotation,
                 mirrored=mirrored,
-                color=None,
+                color=color,
                 is_target=True
             )
 
@@ -221,7 +221,8 @@ class Generator:
                         piece_type,
                         width, height,
                         block_matrix,
-                        area_target
+                        area_target,
+                        color
                     )
 
                     targets[index] = target_obj
