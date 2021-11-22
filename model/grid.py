@@ -54,7 +54,10 @@ class Converter:
                 possible_y.append(y)
 
             for new_x, new_y in itertools.product(possible_x, possible_y):
-                yield {"x": round(new_x, 5)* self.multiplier, "y": round(new_y, 5)* self.multiplier}
+                yield {
+                    "x": round(new_x, 5) * self.multiplier,
+                    "y": round(new_y, 5) * self.multiplier
+                }
 
 
 class Grid:
@@ -99,8 +102,8 @@ class Grid:
             return self.grid[i]
 
         elif isinstance(i, dict):
-            x = int(i["x"] )
-            y = int(i["y"] )
+            x = int(i["x"])
+            y = int(i["y"])
             return self.grid[y][x]
 
     def __contains__(self, coordinates):
@@ -126,13 +129,18 @@ class Grid:
 
         return self.grid[y][x]
 
-
     def add_obj(self, obj):  # change to coordinates
+        """
+        expects non converted coordinates
+        """
         for cell in obj.occupied():
             for new_cell in self.converter(cell):
                 self[new_cell].objects.append(obj.id_n)
 
     def remove_obj(self, obj):  # change to coordinates
+        """
+        expects non converted coordinates
+        """
         for cell in obj.occupied():
             for new_cell in self.converter(cell):
                 self[new_cell].objects.remove(obj.id_n)
@@ -142,7 +150,7 @@ class Grid:
         expects non converted coordinates
         --------------------------------------------
         checks if the passed coordinates are a valid
-        position for the passed item id 
+        position for the passed item id
         """
         for cell in coordinates:
             for new_cell in self.converter(cell):
