@@ -66,7 +66,7 @@ class Grid:
     """
     def __init__(self, width, height, step, prevent_overlap):
         self.width = width
-        self.heigth = height
+        self.height = height
         self.step = step % 1
         self.prevent_overlap = prevent_overlap
         self.clear_grid()
@@ -80,7 +80,7 @@ class Grid:
 
         self.grid = [
             [Tile(j, i) for j in np.arange(0, self.width, step)]
-            for i in np.arange(0, self.heigth, step)
+            for i in np.arange(0, self.height, step)
         ]
 
     def __repr__(self):
@@ -114,9 +114,9 @@ class Grid:
         y = coordinates["y"]
 
         width = len(self.grid[0])
-        heigth = len(self.grid)
+        height = len(self.grid)
 
-        if 0 <= x < width and 0 <= y < heigth:
+        if 0 <= x < width and 0 <= y < height:
             return True
         return False
 
