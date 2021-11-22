@@ -19,6 +19,7 @@ $(document).ready(function () {
 			// Current state
 			this.objs = new Object();
 			this.grippers = new Object();
+			this.targets = new Object();
 		}
 
 		/**
@@ -31,6 +32,7 @@ $(document).ready(function () {
 				if (state["grippers"] && state["objs"]) {
 					this.grippers = state["grippers"];
 					this.objs = state["objs"];
+					this.targets = state["targets"];
 					this.redrawGr();
 					this.redrawObjs();
 				} else {

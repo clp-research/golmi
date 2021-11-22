@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    // --- define globals --- // 
+    // --- define globals --- //
 
     // Set to false to skip unit tests
     const SELFTEST = true;
@@ -15,8 +15,8 @@ $(document).ready(function () {
 
     // --- create a socket --- //
     // don't connect yet
-    var socket = io(MODEL, { 
-        autoConnect: false, 
+    var socket = io(MODEL, {
+        autoConnect: false,
         auth: { "password": "GiveMeTheBigBluePasswordOnTheLeft" }
     });
     // debug: print any messages to the console
@@ -26,7 +26,7 @@ $(document).ready(function () {
     // create a controller, we still need to attach a gripper in the model to it
     let controller = new document.LocalKeyController();
 
-    // --- view --- // 
+    // --- view --- //
     // Get references to the three canvas layers
     let bgLayer     = document.getElementById("background");
     let objLayer    = document.getElementById("objects");
@@ -54,11 +54,8 @@ $(document).ready(function () {
     socket.on("update_config", (config) => {
         // only do setup once (reconnections can occur, we don't want to reset the state every time)
         if (!setup_complete) {
-            // create a random initial state with a gripper in the center
-            let taskGenerator = new document.PentoGenerator(MODEL);
-            let randomState = taskGenerator.generateState(N_OBJECTS, N_GRIPPERS, config, false);
-            // send the state to the model
-            socket.emit("load_state", randomState);
+            // ask model to load a random state
+            socket.emit("random_init", {"n_objs": N_OBJECTS, "n_grip": N_GRIPPERS, "random_grip":false, "area_block": "top", "area_target": "bottom"});
             // subscribe the controller to the only generated gripper
             controller.attachModel(socket, "0");
             setup_complete = true;
@@ -104,7 +101,7 @@ $(document).ready(function () {
         // test the PentoGenerator class
         if (document.pentoGeneratorTest()) {
             console.log("Unit tests passed.");
-        } 
+        }
     }
-    
+
 }); // on document ready end
