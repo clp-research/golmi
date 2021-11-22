@@ -1,9 +1,10 @@
 from flask import Flask, request, session
-from flask_cors import CORS, cross_origin
-from flask_socketio import SocketIO, emit, ConnectionRefusedError, join_room, rooms
+from flask_cors import CORS
+from flask_socketio import (
+    SocketIO, emit, ConnectionRefusedError, join_room, rooms
+)
 from model.model import Model
 from model.config import Config
-
 # --- create the app --- #
 
 # has to be passed by clients to connect
@@ -21,7 +22,7 @@ app.config["SECRET KEY"] = "change this to some random value!".encode("utf-8")
 app.config["DATA_COLLECTION"] = "app/static/resources/data_collection"
 app.config["RECORDINGS"] = "app/static/resources/recordings"
 
-# enable cross-origin requests 
+# enable cross-origin requests
 # TODO: restrict sources
 CORS(app)
 # add socket io
@@ -29,7 +30,8 @@ socketio = SocketIO(
     app,
     logger=True,
     engineio_logger=True,
-    cors_allowed_origins='*')
+    cors_allowed_origins='*'
+)
 
 # --- create a data model --- #
 
@@ -37,8 +39,31 @@ DEFAULT_CONFIG_FILE = "app/static/resources/config/pentomino_types.json"
 # session ids mapped to Model instances
 client_models = dict()
 
-# finally load the routes
+# import views
 from app import views
+
+
+def check_parameters(params, model, keys):
+    """
+    Function to make sure the passed parameters are valid.
+    Checks:
+        - parameters are passed as dictionary
+        - some keys are present in the dictionary
+        - the gripper is not None
+    """
+    good_param = isinstance(params, dict)
+    keys_in_param = keys.issubset(set(params.keys()))
+    if "id" in params:
+        gripper_not_none = model.get_gripper_by_id(
+            str(params["id"])
+        ) is not None
+    else:
+        # if the gripper is not needed (es. random init)
+        # set it to True so that only other 2 checks
+        # need to be True
+        gripper_not_none = True
+
+    return good_param and keys_in_param and gripper_not_none
 
 
 # --- socketio events --- #
@@ -87,6 +112,33 @@ def load_config(json):
     client_models[request.sid].set_config(json)
 
 
+# --- pieces --- #
+@socketio.on("random_init")
+def init_from_Random(params):
+    model = client_models[request.sid]
+    good_params = check_parameters(
+        params,
+        model,
+        {"n_objs", "n_grip", "area_block", "area_target"}
+    )
+
+    if good_params:
+        # obtain random parameters from view
+        n_objects = params["n_objs"]
+        n_grip = params["n_grip"]
+        random_grip = params["random_grip"]
+        area_block = params["area_block"]
+        area_target = params["area_target"]
+
+        # generate a random state and load it
+        model.generator.load_random_state(
+            n_objects,
+            n_grip,
+            area_block,
+            area_target,
+            random_grip
+        )
+
 # --- gripper --- #
 @socketio.on("add_gripper")
 def add_gripper(gr_id=None):
@@ -113,78 +165,107 @@ def remove_gripper(gr_id=None):
 
 @socketio.on("move")
 def move(params):
+    model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
-    if isinstance(params, dict) and \
-            "id" in params and "dx" in params and "dy" in params and \
-            client_models[request.sid].get_gripper_by_id(str(params["id"])) is not None:
+    good_params = check_parameters(params, model, {"id", "dx", "dy"})
+
+    if good_params:
         step_size = params["step_size"] if "step_size" in params else None
         # continuous / looped action
-        if "loop" in params and params["loop"]:
-            client_models[request.sid].start_moving(str(params["id"]), params["dx"], params["dy"], step_size)
+        if params.get("loop"):
+            model.start_moving(
+                str(params["id"]), params["dx"], params["dy"], step_size)
         # one-time action
         else:
-            client_models[request.sid].move(str(params["id"]), params["dx"], params["dy"], step_size)
+            model.mover.apply_movement(
+                "move",
+                str(params["id"]),
+                x_steps=params["dx"],
+                y_steps=params["dy"],
+                step_size=step_size
+            )
 
 
 @socketio.on("stop_move")
 def stop_move(params):
+    model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
-    if isinstance(params, dict) and "id" in params and \
-            client_models[request.sid].get_gripper_by_id(str(params["id"])):
+    good_params = check_parameters(params, model, {"id"})
+
+    if good_params:
         client_models[request.sid].stop_moving(str(params["id"]))
 
 
 @socketio.on("rotate")
 def rotate(params):
+    model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
-    if isinstance(params, dict) and \
-            "id" in params and "direction" in params and \
-            client_models[request.sid].get_gripper_by_id(str(params["id"])) is not None:
+    good_params = check_parameters(params, model, {"id", "direction"})
+
+    if good_params:
         step_size = params["step_size"] if "step_size" in params else None
         # continuous / looped action
-        if "loop" in params and params["loop"]:
-            client_models[request.sid].start_rotating(str(params["id"]), params["direction"], step_size)
+        if params.get("loop"):
+            model.start_rotating(
+                str(params["id"]), params["direction"], step_size
+            )
         # one-time action
         else:
-            client_models[request.sid].rotate(str(params["id"]), params["direction"], step_size)
+            model.mover.apply_movement(
+                "rotate",
+                str(params["id"]),
+                direction=params["direction"],
+                rotation_step=step_size
+            )
 
 
 @socketio.on("stop_rotate")
 def stop_rotate(params):
+    model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
-    if isinstance(params, dict) and "id" in params and \
-            client_models[request.sid].get_gripper_by_id(str(params["id"])) is not None:
-        client_models[request.sid].stop_rotating(str(params["id"]))
+    good_params = check_parameters(params, model, {"id"})
+
+    if good_params:
+        model.stop_rotating(str(params["id"]))
 
 
 @socketio.on("flip")
 def flip(params):
+    model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
-    if isinstance(params, dict) and "id" in params and \
-            client_models[request.sid].get_gripper_by_id(str(params["id"])) is not None:
+    good_params = check_parameters(params, model, {"id"})
+
+    if good_params:
         # continuous / looped action
-        if "loop" in params and params["loop"]:
-            client_models[request.sid].start_flipping(str(params["id"]))
+        if params.get("loop"):
+            model.start_flipping(str(params["id"]))
         # one-time action
         else:
-            client_models[request.sid].flip(str(params["id"]))
+            model.mover.apply_movement(
+                "flip",
+                str(params["id"])
+            )
 
 
 @socketio.on("stop_flip")
 def stop_flip(params):
+    model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
-    if isinstance(params, dict) and "id" in params and \
-            client_models[request.sid].get_gripper_by_id(str(params["id"])) is not None:
-        client_models[request.sid].stop_flipping(str(params["id"]))
+    good_params = check_parameters(params, model, {"id"})
+
+    if good_params:
+        model.stop_flipping(str(params["id"]))
 
 
 @socketio.on("grip")
 def grip(params):
+    model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
-    if isinstance(params, dict) and "id" in params and \
-            client_models[request.sid].get_gripper_by_id(str(params["id"])) is not None:
+    good_params = check_parameters(params, model, {"id"})
+
+    if good_params:
         # continuous / looped action
-        if "loop" in params and params["loop"]:
+        if params.get("loop"):
             client_models[request.sid].start_gripping(str(params["id"]))
         # one-time action
         else:
@@ -193,7 +274,9 @@ def grip(params):
 
 @socketio.on("stop_grip")
 def stop_grip(params):
+    model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
-    if isinstance(params, dict) or "id" in params and \
-            client_models[request.sid].get_gripper_by_id(str(params["id"])) is not None:
-        client_models[request.sid].stop_gripping(str(params["id"]))
+    good_params = check_parameters(params, model, {"id"})
+
+    if good_params:
+        model.stop_gripping(str(params["id"]))

@@ -10,8 +10,8 @@ LOG_DIR = app.config["RECORDINGS"]
 # for now, just use the log storage
 REPLAY_DIR = app.config["RECORDINGS"]
 
-
 # --- define routes --- #
+
 
 @app.route("/", methods=["GET"])
 def index():

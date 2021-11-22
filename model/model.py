@@ -1,9 +1,12 @@
-from model.state import State
-from model.gripper import Gripper
-from model.obj import Obj
-from math import floor, ceil
 import eventlet
 import json
+
+from model.generator import Generator
+from model.grid import Grid
+from model.gripper import Gripper
+from model.obj import Obj
+from model.state import State
+from model.mover import Mover
 
 
 class Model:
@@ -12,11 +15,27 @@ class Model:
         self.room = room
         self.state = State()
         self.config = config
-
+        self.generator = Generator(self)
+        self.mover = Mover(self)
+        self.object_grid = Grid(
+            config.width,
+            config.height,
+            config.move_step,
+            config.prevent_overlap
+        )
+        self.target_grid = Grid(
+            config.width,
+            config.height,
+            config.move_step,
+            config.prevent_overlap
+        )
         # Contains a dictionary for each available action. The nested dicts map
         # gripper ids to an eventlet greenthread instance if the respective
         # action is currently running (= repeatedly executed), else to None
         self.running_loops = {action: dict() for action in self.config.actions}
+
+    def __repr__(self):
+        return f"Model(room: {self.room})"
 
     # --- getter --- #
 
@@ -79,12 +98,26 @@ class Model:
         Initialize the model's (game) state.
         @param state	State object or dict or JSON string
         """
+        # reset grids
+        self.object_grid.clear_grid()
+        self.target_grid.clear_grid()
+
         # state is a JSON string or parsed JSON dictionary
-        if type(state) == str or type(state) == dict:
+        if isinstance(state, (str, dict)):
             self._state_from_json(state)
-        # state is a State instance
         else:
+            # state is a State instance
             self.state = state
+
+        # add objects
+        for obj in self.state.objs.values():
+            self.object_grid.add_obj(obj)
+
+        # add targets
+        for target in self.state.targets.values():
+            self.target_grid.add_obj(target)
+
+        # update views
         self._notify_views("update_state", self.state.to_dict())
 
     def set_config(self, config):
@@ -94,11 +127,12 @@ class Model:
         @param config	Config object or dict or JSON string
         """
         # config is a JSON string or parsed JSON dictionary
-        if type(config) == str or type(config) == dict:
+        if isinstance(config, (str, dict)):
             self._config_from_json(config)
-        # config is a Config instance
         else:
+            # config is a Config instance
             self.config = config
+
         # in case the available actions changed, reset the looped actions
         self.reset_loops()
         self._notify_views("update_config", self.config.to_dict())
@@ -123,49 +157,85 @@ class Model:
             # construct objects
             if "objs" in json_data and type(json_data["objs"]) == dict:
                 for obj_name in json_data["objs"]:
-                    obj = str(obj_name)  # use string identifiers only for consistency
-                    self.state.objs[obj] = Obj(
-                        json_data["objs"][obj]["type"],
-                        float(json_data["objs"][obj]["x"]),
-                        float(json_data["objs"][obj]["y"]),
-                        float(json_data["objs"][obj]["width"]),
-                        float(json_data["objs"][obj]["height"]),
-                        self.get_type_config()[json_data["objs"][obj]["type"]]  # block matrix for given type
+                    obj = str(obj_name)  # use string for consistency
+                    type_config = self.get_type_config()
+
+                    if "id_n" not in json_data["objs"][obj]:
+                        id_n = obj
+                    else:
+                        id_n = json_data["objs"][obj]["id_n"]
+
+                    # create object
+                    this_obj = Obj(
+                        id_n=id_n,
+                        obj_type=json_data["objs"][obj]["type"],
+                        x=float(json_data["objs"][obj]["x"]),
+                        y=float(json_data["objs"][obj]["y"]),
+                        width=float(json_data["objs"][obj]["width"]),
+                        height=float(json_data["objs"][obj]["height"]),
+                        block_matrix=(
+                            type_config[json_data["objs"][obj]["type"]]
+                        )
                     )
+                    self.state.objs[obj] = this_obj
                     # process optional info
                     if "rotation" in json_data["objs"][obj]:
                         # rotate the object
-                        self.state.rotate_obj(obj, float(json_data["objs"][obj]["rotation"]))
-                    if "mirrored" in json_data["objs"][obj] and json_data["objs"][obj]["mirrored"]:
+                        self.state.rotate_obj(
+                            obj, float(json_data["objs"][obj]["rotation"])
+                        )
+                    if ("mirrored" in json_data["objs"][obj]
+                            and json_data["objs"][obj]["mirrored"]):
                         # flip the object if "mirrored" is true in the JSON
                         self.state.flip_obj(obj)
+
                     if "color" in json_data["objs"][obj]:
-                        self.state.objs[obj].color = json_data["objs"][obj]["color"]
+                        color = json_data["objs"][obj]["color"]
+                        self.state.objs[obj].color = color
+
             # construct grippers
             if "grippers" in json_data and type(json_data["grippers"]) == dict:
                 for gr_name in json_data["grippers"]:
-                    gr = str(gr_name)  # use string identifiers only for consistency
+                    gr = str(gr_name)  # use string for consistency
+                    if "id_n" not in json_data["grippers"][gr]:
+                        id_n = gr
+                    else:
+                        id_n = json_data["grippers"][gr]["id_n"]
+
                     self.state.grippers[gr] = Gripper(
+                        gr,
                         float(json_data["grippers"][gr]["x"]),
-                        float(json_data["grippers"][gr]["y"]))
+                        float(json_data["grippers"][gr]["y"])
+                    )
+
                     # process optional info
                     if "gripped" in json_data["grippers"][gr]:
                         # cast object name to str, too
                         gripped_id = str(json_data["grippers"][gr]["gripped"])
                         self.state.grippers[gr].gripped = gripped_id
                         self.state.objs[gripped_id].gripped = True
+
                     if "width" in json_data["grippers"][gr]:
-                        self.state.grippers[gr].width = json_data["grippers"][gr]["width"]
+                        width = json_data["grippers"][gr]["width"]
+                        self.state.grippers[gr].width = width
+
                     elif "height" in json_data["grippers"][gr]:
-                        self.state.grippers[gr].height = json_data["grippers"][gr]["height"]
+                        height = json_data["grippers"][gr]["height"]
+                        self.state.grippers[gr].height = height
+
                     elif "color" in json_data["grippers"][gr]:
-                        self.state.grippers[gr].color = json_data["grippers"][gr]["color"]
-        except:
-            raise SyntaxError("Error during state initialization: JSON data does not have the right format.\n" + \
-                              "Please refer to the documentation.")
+                        color = json_data["grippers"][gr]["color"]
+                        self.state.grippers[gr].color = color
+
+        except KeyError:
+            raise KeyError(
+                "Error during state initialization: JSON data "
+                "does not have the right format.\n"
+                "Please refer to the documentation."
+            )
 
     def _config_from_json(self, json_data):
-        if type(json_data) == str:
+        if isinstance(json_data, str):
             # a JSON string
             json_data = json.loads(json_data)
         # otherwise assume json_data is a dict
@@ -178,14 +248,15 @@ class Model:
 
     def add_gr(self, gr_id):
         """
-        Add a new gripper to the internal state. The start position is the center. Notifies listeners.
+        Add a new gripper to the internal state.
+        The start position is the center. Notifies listeners.
         @param gr_id 	identifier for the new gripper
         """
         start_x = self.get_width()/2
         start_y = self.get_height()/2
         # if a new gripper was created, notify listeners
         if gr_id not in self.state.grippers:
-            self.state.grippers[gr_id] = Gripper(start_x, start_y)
+            self.state.grippers[gr_id] = Gripper(gr_id, start_x, start_y)
             self._notify_views("update_grippers", self.get_gripper_dict())
 
     def remove_gr(self, gr_id):
@@ -199,8 +270,9 @@ class Model:
 
     def start_gripping(self, gr_id):
         """
-        Start calling the function grip periodically until stop_gripping is called, essentially
-        repeatedly gripping / ungripping with a specified gripper.
+        Start calling the function grip periodically until stop_gripping
+        is called, essentially repeatedly gripping / ungripping
+        with a specified gripper.
         @param gr_id 	gripper id
         """
         self.stop_gripping(gr_id)
@@ -230,23 +302,37 @@ class Model:
             # Check if gripper hovers over some object
             new_gripped = self._get_grippable(gr_id)
             # changes to object and gripper
-            if new_gripped:
+            if new_gripped is not None:
                 self.state.grip(gr_id, new_gripped)
+
                 # notify view of object and gripper change
                 self._notify_views("update_objs", self.get_obj_dict())
                 self._notify_views("update_grippers", self.get_gripper_dict())
 
     def start_moving(self, gr_id, x_steps, y_steps, step_size=None):
         """
-        Start calling the function move periodically until stop_moving is called.
-        @param gr_id 	gripper id
-        @param x_steps	steps to move in x direction. Step size is defined by model configuration
-        @param y_steps	steps to move in y direction. Step size is defined by model configuration
-        @param step_size 	Optional, size of step unit in blocks. Default: use move_step of config
+        Start calling the function move periodically
+        until stop_moving is called.
+        @param gr_id 	    gripper id
+        @param x_steps	    steps to move in x direction.
+                            Step size is defined by model configuration
+        @param y_steps	    steps to move in y direction.
+                            Step size is defined by model configuration
+        @param step_size 	Optional, size of step unit in blocks.
+                            Default: use move_step of config
         """
         # cancel any ongoing movement
         self.stop_moving(gr_id)
-        self.start_loop("move", gr_id, self.move, gr_id, x_steps, y_steps, step_size)
+        self.start_loop(
+            "move",
+            gr_id,
+            self.mover.apply_movement,
+            "move",
+            gr_id,
+            x_steps=x_steps,
+            y_steps=y_steps,
+            step_size=step_size
+        )
 
     def stop_moving(self, gr_id):
         """
@@ -255,53 +341,28 @@ class Model:
         """
         self.stop_loop("move", gr_id)
 
-    def move(self, gr_id, x_steps, y_steps, step_size=None):
-        """
-        If allowed, move the gripper x_steps steps in x direction and y_steps steps in y direction.
-        Only executes if the goal position is inside the game dimensions. Notifies views of change.
-        @param gr_id 	gripper id
-        @param x_steps	steps to move in x direction. Step size is defined by model configuration
-        @param y_steps	steps to move in y direction. Step size is defined by model configuration
-        @param step_size 	Optional, size of step unit in blocks. Default: use move_step of config
-        """
-        # if no step_size was given, query the config
-        if not step_size:
-            step_size = self.config.move_step
-        dx = x_steps * step_size  # distance in x direction to move
-        dy = y_steps * step_size  # distance in y direction to move
-        gripper_x, gripper_y = self.get_gripper_coords(gr_id)
-        gr_obj_id = self.get_gripped_obj(gr_id)
-        if gr_obj_id:
-            gr_obj = self.get_obj_by_id(gr_obj_id)
-            # if an object is gripped, three conditions have to be met:
-            # 1. gripper stays on the board
-            # 2. object stays on the board
-            # 3. object does not overlap with another object
-            if self._is_in_limits(gripper_x+dx, gripper_y+dy) and \
-                    self._is_in_limits(gr_obj.get_center_x()+dx, gr_obj.get_center_y()+dy) and \
-                    not (self.config.prevent_overlap and self._has_overlap(gr_obj_id, gr_obj.x+dx, gr_obj.y+dy, gr_obj.block_matrix)):
-
-                self.state.move_gr(gr_id, dx, dy)
-                self.state.move_obj(self.get_gripped_obj(gr_id), dx, dy)
-                # notify the views. A gripped object is implicitly redrawn.
-                self._notify_views("update_grippers", self.get_gripper_dict())
-
-        # if no object is gripped, only move the gripper
-        elif self._is_in_limits(gripper_x + dx, gripper_y + dy):
-            self.state.move_gr(gr_id, dx, dy)
-            # notify the views. A gripped object is implicitly redrawn.
-            self._notify_views("update_grippers", self.get_gripper_dict())
-
     def start_rotating(self, gr_id, direction, step_size=None):
         """
-        Start calling the function rotate periodically until stop_rotating is called.
-        @param gr_id 	id of the gripper whose gripped object should be rotated
-        @param direction	-1 for leftwards rotation, 1 for rightwards rotation
-        @param step_size	Optional, angle to rotate per step. Default: use rotation_step of config
+        Start calling the function rotate periodically
+        until stop_rotating is called.
+        @param gr_id 	    id of the gripper whose gripped
+                            object should be rotated
+        @param direction	-1 for leftwards rotation
+                            1 for rightwards rotation
+        @param step_size	Optional, angle to rotate per step.
+                            Default: use rotation_step of config
         """
         # cancel any ongoing rotation
         self.stop_rotating(gr_id)
-        self.start_loop("rotate", gr_id, self.rotate, gr_id, direction, step_size)
+        self.start_loop(
+            "rotate",
+            gr_id,
+            self.mover.apply_movement,
+            "rotate",
+            gr_id,
+            direction=direction,
+            step_size=step_size
+        )
 
     def stop_rotating(self, gr_id):
         """
@@ -310,37 +371,22 @@ class Model:
         """
         self.stop_loop("rotate", gr_id)
 
-    def rotate(self, gr_id, direction, step_size=None):
-        """
-        If the gripper 'id' currently grips some object, rotate this object one step.
-        @param gr_id 	id of the gripper whose gripped object should be rotated
-        @param direction	-1 for leftwards rotation, 1 for rightwards rotation
-        @param step_size	Optional, angle to rotate per step. Default: use rotation_step of config
-        """
-        # check if an object is gripped
-        gr_obj_id = self.get_gripped_obj(gr_id)
-        if gr_obj_id:
-            gr_obj = self.get_obj_by_id(gr_obj_id)
-            # if not step_size was given, use the default from the configuration
-            if not step_size:
-                step_size = self.config.rotation_step
-            # determine the turning angle
-            d_angle = direction * step_size
-            # rotate the matrix and check whether the new block positions are legal (-> no overlaps)
-            rotated_matrix = self.state.rotate_block_matrix(gr_obj.block_matrix, d_angle)
-            if not (self.config.prevent_overlap and self._has_overlap(gr_obj_id, gr_obj.x, gr_obj.y, rotated_matrix)):
-                self.state.rotate_obj(gr_obj_id, d_angle, rotated_matrix)
-                # notify the views. The gripped object is implicitly redrawn.
-                self._notify_views("update_grippers", self.get_gripper_dict())
-
     def start_flipping(self, gr_id):
         """
-        Start calling the function flip periodically until stop_flipping is called.
-        @param gr_id 	id of the gripper whose gripped object should be flipped
+        Start calling the function flip periodically
+        until stop_flipping is called.
+        @param gr_id 	id of the gripper whose gripped
+                        object should be flipped
         """
         # cancel any ongoing flipping
         self.stop_flipping(gr_id)
-        self.start_loop("flip", gr_id, self.flip, gr_id)
+        self.start_loop(
+            "flip",
+            gr_id,
+            self.mover.apply_movement,
+            "flip",
+            gr_id
+        )
 
     def stop_flipping(self, gr_id):
         """
@@ -349,148 +395,64 @@ class Model:
         """
         self.stop_loop("flip", gr_id)
 
-    def flip(self, gr_id):
-        """
-        Mirror the object currently gripped by some gripper.
-        @param gr_id 	gripper id
-        """
-        # check if an object is gripped
-        gr_obj_id = self.get_gripped_obj(gr_id)
-        if gr_obj_id:
-            gr_obj = self.get_obj_by_id(gr_obj_id)
-            # flip the matrix, then check whether the new block positions are legal (-> no overlaps)
-            flipped_matrix = self.state.flip_block_matrix(gr_obj.block_matrix)
-            if not (self.config.prevent_overlap and self._has_overlap(gr_obj_id, gr_obj.x, gr_obj.y, flipped_matrix)):
-                self.state.flip_obj(gr_obj_id, flipped_matrix)
-                # notify the views. The gripped object is implicitly redrawn.
-                self._notify_views("update_grippers", self.get_gripper_dict())
-
     def _get_grippable(self, gr_id):
         """
         Find an object that is in the range of the gripper.
-        @param gr_id 	gripper id
+        @param id 	gripper id
         @return id of object to grip or None
         """
         # Gripper position. It is just a point.
         x, y = self.get_gripper_coords(gr_id)
-        for obj_id in self.get_object_ids():
-            obj = self.get_obj_by_id(obj_id)
-            # (gridX, gridY) is the position on the type grid the gripper would be on
-            grid_x = floor(x-obj.x)
-            grid_y = floor(y-obj.y)
-            # get the object block matrix - rotation and flip are already applied to the matrix
-            type_matrix = obj.block_matrix
 
-            # check whether the gripper is on the object matrix
-            if 0 <= grid_x < len(type_matrix[0]) and 0 <= grid_y < len(type_matrix):
-                # check whether a block is present at the grid position
-                if type_matrix[grid_y] and type_matrix[grid_y][grid_x]:
-                    return obj_id
+        tile = self.object_grid.get_single_tile({"x": x, "y": y})
+        # if there is an object on tile, return last object
+        if tile.objects:
+            return tile.objects[-1]
         return None
-
-    def _is_in_limits(self, x, y):
-        """
-        Check whether given coordinates are within the space limits.
-        @param x 	x coordinate to check
-        @param y 	y coordinate to check
-        @return true if both coordinates are on the board
-        """
-        return self._x_in_limits(x) and self._y_in_limits(y)
-
-    def _x_in_limits(self, x):
-        """
-        Check whether given x coordinate is within the space limits.
-        @param x 	x coordinate to check
-        @return true if the x coordinate is on the board
-        """
-        return 0 <= x <= self.get_width()
-
-    def _y_in_limits(self, y):
-        """
-        Check whether given y coordinate is within the space limits.
-        @param y 	y coordinate to check
-        @return true if the y coordinate is on the board
-        """
-        return 0 <= y <= self.get_height()
-
-    # this function is extremely unelegant. feel free to change for a better implementation!
-    def _has_overlap(self, obj_id, x, y, block_matrix):
-        """
-        Check whether an object would have an overlap with another object if it were placed at (x,y).
-        @param obj_id 	id of the object to check the given position for
-        @param x 	x coordinate to check for the object
-        @param y 	y coordinate to check for the object
-        @param block_matrix 	0/1 matrix describing the shape of the object
-        @return true if there is some overlap with another object
-        """
-        this_height = len(block_matrix)
-        if this_height == 0:
-            print("Error at _has_overlap(): empty block_matrix passed!")
-            return False
-        this_width = len(block_matrix[0])
-        # iterate through the objects:
-        for other_id in self.get_object_ids():
-            if other_id != obj_id:
-
-                other_obj = self.get_obj_by_id(other_id)
-                x_offset = x - other_obj.x  # horizontal shift between matrices
-                y_offset = y - other_obj.y  # vertical shift between matrices
-
-                # check whether block matrices overlap, otherwise we can skip all the for-loops
-                if other_obj.width > x_offset > (-this_width) and \
-                        other_obj.height > y_offset > (-this_height):
-                    # check whether blocks overlap
-                    for row in range(this_height):
-                        other_row = row + y_offset  # the row we need to check for blocks in other_obj (is a float!)
-                        if 0 <= other_row < other_obj.height:
-                            for col in range(this_width):
-                                # check whether this object has a block here
-                                if not block_matrix[row][col]:
-                                    continue
-                                other_col = col + x_offset  # the column to check for blocks in other_obj (is a float!)
-
-                                # check whether other object overlaps here and has a block: this requires a lot of
-                                # conditions since blocks may not be positioned on grid borders if x and y offsets are
-                                # not whole numbers, we have to check a total of 4 blocks of other_obj
-                                if ceil(other_col) >= 0 and other_col < other_obj.width:
-                                    if other_obj.block_matrix[floor(other_row)][floor(other_col)]:
-                                        return True
-                                    elif ceil(other_row) < other_obj.height and \
-                                            other_obj.block_matrix[ceil(other_row)][floor(other_col)]:
-                                        return True
-                                    elif ceil(other_col) < other_obj.width and \
-                                            other_obj.block_matrix[floor(other_row)][ceil(other_col)]:
-                                        return True
-                                    elif ceil(other_row) < other_obj.height and ceil(other_col) < other_obj.width and \
-                                            other_obj.block_matrix[ceil(other_row)][ceil(other_col)]:
-                                        return True
-        return False
 
     # --- Loop functionality ---
 
     def start_loop(self, action_type, gripper, fn, *args, **kwargs):
-        """Spawn a greenthread.GreenThread instance that executes fn until stop_loop is called.
+        """
+        Spawn a greenthread.GreenThread instance that executes
+        fn until stop_loop is called.
 
         @param action_type	str, one of the action types defined by the config
-        @param gripper  id of the gripper to perform the action with
-        @param fn    function to loop
+        @param gripper      id of the gripper to perform the action with
+        @param fn           function to loop
         """
         assert action_type in self.running_loops, \
-            "Error at Model.start_loop: action {} not registered".format(action_type)
+            f"Error at Model.start_loop: action {action_type} not registered"
         # create a thread executing the action infinitely
-        self.running_loops[action_type][gripper] = eventlet.spawn(self._loop, fn, *args, **kwargs)
+
+        self.running_loops[action_type][gripper] = eventlet.spawn(
+            self._loop, fn, *args, **kwargs
+        )
 
     def _loop(self, fn, *args, **kwargs):
+        # rotations and flips can be slow (0.5)
+        # movements should be as fast as in config
+        if args[0] == "move":
+            action_interval = self.config.action_interval
+        else:
+            action_interval = 0.5
+
+        # start loop
         while True:
-            fn(*args, *kwargs)
-            eventlet.sleep(self.config.action_interval)
+            fn(*args, **kwargs)
+            eventlet.sleep(action_interval)
 
     def stop_loop(self, action_type, gripper):
-        """Stop a running action for a specific gripper."""
+        """
+        Stop a running action for a specific gripper.
+        """
         assert action_type in self.running_loops, \
-            "Error at Model.stop_loop: action {} not registered".format(action_type)
+            f"Error at Model.stop_loop: action {action_type} not registered"
+
         if gripper in self.running_loops[action_type] and isinstance(
-                self.running_loops[action_type][gripper], eventlet.greenthread.GreenThread):
+                self.running_loops[action_type][gripper],
+                eventlet.greenthread.GreenThread
+                ):
             self.running_loops[action_type][gripper].kill()
             self.running_loops[action_type][gripper] = None
 
