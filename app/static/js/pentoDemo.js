@@ -95,13 +95,4 @@ $(document).ready(function () {
         // reactive the start button
         $("#start").prop("disabled", false);
     });
-
-    // --- unit tests --- //
-    if (SELFTEST) {
-        // test the PentoGenerator class
-        if (document.pentoGeneratorTest()) {
-            console.log("Unit tests passed.");
-        }
-    }
-
 }); // on document ready end
