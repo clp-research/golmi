@@ -17,9 +17,12 @@ class Mover:
         will always return True as dx and dy will be zero
         """
         gripper_x, gripper_y = self.model.get_gripper_coords(gr_id)
-        new_gr_pos = {"x": gripper_x + dx, "y": gripper_y + dy}
+        new_gr_pos = {
+            "x": (gripper_x + dx),
+            "y": (gripper_y + dy)
+        }
 
-        return new_gr_pos in self.model.object_grid
+        return self.model.object_grid.gripper_on_grid(new_gr_pos)
 
     def _get_new_coordinates(self, gr_obj, **kwargs):
         """

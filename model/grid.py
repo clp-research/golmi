@@ -145,6 +145,12 @@ class Grid:
             for new_cell in self.converter(cell):
                 self[new_cell].objects.remove(obj.id_n)
 
+    def gripper_on_grid(self, position):
+        x = int(position["x"] * self.converter.multiplier)
+        y = int(position["y"] * self.converter.multiplier)
+
+        return {"x": x, "y": y} in self
+
     def is_legal_position(self, coordinates, id_n):
         """
         expects non converted coordinates
