@@ -15,7 +15,7 @@ $(document).ready(function () {
 
     // --- create a socket --- //
     // don't connect yet
-    var socket = io(MODEL, {
+    let socket = io(MODEL, {
         autoConnect: false,
         auth: { "password": "GiveMeTheBigBluePasswordOnTheLeft" }
     });
