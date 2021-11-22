@@ -404,7 +404,7 @@ class Model:
         # Gripper position. It is just a point.
         x, y = self.get_gripper_coords(gr_id)
 
-        tile = self.object_grid[{"x": x, "y": y}]
+        tile = self.object_grid.get_single_tile({"x": x, "y": y})
         # if there is an object on tile, return last object
         if tile.objects:
             return tile.objects[-1]

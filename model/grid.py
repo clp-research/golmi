@@ -54,7 +54,7 @@ class Converter:
                 possible_y.append(y)
 
             for new_x, new_y in itertools.product(possible_x, possible_y):
-                yield {"x": round(new_x, 5), "y": round(new_y, 5)}
+                yield {"x": round(new_x, 5)* self.multiplier, "y": round(new_y, 5)* self.multiplier}
 
 
 class Grid:
@@ -91,26 +91,41 @@ class Grid:
         grid can be accessed:
             -as a normal 2D-array with int as indeces -> matrix[y][x]
             -by giving a dictionary dict = {"x": x, "y": y}
+
+        expects converted coordinates
         """
         if isinstance(i, int) or isinstance(i, float):
             i = int(i * self.converter.multiplier)
             return self.grid[i]
 
         elif isinstance(i, dict):
-            x = int(i["x"] * self.converter.multiplier)
-            y = int(i["y"] * self.converter.multiplier)
+            x = int(i["x"] )
+            y = int(i["y"] )
             return self.grid[y][x]
 
     def __contains__(self, coordinates):
         """
-        expected coordinates should be already onverted
+        expects converted coordinates
         """
         x = coordinates["x"]
         y = coordinates["y"]
 
-        if 0 <= x < self.width and 0 <= y < self.heigth:
+        width = len(self.grid[0])
+        heigth = len(self.grid)
+
+        if 0 <= x < width and 0 <= y < heigth:
             return True
         return False
+
+    def get_single_tile(self, position):
+        """
+        expects non converted coordinates
+        """
+        x = int(position["x"] * self.converter.multiplier)
+        y = int(position["y"] * self.converter.multiplier)
+
+        return self.grid[y][x]
+
 
     def add_obj(self, obj):  # change to coordinates
         for cell in obj.occupied():
@@ -123,6 +138,12 @@ class Grid:
                 self[new_cell].objects.remove(obj.id_n)
 
     def is_legal_position(self, coordinates, id_n):
+        """
+        expects non converted coordinates
+        --------------------------------------------
+        checks if the passed coordinates are a valid
+        position for the passed item id 
+        """
         for cell in coordinates:
             for new_cell in self.converter(cell):
                 # cell must be on grid
@@ -139,7 +160,7 @@ class Grid:
 
 
 if __name__ == "__main__":
-    g = Grid(width=5, height=5, step=0.25, prevent_overlap=True)
+    g = Grid(width=5, height=5, step=0.5, prevent_overlap=True)
     o1 = Obj(1, "L", 0, 0, 5, 5, block_matrix=[
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
@@ -160,4 +181,4 @@ if __name__ == "__main__":
     g.add_obj(o2)
     print(g)
     new_c = o2.occupied(o1.x, o1.y)
-    print(g.can_move(new_c, 1))
+    print(g.is_legal_position(new_c, 1))
