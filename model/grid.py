@@ -38,7 +38,7 @@ class Converter:
         self.multiplier = max(1, math.floor(1 / step))
 
     def __call__(self, coordinate):
-        if self.factor == 1:
+        if float(self.factor).is_integer():
             yield coordinate
         else:
             x = coordinate["x"]

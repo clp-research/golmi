@@ -55,7 +55,11 @@ $(document).ready(function () {
         // only do setup once (reconnections can occur, we don't want to reset the state every time)
         if (!setup_complete) {
             // ask model to load a random state
-            socket.emit("random_init", {"n_objs": N_OBJECTS, "n_grip": N_GRIPPERS, "random_grip":false, "area_block": "top", "area_target": "bottom"});
+            socket.emit("random_init", {"n_objs": N_OBJECTS,
+                                        "n_grippers": N_GRIPPERS,
+                                        "random_gr_position":false,
+                                        "area_block": "top",
+                                        "area_target": "bottom"});
             // subscribe the controller to the only generated gripper
             controller.attachModel(socket, "0");
             setup_complete = true;
