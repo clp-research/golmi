@@ -17,22 +17,27 @@ class Model:
         self.config = config
         self.generator = Generator(self)
         self.mover = Mover(self)
-        self.object_grid = Grid(
-            config.width,
-            config.height,
-            config.move_step,
-            config.prevent_overlap
-        )
-        self.target_grid = Grid(
-            config.width,
-            config.height,
-            config.move_step,
-            config.prevent_overlap
-        )
+        self._generate_grids()
+
         # Contains a dictionary for each available action. The nested dicts map
         # gripper ids to an eventlet greenthread instance if the respective
         # action is currently running (= repeatedly executed), else to None
         self.running_loops = {action: dict() for action in self.config.actions}
+
+    def _generate_grids(self):
+        self.object_grid = Grid(
+            self.config.width,
+            self.config.height,
+            self.config.move_step,
+            self.config.prevent_overlap
+        )
+        self.target_grid = Grid(
+            self.config.width,
+            self.config.height,
+            self.config.move_step,
+            self.config.prevent_overlap
+        )
+
 
     def __repr__(self):
         return f"Model(room: {self.room})"
@@ -132,6 +137,9 @@ class Model:
         else:
             # config is a Config instance
             self.config = config
+
+        # create grids
+        self._generate_grids()
 
         # in case the available actions changed, reset the looped actions
         self.reset_loops()

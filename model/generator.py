@@ -151,7 +151,7 @@ class Generator:
 
         return target_obj
 
-    def _generate_objects(self, n_objs, area_block, area_target, target=True):
+    def _generate_objects(self, n_objs, area_block, area_target, create_targets):
         objects = dict()
         targets = dict()
         attempt = 0
@@ -215,7 +215,7 @@ class Generator:
                 self.model.object_grid.add_obj(obj)
 
                 # create a target
-                if target:
+                if create_targets:
                     target_obj = self._generate_target(
                         index,
                         piece_type,
@@ -241,20 +241,21 @@ class Generator:
 
     def load_random_state(
             self, n_objs, n_grippers, area_block,
-            area_target, random_gr_position=False):
+            area_target, create_targets=False,
+            random_gr_position=False):
         # get grippers
         grippers = self._generate_grippers(n_grippers, random_gr_position)
 
         # get objects
-        objects, targets = self._generate_objects(
-            n_objs, area_block, area_target
+        objects, target_objs = self._generate_objects(
+            n_objs, area_block, area_target, create_targets
         )
 
         # create state
         state = State()
         state.grippers = grippers
         state.objs = objects
-        state.targets = targets
+        state.targets = target_objs
 
         # load state
         self.model.set_state(state)

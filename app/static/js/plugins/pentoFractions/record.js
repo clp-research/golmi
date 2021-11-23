@@ -64,8 +64,9 @@ $(document).ready(function () {
             // ask model to load a random state
             socket.emit("random_init", {
                 "n_objs": N_OBJECTS,
-                "n_grip": N_GRIPPERS,
-                "random_grip":false,
+                "n_grippers": N_GRIPPERS,
+                "random_gr_position":false,
+                "create_targets": true,
                 "area_block": "all",
                 "area_target": "all"
             });
