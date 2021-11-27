@@ -64,10 +64,9 @@ $(document).ready(function () {
             // ask model to load a random state
             socket.emit("random_init", {
                 "n_objs": N_OBJECTS,
-                "n_grip": N_GRIPPERS,
-                "random_grip":false,
-                "area_block": "all",
-                "area_target": "all"
+                "n_grippers": N_GRIPPERS,
+                "random_gr_position":false,
+                "area_block": "all"
             });
             // subscribe the controller to the only generated gripper
             controller.attachModel(socket, "0");
