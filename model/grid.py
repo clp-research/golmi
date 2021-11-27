@@ -98,7 +98,7 @@ class Grid:
         expects converted coordinates
         """
         if isinstance(i, int) or isinstance(i, float):
-            i = int(i * self.converter.multiplier)
+            i = int(i)
             return self.grid[i]
 
         elif isinstance(i, dict):
