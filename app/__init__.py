@@ -118,7 +118,7 @@ def init_from_Random(params):
     good_params = check_parameters(
         params,
         model,
-        {"n_objs", "n_grippers", "area_block", "area_target"}
+        {"n_objs", "n_grippers"}
     )
 
     if good_params:
