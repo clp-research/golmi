@@ -66,9 +66,7 @@ $(document).ready(function () {
                 "n_objs": N_OBJECTS,
                 "n_grippers": N_GRIPPERS,
                 "random_gr_position":false,
-                "create_targets": true,
-                "area_block": "all",
-                "area_target": "all"
+                "area_block": "all"
             });
             // subscribe the controller to the only generated gripper
             controller.attachModel(socket, "0");

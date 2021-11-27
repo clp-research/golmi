@@ -119,9 +119,10 @@ def init_from_Random(params):
     good_params = check_parameters(
         params,
         model,
-        {"n_objs", "n_grippers", "area_block", "area_target"}
+        {"n_objs", "n_grippers"}
     )
 
+    print(params)
     if good_params:
         model.generator.load_random_state(
             **params

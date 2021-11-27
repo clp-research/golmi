@@ -240,8 +240,8 @@ class Generator:
         return objects, targets
 
     def load_random_state(
-            self, n_objs, n_grippers, area_block,
-            area_target, create_targets=False,
+            self, n_objs, n_grippers, area_block="all",
+            area_target="all", create_targets=False,
             random_gr_position=False):
         # get grippers
         grippers = self._generate_grippers(n_grippers, random_gr_position)
