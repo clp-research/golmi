@@ -151,7 +151,8 @@ class Generator:
 
         return target_obj
 
-    def _generate_objects(self, n_objs, area_block, area_target, create_targets):
+    def _generate_objects(
+            self, n_objs, area_block, area_target, create_targets):
         objects = dict()
         targets = dict()
         attempt = 0

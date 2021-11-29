@@ -67,7 +67,12 @@ class Grid:
     def __init__(self, width, height, step, prevent_overlap):
         self.width = width
         self.height = height
-        self.step = step % 1
+        # if move step is an integer, set step to 1 (smallest possible)
+        if float(step).is_integer():
+            self.step = 1
+        else:
+            # otherwise reduce it to the 0-1 interval
+            self.step = step % 1
         self.prevent_overlap = prevent_overlap
         self.clear_grid()
         self.converter = Converter(self.step)
@@ -76,11 +81,9 @@ class Grid:
         """
         generate an empty grid
         """
-        step = min(1, self.step)
-
         self.grid = [
-            [Tile(j, i) for j in np.arange(0, self.width, step)]
-            for i in np.arange(0, self.height, step)
+            [Tile(j, i) for j in np.arange(0, self.width, self.step)]
+            for i in np.arange(0, self.height, self.step)
         ]
 
     def __repr__(self):
@@ -175,21 +178,27 @@ class Grid:
 
 if __name__ == "__main__":
     g = Grid(width=5, height=5, step=0.5, prevent_overlap=True)
-    o1 = Obj(1, "L", 0, 0, 5, 5, block_matrix=[
+    o1 = Obj(
+        1, "L", 0, 0, 5, 5,
+        block_matrix=[
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
             [1, 1, 1, 1, 1],
             [0, 0, 0, 0, 1],
             [0, 0, 0, 0, 0]
-            ])
+        ]
+    )
 
-    o2 = Obj(2, "L", 3, 3, 5, 5, block_matrix=[
+    o2 = Obj(
+        2, "L", 3, 3, 5, 5,
+        block_matrix=[
             [0, 0, 0, 0, 0],
             [0, 1, 0, 0, 0],
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0]
-            ])
+        ]
+    )
 
     g.add_obj(o1)
     g.add_obj(o2)

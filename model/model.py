@@ -38,7 +38,6 @@ class Model:
             self.config.prevent_overlap
         )
 
-
     def __repr__(self):
         return f"Model(room: {self.room})"
 

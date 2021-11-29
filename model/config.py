@@ -35,8 +35,8 @@ class Config:
                                 default: 0.5
         """
         # make sure step size is allowed
-        if (not (1/(move_step % 1)).is_integer() and
-                not isinstance(move_step, int)):
+        allowed_step = self._evaluate_move_step(move_step)
+        if not allowed_step:
             raise ValueError(
                 f"Selected step size of {move_step} is not allowed\n"
                 "Please select a step size that satisfies the following "
@@ -72,6 +72,26 @@ class Config:
     def __repr__(self):
         properties = ", ".join(vars(self).keys())
         return f"Config({properties})"
+
+    def _evaluate_move_step(self, move_step):
+        """
+        Method to evaluate if the move step is allowed
+        move steps must:
+            - be higher than 0
+            - evenly divide the interval between 0 and 1
+              (ex. 0.25, 0.5, 0.1 etc...)
+        """
+        # move step cannot be negative
+        if move_step <= 0:
+            return False
+
+        # if move_step is a float it must divide
+        # the interval between 0 and 1 evenly
+        if isinstance(move_step, float):
+            if not (1/(move_step % 1)).is_integer():
+                return False
+
+        return True
 
     def get_types(self):
         return self.type_config.keys()
