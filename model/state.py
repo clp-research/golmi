@@ -113,7 +113,7 @@ class State:
             if rotated_matrix:
                 obj.block_matrix = rotated_matrix
             else:
-                obj.block_matrix = self.rotate_block_matrix(
+                obj.block_matrix = State.rotate_block_matrix(
                     obj.block_matrix, d_angle
                 )
 
@@ -131,7 +131,7 @@ class State:
         if flipped_matrix:
             obj.block_matrix = flipped_matrix
         else:
-            obj.block_matrix = self.flip_block_matrix(obj.block_matrix)
+            obj.block_matrix = State.flip_block_matrix(obj.block_matrix)
 
     def grip(self, gr_id, obj_id):
         """
@@ -150,8 +150,9 @@ class State:
         self.objs[self.grippers[id].gripped].gripped = False
         self.grippers[id].gripped = None
 
-    def rotate_block_matrix(self, old_matrix, d_angle):
-        """
+    @staticmethod
+    def rotate_block_matrix(old_matrix, d_angle):
+        """ TODO Seems to me more natural as a function of Obj?
         Rearrange blocks of a 0/1 block matrix to apply some rotation.
         Rotations are applied clockwise.
         @param old_matrix 	block matrix describing the current block positions
@@ -184,8 +185,9 @@ class State:
         k = angle_to_k[approx_angle]
         return np.rot90(matrix, k).tolist()
 
-    def flip_block_matrix(self, old_matrix):
-        """
+    @staticmethod
+    def flip_block_matrix(old_matrix):
+        """ TODO Seems to me more natural as a function of Obj?
         Flips blocks using a horizontal axis of reflection.
         @param old_matrix 	block matrix describing the current block positions
         @return a new block matrix with 1s in horizontally mirrored positions

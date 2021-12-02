@@ -15,28 +15,14 @@ class Model:
         self.room = room
         self.state = State()
         self.config = config
-        self.generator = Generator(self)
         self.mover = Mover(self)
-        self._generate_grids()
+        self.object_grid = Grid.create_from_config(self.config)
+        self.target_grid = Grid.create_from_config(self.config)
 
         # Contains a dictionary for each available action. The nested dicts map
         # gripper ids to an eventlet greenthread instance if the respective
         # action is currently running (= repeatedly executed), else to None
         self.running_loops = {action: dict() for action in self.config.actions}
-
-    def _generate_grids(self):
-        self.object_grid = Grid(
-            self.config.width,
-            self.config.height,
-            self.config.move_step,
-            self.config.prevent_overlap
-        )
-        self.target_grid = Grid(
-            self.config.width,
-            self.config.height,
-            self.config.move_step,
-            self.config.prevent_overlap
-        )
 
     def __repr__(self):
         return f"Model(room: {self.room})"
@@ -97,6 +83,18 @@ class Model:
 
     # --- Set up and configuration --- #
 
+    def set_random_state(self, n_objs, n_grippers, area_block="all",
+                         area_target="all", create_targets=False,
+                         random_gr_position=False):
+        generator = Generator(self.config)  # we could possibly hold a generator instance as well
+        new_state, new_obj_grid, new_trg_grid = generator.generate_random_state(n_objs, n_grippers, area_block,
+                                                                                area_target, create_targets,
+                                                                                random_gr_position)
+        # TODO state should include the grids ?!
+        self.object_grid = new_obj_grid
+        self.target_grid = new_trg_grid
+        self.set_state(new_state)
+
     def set_state(self, state):
         """
         Initialize the model's (game) state.
@@ -138,7 +136,8 @@ class Model:
             self.config = config
 
         # create grids
-        self._generate_grids()
+        self.object_grid = Grid.create_from_config(self.config)
+        self.target_grid = Grid.create_from_config(self.config)
 
         # in case the available actions changed, reset the looped actions
         self.reset_loops()

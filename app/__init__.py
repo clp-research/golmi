@@ -110,7 +110,6 @@ def reset_state():
 def load_config(json):
     client_models[request.sid].set_config(json)
 
-
 # --- pieces --- #
 @socketio.on("random_init")
 def init_from_Random(params):
@@ -122,7 +121,7 @@ def init_from_Random(params):
     )
 
     if good_params:
-        model.generator.load_random_state(
+        model.set_random_state(
             **params
         )
 
