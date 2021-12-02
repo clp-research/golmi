@@ -11,12 +11,11 @@ $(document).ready(function () {
     // parameters for random initial state
     // (state is generated once the configuration is received)
     const N_OBJECTS = 5;
-    const N_GRIPPERS = 1;
+    const N_GRIPPERS = 0; // no pre-generated gripper
 
     // --- create a socket --- //
     // don't connect yet
     let socket = io(MODEL, {
-        autoConnect: false,
         auth: { "password": "GiveMeTheBigBluePasswordOnTheLeft" }
     });
     // debug: print any messages to the console
@@ -43,6 +42,10 @@ $(document).ready(function () {
         console.log("Connected to model server");
     });
 
+    socket.on("joined_room", (data) => {
+        console.log(`Joined room ${data.room_id} as client ${data.client_id}`);
+    })
+
     socket.on("disconnect", () => {
         console.log("Disconnected from model server");
         // demo of the logView: send the logged data to the server
@@ -57,11 +60,12 @@ $(document).ready(function () {
             // ask model to load a random state
             socket.emit("random_init", {"n_objs": N_OBJECTS,
                                         "n_grippers": N_GRIPPERS,
-                                        "random_gr_position":false,
+                                        "random_gr_position": false,
+                                        "create_targets": true,
                                         "area_block": "top",
                                         "area_target": "bottom"});
             // subscribe the controller to the only generated gripper
-            controller.attachModel(socket, "0");
+            controller.attachModel(socket);
             setup_complete = true;
         }
     });
@@ -75,8 +79,8 @@ $(document).ready(function () {
     function start() {
         // reset the controller in case any key is currently pressed
         controller.resetKeys()
-        // manually establish a connection, connect the controller and load a state
-        socket.connect();
+        // join a GOLMI room with the name "test_token"
+        socket.emit("join", {"token": "test_token"});
     }
 
     function stop() {
