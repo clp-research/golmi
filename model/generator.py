@@ -166,7 +166,7 @@ class Generator:
         while len(objects) < n_objs:
             # pick a random type and its height and width
             piece_type = random.choice(
-                list(self.config.type_config.keys())
+                list(self.config.get_types())
             )
             block_matrix = self.config.type_config[piece_type]
             height = len(block_matrix)

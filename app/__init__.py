@@ -34,7 +34,7 @@ socketio = SocketIO(
 
 # --- create a data model --- #
 
-DEFAULT_CONFIG_FILE = "app/static/resources/config/pentomino_types.json"
+DEFAULT_CONFIG_FILE = "app/static/resources/config/pentomino_config.json"
 # session ids mapped to Model instances
 client_models = dict()
 
@@ -76,7 +76,7 @@ def client_connect(auth):
     # add client to the list, for now each client gets their own room
     # create and model for this client
     client_models[request.sid] = Model(
-        Config(DEFAULT_CONFIG_FILE), socketio, request.sid
+        Config.from_json(DEFAULT_CONFIG_FILE), socketio, request.sid
     )
     room = session.get("room")
     join_room(room)

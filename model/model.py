@@ -2,6 +2,7 @@ import eventlet
 import json
 
 from model.generator import Generator
+from model.config import Config
 from model.grid import Grid
 from model.gripper import Gripper
 from model.obj import Obj
@@ -126,14 +127,18 @@ class Model:
         """
         Change the model's configuration. Overwrites any attributes
         passed in config and leaves the rest as before. New keys simply added.
-        @param config	Config object or dict or JSON string
+        @param config	Config object or dict or JSON filename
         """
         # config is a JSON string or parsed JSON dictionary
-        if isinstance(config, (str, dict)):
-            self._config_from_json(config)
-        else:
-            # config is a Config instance
+        if isinstance(config, str):
+            self.config = Config.from_json(config)
+        elif isinstance(config, dict):
+            self.config = Config.from_dict(config)
+        elif isinstance(config, Config):
             self.config = config
+        else:
+            raise ValueError("Parameter config must be a file name, "
+                             "dict, or Config instance")
 
         # create grids
         self.object_grid = Grid.create_from_config(self.config)
@@ -239,16 +244,6 @@ class Model:
                 "does not have the right format.\n"
                 "Please refer to the documentation."
             )
-
-    def _config_from_json(self, json_data):
-        if isinstance(json_data, str):
-            # a JSON string
-            json_data = json.loads(json_data)
-        # otherwise assume json_data is a dict
-        # overwrite any setting given in the data, leave the rest as before.
-        # new keys are also allowed
-        for attr_key, attr_value in json_data.items():
-            setattr(self.config, attr_key, attr_value)
 
     # --- Gripper manipulation --- #
 

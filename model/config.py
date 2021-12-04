@@ -12,28 +12,47 @@ class Config:
             actions=["move", "rotate", "flip", "grip"],
             move_step=0.5, rotation_step=90,
             action_interval=0.1, verbose=False,
-            block_on_target=True):
+            block_on_target=True,
+            colors=["red", "orange", "yellow", "green",
+                    "blue", "purple", "saddlebrown", "grey"]):
         """
         Constructor.
-        @param type_config	    json file or object mapping types
-                                to 0/1 matrices indicating type shapes
-        @param width 	        number of vertical 'blocks' on the board
+        @param type_config	    Json file name or dictionary mapping types
+                                to 0/1 matrices indicating type shapes.
+        @param width 	        Number of vertical 'blocks' on the board
                                 e.g. for block-based rendering. default:20
-        @param height	        number of horizontal 'blocks' on the board
+        @param height	        Number of horizontal 'blocks' on the board
                                 e.g. for block-based rendering. default:20
         @param snap_to_grid 	True to lock objects to the nearest block at
                                 gripper release. default:False
         @param prevent_overlap 	True to prohibit any action that would lead
                                 to objects overlapping. default:True
-        @param actions 	        array of strings naming allowed object
-                                manipulations. default:['move', 'rotate']
-        @param move_step	    step size for object movement. default:0.2[blocks]
-        @param rotation_step	applied angle when object is rotated. Limitations
+        @param actions 	        Array of strings naming allowed object
+                                manipulations.
+                                Default: ['move', 'rotate', "flip", "grip"]
+        @param move_step	    Step size for object movement.
+                                Default: 0.5 [blocks]
+        @param rotation_step	Applied angle when object is rotated. Limitations
                                 might exist for View implementations.
-                                default:90
-        @param action_interval	frequency of repeating looped actions in seconds
-                                default: 0.5
+                                Default: 90
+        @param action_interval	Frequency of repeating looped actions in seconds
+                                Default: 0.1
+        @param verbose          True to print additional (debug-) information
+                                after model changes, such as the object grid.
+        @param block_on_target  True to lock objects once they align on the
+                                grid with a matching target object.
+        @param colors           Available object colors, can be color names
+                                or html color codes.
+                                Default: ["red", "orange", "yellow", "green",
+                                "blue", "purple", "saddlebrown", "grey"]
         """
+        # make sure type_config can be parseds
+        if isinstance(type_config, str):
+            self.type_config = Config.types_from_json(type_config)
+        elif isinstance(type_config, dict):
+            self.type_config = type_config
+        else:
+            raise ValueError("type_config must be a json file name or dict")
         # make sure step size is allowed
         allowed_step = self._evaluate_move_step(move_step)
         if not allowed_step:
@@ -52,22 +71,7 @@ class Config:
         self.action_interval = action_interval
         self.verbose = verbose
         self.block_on_target = block_on_target
-
-        if type(type_config) == str:
-            self.type_config = self._types_from_JSON(type_config)
-        else:
-            self.type_config = type_config
-
-        self.colors = [
-            "red",
-            "orange",
-            "yellow",
-            "green",
-            "blue",
-            "purple",
-            "saddlebrown",
-            "grey"
-        ]
+        self.colors = colors
 
     def __repr__(self):
         properties = ", ".join(vars(self).keys())
@@ -96,7 +100,8 @@ class Config:
     def get_types(self):
         return self.type_config.keys()
 
-    def _types_from_JSON(self, filename):
+    @staticmethod
+    def types_from_json(filename):
         """
         Parses a JSON file containing type matrices.
         The file should map each supported object type
@@ -109,10 +114,43 @@ class Config:
             types = json.load(infile)
 
         # Ignore keys with underscores (used for comments)
-        return {
-            key: value for key, value in types.items()
-            if not key.startswith("_")
-        }
+        return Config.remove_json_comments(types)
+
+    @staticmethod
+    def from_json(filename):
+        """
+        @param filename String, name of a json file describing a Config.
+            The key "type_config" mapping to a dictionary is mandatory.
+        @return new Config instance with the given attributes
+        """
+        with open(filename, mode="r") as file:
+            json_data = json.loads(file.read())
+        return Config.from_dict(json_data)
+
+    @staticmethod
+    def from_dict(source_dict):
+        """
+        @param source_dict  Dictionary containing Config constructor
+            parameters. The key "type_config" mapping to a dictionary is
+            mandatory.
+        @return new Config instance with the given attributes
+        """
+        if not isinstance(source_dict, dict):
+            raise TypeError("source_dict must be of type dict")
+        # check for mandatory parameter type_config
+        if source_dict.get("type_config") is None or \
+                not isinstance(source_dict["type_config"], dict):
+            raise ValueError(
+                "source_dict must contain key 'type_config' mapping to a dict"
+            )
+        types = Config.remove_json_comments(source_dict["type_config"])
+        new_config = Config(types)
+        # overwrite any setting given in the data, leave the rest as default
+        # new keys are also allowed
+        for attr_key, attr_value in source_dict.items():
+            if attr_key != "type_config":
+                setattr(new_config, attr_key, attr_value)
+        return new_config
 
     def to_dict(self):
         """
@@ -121,8 +159,21 @@ class Config:
         return {
             "width": self.width,
             "height": self.height,
+            "snap_to_grid": self.snap_to_grid,
+            "prevent_overlap": self.prevent_overlap,
             "actions": self.actions,
+            "move_step": self.move_step,
             "rotation_step": self.rotation_step,
-            "type_config": self.type_config,
-            "colors": self.colors
+            "action_interval": self.action_interval,
+            "verbose": self.verbose,
+            "block_on_target": self.block_on_target,
+            "colors": self.colors,
+            "type_config": self.type_config
+        }
+
+    @staticmethod
+    def remove_json_comments(parsed_json):
+        return {
+            key: value for key, value in parsed_json.items()
+            if not key.startswith("_")
         }
