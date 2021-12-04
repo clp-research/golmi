@@ -22,12 +22,9 @@ class State:
     def get_object_ids(self):
         return self.objs.keys()
 
-    def get_obj_by_id(self, id):
-        """
-        @param id 	gripper id
-        """
-        if id in self.objs:
-            return self.objs[id]
+    def get_obj_by_id(self, obj_id):
+        if obj_id in self.objs:
+            return self.objs[obj_id]
         else:
             return None
 
@@ -53,61 +50,61 @@ class State:
     def get_gripper_ids(self):
         return self.grippers.keys()
 
-    def get_gripper_by_id(self, id):
-        if id in self.grippers:
-            return self.grippers[id]
+    def get_gripper_by_id(self, gr_id):
+        if gr_id in self.grippers:
+            return self.grippers[gr_id]
         else:
             return None
 
-    def get_gripper_coords(self, id):
+    def get_gripper_coords(self, gr_id):
         """
-        @param id 	gripper id
+        @param gr_id 	gripper id
         """
-        if id in self.grippers:
-            return [self.grippers[id].x, self.grippers[id].y]
+        if gr_id in self.grippers:
+            return [self.grippers[gr_id].x, self.grippers[gr_id].y]
         else:
             return list()
 
-    def get_gripped_obj(self, id):
+    def get_gripped_obj(self, gr_id):
         """
-        @param id 	gripper id
+        @param gr_id 	gripper id
         @return None or the id of the gripped object
         """
-        if id in self.grippers:
-            return self.grippers[id].gripped
+        if gr_id in self.grippers:
+            return self.grippers[gr_id].gripped
         else:
             return None
 
-    def move_gr(self, id, dx, dy):
+    def move_gr(self, gr_id, dx, dy):
         """
         Change gripper position by moving in direction (dx, dy).
-        @param id 	id of the gripper to move
-         @param dx 	x direction
+        @param gr_id 	id of the gripper to move
+        @param dx 	x direction
         @param dy 	y direction
         """
-        self.grippers[id].x += dx
-        self.grippers[id].y += dy
+        self.grippers[gr_id].x += dx
+        self.grippers[gr_id].y += dy
 
-    def move_obj(self, id, dx, dy):
+    def move_obj(self, obj_id, dx, dy):
         """
          Change an object's position by moving in direction (dx, dy).
-         @param id 	object id
+         @param obj_id 	object id
          @param dx 	x direction
          @param dy 	y direction
         """
-        self.get_obj_by_id(id).x += dx
-        self.get_obj_by_id(id).y += dy
+        self.get_obj_by_id(obj_id).x += dx
+        self.get_obj_by_id(obj_id).y += dy
 
-    def rotate_obj(self, id, d_angle, rotated_matrix=None):
+    def rotate_obj(self, obj_id, d_angle, rotated_matrix=None):
         """
         Change an object's goal_rotation by d_angle.
-        @param id  	object id
+        @param obj_id  	object id
         @param d_angle	current angle is changed by d_angle
         @param rotated_matrix 	optional: pre-rotated block matrix
                                 otherwise the current matrix is rotated
         """
         if d_angle != 0:
-            obj = self.get_obj_by_id(id)
+            obj = self.get_obj_by_id(obj_id)
             obj.rotation = (obj.rotation + d_angle) % 360
             # update block matrix
             if rotated_matrix:
@@ -117,15 +114,15 @@ class State:
                     obj.block_matrix, d_angle
                 )
 
-    def flip_obj(self, id, flipped_matrix=None):
+    def flip_obj(self, obj_id, flipped_matrix=None):
         """
         Mirror an object.
-        @param id 	object_id
+        @param obj_id 	object_id
         @param flipped_matrix	optional: pre-flipped block matrix
                                 otherwise the current matrix is flipped
         """
         # change 'mirrored' attribute
-        obj = self.get_obj_by_id(id)
+        obj = self.get_obj_by_id(obj_id)
         obj.mirrored = not obj.mirrored
         # update the block matrix
         if flipped_matrix:
@@ -142,13 +139,13 @@ class State:
         self.objs[obj_id].gripped = True
         self.grippers[gr_id].gripped = obj_id
 
-    def ungrip(self, id):
+    def ungrip(self, gr_id):
         """
         Detach the currently gripped object from the gripper.
-        @param id 	id of the gripper that ungrips
+        @param gr_id 	id of the gripper that ungrips
         """
-        self.objs[self.grippers[id].gripped].gripped = False
-        self.grippers[id].gripped = None
+        self.objs[self.grippers[gr_id].gripped].gripped = False
+        self.grippers[gr_id].gripped = None
 
     @staticmethod
     def rotate_block_matrix(old_matrix, d_angle):
