@@ -54,8 +54,8 @@ class Config:
         else:
             raise ValueError("type_config must be a json file name or dict")
         # make sure step size is allowed
-        allowed_step = self._evaluate_move_step(move_step)
-        if not allowed_step:
+        valid_step = Config.is_valid_move_step(move_step)
+        if not valid_step:
             raise ValueError(
                 f"Selected step size of {move_step} is not allowed\n"
                 "Please select a step size that satisfies the following "
@@ -77,7 +77,8 @@ class Config:
         properties = ", ".join(vars(self).keys())
         return f"Config({properties})"
 
-    def _evaluate_move_step(self, move_step):
+    @staticmethod
+    def is_valid_move_step(move_step):
         """
         Method to evaluate if the move step is allowed
         move steps must:
@@ -94,7 +95,6 @@ class Config:
         if isinstance(move_step, float):
             if not (1/(move_step % 1)).is_integer():
                 return False
-
         return True
 
     def get_types(self):
