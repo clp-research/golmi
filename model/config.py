@@ -131,8 +131,8 @@ class Config:
     def from_dict(source_dict):
         """
         @param source_dict  Dictionary containing Config constructor
-            parameters. The key "type_config" mapping to a dictionary is
-            mandatory.
+                            parameters. The key "type_config" mapping to a
+                            dictionary is mandatory.
         @return new Config instance with the given attributes
         """
         if not isinstance(source_dict, dict):

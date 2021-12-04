@@ -1,4 +1,7 @@
-import numpy as np
+import json
+
+from model.obj import Obj
+from model.gripper import Gripper
 
 
 class State:
@@ -100,35 +103,23 @@ class State:
         Change an object's goal_rotation by d_angle.
         @param obj_id  	object id
         @param d_angle	current angle is changed by d_angle
-        @param rotated_matrix 	optional: pre-rotated block matrix
+        @param rotated_matrix 	optional pre-rotated block matrix
                                 otherwise the current matrix is rotated
         """
         if d_angle != 0:
             obj = self.get_obj_by_id(obj_id)
-            obj.rotation = (obj.rotation + d_angle) % 360
-            # update block matrix
-            if rotated_matrix:
-                obj.block_matrix = rotated_matrix
-            else:
-                obj.block_matrix = State.rotate_block_matrix(
-                    obj.block_matrix, d_angle
-                )
+            Obj.rotate(obj, d_angle, rotated_matrix)
 
     def flip_obj(self, obj_id, flipped_matrix=None):
         """
         Mirror an object.
         @param obj_id 	object_id
-        @param flipped_matrix	optional: pre-flipped block matrix
+        @param flipped_matrix	optional pre-flipped block matrix
                                 otherwise the current matrix is flipped
         """
         # change 'mirrored' attribute
         obj = self.get_obj_by_id(obj_id)
-        obj.mirrored = not obj.mirrored
-        # update the block matrix
-        if flipped_matrix:
-            obj.block_matrix = flipped_matrix
-        else:
-            obj.block_matrix = State.flip_block_matrix(obj.block_matrix)
+        Obj.flip(obj, flipped_matrix)
 
     def grip(self, gr_id, obj_id):
         """
@@ -148,49 +139,64 @@ class State:
         self.grippers[gr_id].gripped = None
 
     @staticmethod
-    def rotate_block_matrix(old_matrix, d_angle):
-        """ TODO Seems to me more natural as a function of Obj?
-        Rearrange blocks of a 0/1 block matrix to apply some rotation.
-        Rotations are applied clockwise.
-        @param old_matrix 	block matrix describing the current block positions
-        @param d_angle 	    float or int, angle to apply.
-                            Can be negative for leftwards rotation.
-        @return the new block matrix with changed block position
+    def from_json(filename, type_config):
         """
-        # normalize the angle (moves all values in the range [0-360])
-        d_angle = d_angle % 360
-
-        # can only process multiples of 90, so round to the next step here
-        approx_angle = round(d_angle/90) * 90
-
-        # nothing to do if rotation is 0
-        if approx_angle == 0:
-            return old_matrix
-
-        # otherwise compute rotation with numpy
-        matrix = np.array(old_matrix)
-
-        # choose k parameters for np.rot90
-        # k = how often a COUNTERclockwise rotation will be applied
-        angle_to_k = {
-            90: 3,
-            180: 2,
-            270: 1
-        }
-
-        # apply rotation and return matrix as a python list
-        k = angle_to_k[approx_angle]
-        return np.rot90(matrix, k).tolist()
+        @param filename String, name of a json file describing a State.
+                        The key "type_config" mapping to a dict is mandatory.
+        @param type_config  dict mapping type names to block matrices
+        @return new State instance with the given attributes
+        """
+        with open(filename, mode="r") as file:
+            json_data = json.loads(file.read())
+        return State.from_dict(json_data, type_config)
 
     @staticmethod
-    def flip_block_matrix(old_matrix):
-        """ TODO Seems to me more natural as a function of Obj?
-        Flips blocks using a horizontal axis of reflection.
-        @param old_matrix 	block matrix describing the current block positions
-        @return a new block matrix with 1s in horizontally mirrored positions
+    # TODO: make sure pieces are on the board! (at least emit warning)
+    def from_dict(source_dict, type_config):
         """
-        matrix = np.array(old_matrix)
-        return np.flip(matrix, axis=0).tolist()
+        @param source_dict  Dict containing State constructor parameters.
+                            The keys "objs" and "grippers" are mandatory.
+                            Refer to the documentation for additional format
+                            instructions.
+        @param type_config  dict mapping type names to block matrices
+        @return new State instance with the given attributes
+        """
+        if not isinstance(source_dict.get("objs"), dict) or \
+                not isinstance(source_dict.get("grippers"), dict):
+            raise ValueError(
+                "source_dict must contain the keys 'objs' and 'grippers' "
+                "mapping to dictionaries."
+            )
+        # initialize an empty state
+        new_state = State()
+        try:
+            # construct objects
+            for obj_name, obj_dict in source_dict["objs"].items():
+                # get identifier or use object key (use str for consistency)
+                id_n = obj_dict.get("id_n") or str(obj_name)
+
+                new_object = Obj.from_dict(id_n, obj_dict, type_config)
+                new_state.objs[id_n] = new_object
+
+            # construct grippers
+            for gr_name, gr_dict in source_dict["grippers"].items():
+                # get identifier or use gripper key (use str for consistency)
+                id_n = gr_dict.get("id_n") or str(gr_name)
+                new_gr = Gripper.from_dict(id_n, gr_dict, type_config)
+                new_state.grippers[id_n] = new_gr
+
+                # Not the nicest solution: Make sure any gripped object has
+                # its 'gripped' attribute set to True
+                if new_gr.gripped is not None:
+                    new_state.objs[new_gr.gripped].gripped = True
+
+        except KeyError:
+            raise KeyError(
+                "Error during state initialization: JSON data "
+                "does not have the right format.\n"
+                "Please refer to the documentation."
+            )
+        return new_state
 
     def to_dict(self):
         """

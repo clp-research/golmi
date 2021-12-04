@@ -122,13 +122,13 @@ class Generator:
                 rotation = self.config.rotation_step * random_rot
 
                 # rotate matrix
-                block_matrix = State.rotate_block_matrix(block_matrix, rotation)
+                block_matrix = Obj.rotate_block_matrix(block_matrix, rotation)
 
             if "flip" in self.config.actions:
                 mirrored = bool(random.randint(0, 1))
                 if mirrored:
                     # flip matrix
-                    block_matrix = State.flip_block_matrix(block_matrix)
+                    block_matrix = Obj.flip_block_matrix(block_matrix)
 
             # create target object
             target_obj = Obj(
@@ -186,12 +186,12 @@ class Generator:
                     0, math.floor(360 / self.config.rotation_step)
                 )
                 rotation = self.config.rotation_step * random_rot
-                block_matrix = State.rotate_block_matrix(block_matrix, rotation)
+                block_matrix = Obj.rotate_block_matrix(block_matrix, rotation)
 
             if "flip" in self.config.actions:
                 mirrored = bool(random.randint(0, 1))
                 if mirrored:
-                    block_matrix = State.flip_block_matrix(block_matrix)
+                    block_matrix = Obj.flip_block_matrix(block_matrix)
 
             # generate object
             obj = Obj(

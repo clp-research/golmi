@@ -1,8 +1,10 @@
+import numpy as np
+
+
 class Obj:
     def __init__(
             self, id_n, obj_type, x, y, width, height, block_matrix,
-            rotation=0, mirrored=False, color="blue", gripped=False,
-            is_target=False):
+            rotation=0, mirrored=False, color="blue", gripped=False):
         self.id_n = id_n
         self.type = obj_type
         self.x = x
@@ -38,25 +40,6 @@ class Obj:
     def get_bottom_edge(self):
         return self.y + self.height
 
-    def to_dict(self):
-        """
-        Constructs a JSON-friendly dictionary representation of this instance.
-        @return dictionary containing all important properties
-        """
-        return {
-            "id_n":         self.id_n,
-            "type":			self.type,
-            "x":			self.x,
-            "y":			self.y,
-            "width":		self.width,
-            "height":		self.height,
-            "rotation":		self.rotation,
-            "mirrored":		self.mirrored,
-            "color":		self.color,
-            "block_matrix":	self.block_matrix,
-            "gripped":		self.gripped
-        }
-
     def occupied(self, x=None, y=None, matrix=None):
         """
         calculates coordinates of occupied fields based on
@@ -85,3 +68,136 @@ class Obj:
                     cell_y = obj_y + y
                     occupied.append({"y": cell_y, "x": cell_x})
         return occupied
+
+    @staticmethod
+    def rotate(obj, d_angle, rotated_matrix=None):
+        """
+        Rotate an object instance *in-place*.
+        @param obj  Object instance to modify
+        @param d_angle	current angle is changed by d_angle
+        @param rotated_matrix 	optional pre-rotated block matrix
+                                otherwise the current matrix is rotated
+        """
+        obj.rotation = (obj.rotation + d_angle) % 360
+        # update block matrix
+        if rotated_matrix:
+            obj.block_matrix = rotated_matrix
+        else:
+            obj.block_matrix = Obj.rotate_block_matrix(
+                obj.block_matrix, d_angle
+            )
+
+    @staticmethod
+    def flip(obj, flipped_matrix=None):
+        """
+        Mirror an object *in-place*.
+        @param obj 	Object instance to modify
+        @param flipped_matrix	optional pre-flipped block matrix
+                                otherwise the object's matrix is flipped
+        """
+        obj.mirrored = not obj.mirrored
+        # update the block matrix
+        if flipped_matrix:
+            obj.block_matrix = flipped_matrix
+        else:
+            obj.block_matrix = Obj.flip_block_matrix(obj.block_matrix)
+
+    @staticmethod
+    def rotate_block_matrix(old_matrix, d_angle):
+        """
+        Rearrange blocks of a 0/1 block matrix to apply some rotation.
+        Rotations are applied clockwise.
+        @param old_matrix 	block matrix describing the current block positions
+        @param d_angle 	    float or int, angle to apply.
+                            Can be negative for leftwards rotation.
+        @return the new block matrix with changed block position
+        """
+        # normalize the angle (moves all values in the range [0-360])
+        d_angle = d_angle % 360
+
+        # can only process multiples of 90, so round to the next step here
+        approx_angle = round(d_angle/90) * 90
+
+        # nothing to do if rotation is 0
+        if approx_angle == 0:
+            return old_matrix
+
+        # otherwise compute rotation with numpy
+        matrix = np.array(old_matrix)
+
+        # choose k parameters for np.rot90
+        # k = how often a COUNTERclockwise rotation will be applied
+        angle_to_k = {
+            90: 3,
+            180: 2,
+            270: 1
+        }
+
+        # apply rotation and return matrix as a python list
+        k = angle_to_k[approx_angle]
+        return np.rot90(matrix, k).tolist()
+
+    @staticmethod
+    def flip_block_matrix(old_matrix):
+        """
+        Flips blocks using a horizontal axis of reflection.
+        @param old_matrix 	block matrix describing the current block positions
+        @return a new block matrix with 1s in horizontally mirrored positions
+        """
+        matrix = np.array(old_matrix)
+        return np.flip(matrix, axis=0).tolist()
+
+    @staticmethod
+    def from_dict(id_n, source_dict, type_config):
+        """
+        Construct a new Obj instance from a dictionary, e.g., parsed json.
+        @param id_n identifier for the object
+        @param source_dict  dict containing object attributes, keys "type",
+                            "x", "y", "width", "height" are mandatory
+        @param type_config  dict mapping type names to block matrices
+        @return new Obj instance with the given attributes
+        """
+        for mandatory_key in ["type", "x", "y", "width", "height"]:
+            if source_dict.get(mandatory_key) is None:
+                raise KeyError(
+                    f"Object construction failed, key {mandatory_key} missing"
+                )
+        # create new object from the mandatory keys
+        new_obj = Obj(
+            id_n=id_n,
+            obj_type=source_dict["type"],
+            x=float(source_dict["x"]),
+            y=float(source_dict["y"]),
+            width=float(source_dict["width"]),
+            height=float(source_dict["height"]),
+            block_matrix=type_config[source_dict["type"]]
+        )
+
+        # process optional info
+        if "rotation" in source_dict and source_dict["rotation"] != 0:
+            Obj.rotate(new_obj, float(source_dict["rotation"]))
+        # flip the object if "mirrored" is true in the dictionary
+        if "mirrored" in source_dict and source_dict["mirrored"]:
+            Obj.flip(new_obj, source_dict["mirrored"])
+        if "color" in source_dict:
+            new_obj.color = source_dict["color"]
+        return new_obj
+
+    def to_dict(self):
+        """
+        Constructs a JSON-friendly dictionary representation of this instance.
+        @return dictionary containing all important properties
+        """
+        return {
+            "id_n":         self.id_n,
+            "type":			self.type,
+            "x":			self.x,
+            "y":			self.y,
+            "width":		self.width,
+            "height":		self.height,
+            "rotation":		self.rotation,
+            "mirrored":		self.mirrored,
+            "color":		self.color,
+            "block_matrix":	self.block_matrix,
+            "gripped":		self.gripped
+        }

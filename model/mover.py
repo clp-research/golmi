@@ -4,7 +4,7 @@ The Mover module implements all movements
 All helpers function needed to make a movement
 are also implemented here.
 """
-from model.state import State
+from model.obj import Obj
 
 
 class Mover:
@@ -49,7 +49,7 @@ class Mover:
             d_angle = direction * step_size
 
             # obtain rotated matrix
-            new_matrix = State.rotate_block_matrix(
+            new_matrix = Obj.rotate_block_matrix(
                 gr_obj.block_matrix, d_angle
             )
 
@@ -59,7 +59,7 @@ class Mover:
 
         elif kwargs["type"] == "flip":
             # obtain flipped matrix
-            new_matrix = self.model.state.flip_block_matrix(
+            new_matrix = Obj.flip_block_matrix(
                 gr_obj.block_matrix
             )
 
