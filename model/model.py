@@ -1,5 +1,6 @@
 import eventlet
 import json
+import math
 
 from model.generator import Generator
 from model.config import Config
@@ -286,6 +287,50 @@ class Model:
         """
         self.stop_loop("grip", gr_id)
 
+    def can_ungrip(self, obj_id):
+        """
+        This function decides wether a block can be ungripped
+        if snap_to_grid is on and the object lies between
+        lines (coordinates are float), it will automatically
+        try to find a free spot and place the object there
+        """
+        # without snap to grid a gripper can always ungrip
+        if self.config.snap_to_grid is False:
+            return True
+
+        obj = self.state.get_obj_by_id(obj_id)
+
+        # integer positions are always plotted on the grid
+        if float(obj.x).is_integer() and float(obj.y).is_integer():
+            return True
+        else:
+            # x or y not on grid
+            possible_positions = [
+                (math.ceil(obj.x), math.ceil(obj.y)),
+                (math.ceil(obj.x), math.floor(obj.y)),
+                (math.floor(obj.x), math.ceil(obj.y)),
+                (math.floor(obj.x), math.floor(obj.y))
+            ]
+
+            for new_x, new_y in possible_positions:
+                occupied = obj.occupied(new_x, new_y)
+                if self.mover._is_legal_move(occupied, obj_id):
+                    # move object
+
+                    # 1 - remove obj from grid
+                    self.object_grid.remove_obj(obj)
+
+                    # 2 - change x and y in object
+                    obj.x = new_x
+                    obj.y = new_y
+
+                    # 3 - plot obj on grid
+                    self.object_grid.add_obj(obj)
+                    return True
+
+            # if no nearby position if free, cannot place it
+            return False
+
     def grip(self, gr_id):
         """
         Attempt a grip / ungrip.
@@ -294,11 +339,13 @@ class Model:
         # if some object is already gripped, ungrip it
         old_gripped = self.get_gripped_obj(gr_id)
         if old_gripped:
-            # state takes care of detaching object and gripper
-            self.state.ungrip(gr_id)
-            # notify view of object and gripper change
-            self._notify_views("update_objs", self.get_obj_dict())
-            self._notify_views("update_grippers", self.get_gripper_dict())
+            allowed = self.can_ungrip(old_gripped)
+            if allowed:
+                # state takes care of detaching object and gripper
+                self.state.ungrip(gr_id)
+                # notify view of object and gripper change
+                self._notify_views("update_objs", self.get_obj_dict())
+                self._notify_views("update_grippers", self.get_gripper_dict())
         else:
             # Check if gripper hovers over some object
             new_gripped = self._get_grippable(gr_id)
