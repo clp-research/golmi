@@ -77,9 +77,9 @@ class Grid:
         self.clear_grid()
         self.converter = Converter(self.step)
 
-    @staticmethod
-    def create_from_config(config):
-        return Grid(
+    @classmethod
+    def create_from_config(cls, config):
+        return cls(
             config.width,
             config.height,
             config.move_step,
