@@ -46,7 +46,7 @@ class Config:
         """
         # make sure type_config can be parseds
         if isinstance(type_config, str):
-            self.type_config = Config.types_from_json(type_config)
+            self.type_config = Config.blocks_from_json(type_config)
         elif isinstance(type_config, dict):
             self.type_config = type_config
         else:
@@ -99,9 +99,9 @@ class Config:
         return self.type_config.keys()
 
     @staticmethod
-    def types_from_json(filename):
+    def blocks_from_json(filename):
         """
-        Parses a JSON file containing type matrices.
+        Parses a JSON file containing block matrices.
         The file should map each supported object type
         to a grid filled with 0s and 1s,
         where a 1 signifies the presence of a block and
@@ -114,8 +114,8 @@ class Config:
         # Ignore keys with underscores (used for comments)
         return Config.remove_json_comments(types)
 
-    @staticmethod
-    def from_json(filename):
+    @classmethod
+    def from_json(cls, filename):
         """
         @param filename String, name of a json file describing a Config.
             The key "type_config" mapping to a dictionary is mandatory.
@@ -123,17 +123,21 @@ class Config:
         """
         with open(filename, mode="r") as file:
             json_data = json.loads(file.read())
-        json_data = Config.remove_json_comments(json_data)
-        return Config.from_dict(json_data)
 
-    @staticmethod
-    def from_dict(source_dict):
+        # remove comments from json file
+        json_data = Config.remove_json_comments(json_data)
+
+        return cls.from_dict(json_data)
+
+    @classmethod
+    def from_dict(cls, source_dict):
         """
         @param source_dict  Dictionary containing Config constructor
                             parameters. The key "type_config" mapping to a
                             dictionary is mandatory.
         @return new Config instance with the given attributes
         """
+        # parameter checks
         if not isinstance(source_dict, dict):
             raise TypeError("source_dict must be of type dict")
         # check for mandatory parameter type_config
@@ -142,14 +146,14 @@ class Config:
             raise ValueError(
                 "source_dict must contain key 'type_config' mapping to a dict"
             )
+
+        # remove comments from dictionary
         types = Config.remove_json_comments(source_dict["type_config"])
-        new_config = Config(types)
-        # overwrite any setting given in the data, leave the rest as default
-        # new keys are also allowed
-        for attr_key, attr_value in source_dict.items():
-            if attr_key != "type_config":
-                setattr(new_config, attr_key, attr_value)
-        return new_config
+
+        # use source_dict as kwargs to construct a config object
+        source_dict["type_config"] = types
+        return cls(**source_dict)
+
 
     def to_dict(self):
         """
