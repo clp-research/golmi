@@ -69,38 +69,28 @@ class Obj:
                     occupied.append({"y": cell_y, "x": cell_x})
         return occupied
 
-    @staticmethod
-    def rotate(obj, d_angle, rotated_matrix=None):
+    def rotate(self, d_angle):
         """
         Rotate an object instance *in-place*.
-        @param obj  Object instance to modify
         @param d_angle	current angle is changed by d_angle
-        @param rotated_matrix 	optional pre-rotated block matrix
-                                otherwise the current matrix is rotated
         """
-        obj.rotation = (obj.rotation + d_angle) % 360
-        # update block matrix
-        if rotated_matrix:
-            obj.block_matrix = rotated_matrix
-        else:
-            obj.block_matrix = Obj.rotate_block_matrix(
-                obj.block_matrix, d_angle
-            )
+        # update rotation angle
+        self.rotation = (self.rotation + d_angle) % 360
 
-    @staticmethod
-    def flip(obj, flipped_matrix=None):
+        # update block matrix
+        self.block_matrix = Obj.rotate_block_matrix(
+            self.block_matrix, d_angle
+        )
+
+    def flip(self):
         """
-        Mirror an object *in-place*.
-        @param obj 	Object instance to modify
-        @param flipped_matrix	optional pre-flipped block matrix
-                                otherwise the object's matrix is flipped
+        Mirror an object *in-place*
         """
-        obj.mirrored = not obj.mirrored
+        # update mirrored parameter
+        self.mirrored = not self.mirrored
+        
         # update the block matrix
-        if flipped_matrix:
-            obj.block_matrix = flipped_matrix
-        else:
-            obj.block_matrix = Obj.flip_block_matrix(obj.block_matrix)
+        self.block_matrix = Obj.flip_block_matrix(self.block_matrix)
 
     @staticmethod
     def rotate_block_matrix(old_matrix, d_angle):
@@ -147,8 +137,8 @@ class Obj:
         matrix = np.array(old_matrix)
         return np.flip(matrix, axis=0).tolist()
 
-    @staticmethod
-    def from_dict(id_n, source_dict, type_config):
+    @classmethod
+    def from_dict(cls, id_n, source_dict, type_config):
         """
         Construct a new Obj instance from a dictionary, e.g., parsed json.
         @param id_n identifier for the object
@@ -157,13 +147,15 @@ class Obj:
         @param type_config  dict mapping type names to block matrices
         @return new Obj instance with the given attributes
         """
-        for mandatory_key in ["type", "x", "y", "width", "height"]:
-            if source_dict.get(mandatory_key) is None:
-                raise KeyError(
-                    f"Object construction failed, key {mandatory_key} missing"
-                )
+        # make sure mandatory keys are part of dictionary
+        mandatory_key = {"type", "x", "y", "width", "height"}
+        if any(source_dict.get(key) is None for key in mandatory_key):
+            raise KeyError(
+                f"Object construction failed, key {mandatory_key} missing"
+            )
+
         # create new object from the mandatory keys
-        new_obj = Obj(
+        new_obj = cls(
             id_n=id_n,
             obj_type=source_dict["type"],
             x=float(source_dict["x"]),
@@ -175,12 +167,16 @@ class Obj:
 
         # process optional info
         if "rotation" in source_dict and source_dict["rotation"] != 0:
-            Obj.rotate(new_obj, float(source_dict["rotation"]))
+            new_obj.rotate(float(source_dict["rotation"]))
+
         # flip the object if "mirrored" is true in the dictionary
         if "mirrored" in source_dict and source_dict["mirrored"]:
-            Obj.flip(new_obj, source_dict["mirrored"])
+            new_obj.flip(source_dict["mirrored"])
+
+        # apply color
         if "color" in source_dict:
             new_obj.color = source_dict["color"]
+        
         return new_obj
 
     def to_dict(self):

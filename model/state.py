@@ -108,7 +108,7 @@ class State:
         """
         if d_angle != 0:
             obj = self.get_obj_by_id(obj_id)
-            Obj.rotate(obj, d_angle, rotated_matrix)
+            obj.rotate(d_angle)
 
     def flip_obj(self, obj_id, flipped_matrix=None):
         """
@@ -119,7 +119,7 @@ class State:
         """
         # change 'mirrored' attribute
         obj = self.get_obj_by_id(obj_id)
-        Obj.flip(obj, flipped_matrix)
+        obj.flip()
 
     def grip(self, gr_id, obj_id):
         """
