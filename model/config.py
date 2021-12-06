@@ -125,6 +125,7 @@ class Config:
         """
         with open(filename, mode="r") as file:
             json_data = json.loads(file.read())
+        json_data = Config.remove_json_comments(json_data)
         return Config.from_dict(json_data)
 
     @staticmethod
