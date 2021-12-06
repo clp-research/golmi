@@ -155,7 +155,10 @@ class Config:
         """
         Constructs a dictionary from this instance.
         """
-        return {key: value for key, value in vars(self).items() if not key.startswith("_")}
+        return {
+            key: value for key, value in vars(self).items()
+            if not key.startswith("_")
+        }
 
     @staticmethod
     def remove_json_comments(parsed_json):

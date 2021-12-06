@@ -88,7 +88,7 @@ class Obj:
         """
         # update mirrored parameter
         self.mirrored = not self.mirrored
-        
+
         # update the block matrix
         self.block_matrix = Obj.flip_block_matrix(self.block_matrix)
 
@@ -176,7 +176,7 @@ class Obj:
         # apply color
         if "color" in source_dict:
             new_obj.color = source_dict["color"]
-        
+
         return new_obj
 
     def to_dict(self):
