@@ -102,7 +102,7 @@ class Mover:
         )
 
         # check if object is on a target
-        if self.model.config.block_on_target is True:
+        if self.model.config.lock_on_target is True:
             obj = self.model.get_obj_by_id(gr_obj_id)
             on_target = self._obj_on_target(obj)
         else:

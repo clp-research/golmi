@@ -6,15 +6,13 @@ import json
 
 
 class Config:
-    def __init__(
-            self, type_config, width=20, height=20,
-            snap_to_grid=False, prevent_overlap=True,
-            actions=["move", "rotate", "flip", "grip"],
-            move_step=0.5, rotation_step=90,
-            action_interval=0.1, verbose=False,
-            block_on_target=True,
-            colors=["red", "orange", "yellow", "green",
-                    "blue", "purple", "saddlebrown", "grey"]):
+    def __init__(self, type_config, width=20, height=20,
+                 snap_to_grid=False, prevent_overlap=True,
+                 actions=["move", "rotate", "flip", "grip"],
+                 move_step=0.5, rotation_step=90, action_interval=0.1,
+                 verbose=False, lock_on_target=False,
+                 colors=["red", "orange", "yellow", "green",
+                         "blue", "purple", "saddlebrown", "grey"]):
         """
         Constructor.
         @param type_config	    Json file name or dictionary mapping types
@@ -39,7 +37,7 @@ class Config:
                                 Default: 0.1
         @param verbose          True to print additional (debug-) information
                                 after model changes, such as the object grid.
-        @param block_on_target  True to lock objects once they align on the
+        @param lock_on_target  True to lock objects once they align on the
                                 grid with a matching target object.
         @param colors           Available object colors, can be color names
                                 or html color codes.
@@ -70,7 +68,7 @@ class Config:
         self.rotation_step = rotation_step
         self.action_interval = action_interval
         self.verbose = verbose
-        self.block_on_target = block_on_target
+        self.lock_on_target = lock_on_target
         self.colors = colors
 
     def __repr__(self):
