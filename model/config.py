@@ -156,20 +156,7 @@ class Config:
         """
         Constructs a dictionary from this instance.
         """
-        return {
-            "width": self.width,
-            "height": self.height,
-            "snap_to_grid": self.snap_to_grid,
-            "prevent_overlap": self.prevent_overlap,
-            "actions": self.actions,
-            "move_step": self.move_step,
-            "rotation_step": self.rotation_step,
-            "action_interval": self.action_interval,
-            "verbose": self.verbose,
-            "block_on_target": self.block_on_target,
-            "colors": self.colors,
-            "type_config": self.type_config
-        }
+        return {key: value for key, value in vars(self).items() if not key.startswith("_")}
 
     @staticmethod
     def remove_json_comments(parsed_json):
