@@ -134,8 +134,8 @@ class State:
         self.objs[self.grippers[gr_id].gripped].gripped = False
         self.grippers[gr_id].gripped = None
 
-    @staticmethod
-    def from_json(filename, type_config):
+    @classmethod
+    def from_json(cls, filename, type_config):
         """
         @param filename String, name of a json file describing a State.
                         The key "type_config" mapping to a dict is mandatory.
@@ -144,7 +144,7 @@ class State:
         """
         with open(filename, mode="r") as file:
             json_data = json.loads(file.read())
-        return State.from_dict(json_data, type_config)
+        return cls.from_dict(json_data, type_config)
 
     @classmethod
     # TODO: make sure pieces are on the board! (at least emit warning)
