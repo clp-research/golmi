@@ -11,7 +11,6 @@ class Tile:
     class representing a tile of a grid, a tile
     knows:
         -its coordinates (x, y)
-        -if it's free
         -which object(s) on it
     """
     def __init__(self, x, y):
