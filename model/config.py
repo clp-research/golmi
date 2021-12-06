@@ -154,7 +154,6 @@ class Config:
         source_dict["type_config"] = types
         return cls(**source_dict)
 
-
     def to_dict(self):
         """
         Constructs a dictionary from this instance.
