@@ -1,12 +1,10 @@
 import eventlet
-import json
 import math
 
 from model.generator import Generator
 from model.config import Config
 from model.grid import Grid
 from model.gripper import Gripper
-from model.obj import Obj
 from model.state import State
 from model.mover import Mover
 
@@ -88,13 +86,20 @@ class Model:
     def set_random_state(self, n_objs, n_grippers, area_block="all",
                          area_target="all", create_targets=False,
                          random_gr_position=False):
-        generator = Generator(self.config)  # we could possibly hold a generator instance as well
-        new_state, new_obj_grid, new_trg_grid = generator.generate_random_state(n_objs, n_grippers, area_block,
-                                                                                area_target, create_targets,
-                                                                                random_gr_position)
+        # we could possibly hold a generator instance as well
+        generator = Generator(self.config)
+
+        # generate state and grids
+        (new_state,
+         new_obj_grid,
+         new_trg_grid) = generator.generate_random_state(
+             n_objs, n_grippers, area_block, area_target,
+             create_targets, random_gr_position
+        )
+
         # TODO state should include the grids ?!
-        self.object_grid = new_obj_grid
-        self.target_grid = new_trg_grid
+        # self.object_grid = new_obj_grid
+        # self.target_grid = new_trg_grid
         self.set_state(new_state)
 
     def set_state(self, state):

@@ -239,31 +239,16 @@ class Generator:
 
         return objects, targets
 
-    def generate_random_state(
-            self, n_objs, n_grippers, area_block="all",
-            area_target="all", create_targets=False,
-            random_gr_position=False):
-        # TODO There might be actually: BoardGenerator, ObjGenerator and ObjPlacer
-        object_grid = Grid.create_from_config(self.config)
-        target_grid = Grid.create_from_config(self.config)
-        state = self._generate_random_state(object_grid, target_grid,
-                                            n_objs, n_grippers, area_block,
-                                            area_target, create_targets,
-                                            random_gr_position)
-        # TODO state should include the grids (or the other way around)
-        return state, object_grid, target_grid
-
-    def _generate_random_state(self, obj_grid: Grid, trg_grid: Grid,
-                               n_objs, n_grippers, area_block="all",
-                               area_target="all", create_targets=False,
-                               random_gr_position=False):
+    def _initialize_random_state(
+            self, obj_grid, trg_grid, n_objs, n_grippers, area_block="all",
+            area_target="all", create_targets=False, random_gr_position=False):
         # get grippers
         grippers = self._generate_grippers(n_grippers, random_gr_position)
 
         # get objects
-        objects, target_objs = self._generate_objects(obj_grid, trg_grid,
-                                                      n_objs, area_block,
-                                                      area_target, create_targets)
+        objects, target_objs = self._generate_objects(
+            obj_grid, trg_grid, n_objs, area_block, area_target, create_targets
+        )
 
         # create state
         state = State()
@@ -272,3 +257,22 @@ class Generator:
         state.targets = target_objs
 
         return state
+
+    def generate_random_state(
+            self, n_objs, n_grippers, area_block="all",
+            area_target="all", create_targets=False,
+            random_gr_position=False):
+        # TODO There might be actually:
+        #  - BoardGenerator
+        #  - ObjGenerator
+        #  - ObjPlacer
+        object_grid = Grid.create_from_config(self.config)
+        target_grid = Grid.create_from_config(self.config)
+
+        # generate random state from parameters
+        state = self._initialize_random_state(
+            object_grid, target_grid, n_objs, n_grippers, area_block,
+            area_target, create_targets, random_gr_position
+        )
+        # TODO state should include the grids (or the other way around)
+        return state, object_grid, target_grid
