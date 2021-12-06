@@ -98,24 +98,20 @@ class State:
         self.get_obj_by_id(obj_id).x += dx
         self.get_obj_by_id(obj_id).y += dy
 
-    def rotate_obj(self, obj_id, d_angle, rotated_matrix=None):
+    def rotate_obj(self, obj_id, d_angle):
         """
         Change an object's goal_rotation by d_angle.
         @param obj_id  	object id
         @param d_angle	current angle is changed by d_angle
-        @param rotated_matrix 	optional pre-rotated block matrix
-                                otherwise the current matrix is rotated
         """
         if d_angle != 0:
             obj = self.get_obj_by_id(obj_id)
             obj.rotate(d_angle)
 
-    def flip_obj(self, obj_id, flipped_matrix=None):
+    def flip_obj(self, obj_id):
         """
         Mirror an object.
         @param obj_id 	object_id
-        @param flipped_matrix	optional pre-flipped block matrix
-                                otherwise the current matrix is flipped
         """
         # change 'mirrored' attribute
         obj = self.get_obj_by_id(obj_id)
@@ -150,9 +146,9 @@ class State:
             json_data = json.loads(file.read())
         return State.from_dict(json_data, type_config)
 
-    @staticmethod
+    @classmethod
     # TODO: make sure pieces are on the board! (at least emit warning)
-    def from_dict(source_dict, type_config):
+    def from_dict(cls, source_dict, type_config):
         """
         @param source_dict  Dict containing State constructor parameters.
                             The keys "objs" and "grippers" are mandatory.
@@ -168,7 +164,7 @@ class State:
                 "mapping to dictionaries."
             )
         # initialize an empty state
-        new_state = State()
+        new_state = cls()
         try:
             # construct objects
             for obj_name, obj_dict in source_dict["objs"].items():

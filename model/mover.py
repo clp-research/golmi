@@ -122,14 +122,14 @@ class Mover:
         rotate an object
         """
         # update state
-        self.model.state.rotate_obj(gr_obj_id, d_angle, new_matrix)
+        self.model.state.rotate_obj(gr_obj_id, d_angle)
 
     def _flip(self, gr_obj_id, new_matrix):
         """
         flip an object
         """
         # update state
-        self.model.state.flip_obj(gr_obj_id, new_matrix)
+        self.model.state.flip_obj(gr_obj_id)
 
     def apply_movement(self, movement_type, gr_id, **kwargs):
         """
