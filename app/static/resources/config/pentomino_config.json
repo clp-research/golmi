@@ -1,7 +1,7 @@
 {
   "width": 20,
   "height": 20,
-  "snap_to_grid": false,
+  "snap_to_grid": true,
   "prevent_overlap": true,
   "actions": ["move", "rotate"],
   "move_step": 0.5,
