@@ -11,8 +11,8 @@ class Config:
                  actions=["move", "rotate", "flip", "grip"],
                  move_step=0.5, rotation_step=90, action_interval=0.1,
                  verbose=False, lock_on_target=False,
-                 colors=["red", "orange", "yellow", "green",
-                         "blue", "purple", "saddlebrown", "grey"]):
+                 colors=["#ff0000", "#ffa500", "#ffff00", "#008000",
+                         "#0000ff", "#800080", "#8b4513", "#808080"]):
         """
         Constructor.
         @param type_config	    Json file name or dictionary mapping types
