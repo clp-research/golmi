@@ -178,7 +178,7 @@ class State:
             for gr_name, gr_dict in source_dict["grippers"].items():
                 # get identifier or use gripper key (use str for consistency)
                 id_n = gr_dict.get("id_n") or str(gr_name)
-                new_gr = Gripper.from_dict(id_n, gr_dict, type_config)
+                new_gr = Gripper.from_dict(id_n, gr_dict)
                 new_state.grippers[id_n] = new_gr
 
                 # Not the nicest solution: Make sure any gripped object has

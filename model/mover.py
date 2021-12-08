@@ -203,10 +203,10 @@ class Mover:
                         self._move(gr_id, dx, dy)
 
                     elif movement_type == "flip":
-                        self._flip(gr_obj_id, new_matrix)
+                        self._flip(gr_obj_id)
 
                     elif movement_type == "rotate":
-                        self._rotate(gr_obj_id, d_angle, new_matrix)
+                        self._rotate(gr_obj_id, d_angle)
 
                     # add element to grid
                     self.model.object_grid.add_obj(gr_obj)
