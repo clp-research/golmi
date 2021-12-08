@@ -13,8 +13,8 @@ class Gripper(Obj):
             rotation=0, mirrored=False, color=color, gripped=gripped
         )
 
-    @staticmethod
-    def from_dict(id_n, source_dict, type_config):
+    @classmethod
+    def from_dict(cls, id_n, source_dict):
         """
         Construct a new Gripper instance from a dictionary, e.g., parsed json.
         @param id_n identifier for the gripper
@@ -23,13 +23,13 @@ class Gripper(Obj):
         @param type_config  dict mapping type names to block matrices
         @return new Gripper instance with the given attributes
         """
-        for mandatory_key in ["x", "y"]:
-            if source_dict.get(mandatory_key) is None:
-                raise KeyError(
-                    f"Gripper construction failed, key {mandatory_key} missing"
-                )
+        mandatory_key = {"x", "y"}
+        if any(source_dict.get(key) is None for key in mandatory_key):
+            raise KeyError(
+                f"Gripper construction failed, key {mandatory_key} missing"
+            )
 
-        new_gripper = Gripper(
+        new_gripper = cls(
             id_n,
             float(source_dict["x"]),
             float(source_dict["y"])
