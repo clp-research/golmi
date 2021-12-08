@@ -99,7 +99,7 @@ class Config:
         return self.type_config.keys()
 
     @staticmethod
-    def blocks_from_json(filename):
+    def types_from_json(filename):
         """
         Parses a JSON file containing block matrices.
         The file should map each supported object type
