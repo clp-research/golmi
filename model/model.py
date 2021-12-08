@@ -98,8 +98,6 @@ class Model:
         )
 
         # TODO state should include the grids ?!
-        # self.object_grid = new_obj_grid
-        # self.target_grid = new_trg_grid
         self.set_state(new_state)
 
     def set_state(self, state):
