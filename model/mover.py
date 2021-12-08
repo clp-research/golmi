@@ -117,14 +117,14 @@ class Mover:
         self.model.state.move_gr(gr_id, dx, dy)
         self.model.state.move_obj(self.model.get_gripped_obj(gr_id), dx, dy)
 
-    def _rotate(self, gr_obj_id, d_angle, new_matrix):
+    def _rotate(self, gr_obj_id, d_angle):
         """
         rotate an object
         """
         # update state
         self.model.state.rotate_obj(gr_obj_id, d_angle)
 
-    def _flip(self, gr_obj_id, new_matrix):
+    def _flip(self, gr_obj_id):
         """
         flip an object
         """
