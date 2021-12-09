@@ -69,9 +69,10 @@ class ConnectionTest(unittest.TestCase):
         self.assertTrue(received_config)
 
 
-class SocketEventTest(unittest.TestCase):
+class SocketTest(unittest.TestCase):
     """
-    Test event-based socket communication.
+    Base class implementing setup and teardown functionality for unit tests
+    using socket events.
     """
     def setUp(self):
         """
@@ -93,17 +94,28 @@ class SocketEventTest(unittest.TestCase):
         if self.socketio_client.is_connected():
             self.socketio_client.disconnect()
 
+    @staticmethod 
+    def _read_json(filename):
+        """
+        @param filename File path relative to the resource directory. No / at the beginning!
+        @return parsed json as dict
+        """
+        file_path = Path(RESOURCE_DIR) / filename
+        return json.loads(file_path.read_text())
+
+
+class SocketEventTest(SocketTest):
+    """
+    Test event-based socket communication.
+    """
     def test_load_state(self):
         """
         test if loading a state from a configuration file works
         """
-        # read state file as string and parse to dictionary
-        file_path = Path(f"{RESOURCE_DIR}/tasks/test_state.json")
-        with open(file_path, "r", encoding="utf-8") as f:
-            test_state_json = json.load(f)
+        test_state = SocketTest._read_json("tasks/test_state.json")
 
         # send state as dictionary
-        self.socketio_client.emit("load_state", test_state_json)
+        self.socketio_client.emit("load_state", test_state)
         received = self.socketio_client.get_received()
 
         # make sure just one event was received
@@ -115,7 +127,7 @@ class SocketEventTest(unittest.TestCase):
         for gripper in received[0]["args"][0]["grippers"]:
             # obtain gripper dict
             received_gripper = received[0]["args"][0]["grippers"][gripper]
-            sent_gripper = test_state_json["grippers"][gripper]
+            sent_gripper = test_state["grippers"][gripper]
 
             # sent should be a subset of received
             self.assertTrue(sent_gripper.items() <= received_gripper.items())
@@ -124,7 +136,7 @@ class SocketEventTest(unittest.TestCase):
         for obj in received[0]["args"][0]["objs"]:
             # obtain object dictionary
             received_obj = received[0]["args"][0]["objs"][obj]
-            sent_obj = test_state_json["objs"][obj]
+            sent_obj = test_state["objs"][obj]
 
             # sent should be a subset of received
             self.assertTrue(sent_obj.items() <= received_obj.items())
@@ -134,10 +146,7 @@ class SocketEventTest(unittest.TestCase):
         Test resetting the model to an empty state.
         """
         # first send some state
-        # read state file as string
-        file_path = Path(f"{RESOURCE_DIR}/tasks/test_state.json")
-        with open(file_path, "r", encoding="utf-8") as f:
-            test_state = json.loads(f.read())
+        test_state = SocketTest._read_json("tasks/test_state.json")
         self.socketio_client.emit("load_state", test_state)
         received = self.socketio_client.get_received()
         self.assertEqual(len(received), 1)
@@ -157,11 +166,7 @@ class SocketEventTest(unittest.TestCase):
         """
         test sending a configuration
         """
-        # read config from a file and parse to dictionary
-        file_path = Path(f"{RESOURCE_DIR}/config/test_config.json")
-        with open(file_path, "r", encoding="utf-8") as f:
-            test_config = json.loads(f.read())
-
+        test_config = SocketTest._read_json("config/test_config.json")
         # send state as dictionary
         self.socketio_client.emit("load_config", test_config)
         received = self.socketio_client.get_received()
@@ -182,12 +187,9 @@ class SocketEventTest(unittest.TestCase):
         and user defined step size
         """
         # send a state
-        file_path = Path(f"{RESOURCE_DIR}/tasks/test_state.json")
-        with open(file_path, "r", encoding="utf-8") as f:
-            test_state_json = json.load(f)
-
+        test_state = SocketTest._read_json("tasks/test_state.json")
         # send state as dictionary
-        self.socketio_client.emit("load_state", test_state_json)
+        self.socketio_client.emit("load_state", test_state)
         self.socketio_client.get_received()
 
         # configuration
@@ -208,7 +210,7 @@ class SocketEventTest(unittest.TestCase):
 
         # make sure new coordinates are correct
         new_x = received[0]["args"][0][test_gripper]["x"]
-        old_x = test_state_json["grippers"][test_gripper]["x"]
+        old_x = test_state["grippers"][test_gripper]["x"]
         self.assertEqual(new_x, old_x + test_step_size)
 
         # test bigger movement on y coordinate
@@ -227,17 +229,13 @@ class SocketEventTest(unittest.TestCase):
 
         # make sure new coordinates are correct
         new_y = received[0]["args"][0][test_gripper]["y"]
-        old_y = test_state_json["grippers"][test_gripper]["y"]
+        old_y = test_state["grippers"][test_gripper]["y"]
         self.assertEqual(new_y, old_y + test_step_size)
 
     def test_rotate_object(self):
         # send a state
-        file_path = Path(f"{RESOURCE_DIR}/tasks/gripped_test.json")
-        with open(file_path, "r", encoding="utf-8") as f:
-            test_state_json = json.load(f)
-
-        # send state as dictionary
-        self.socketio_client.emit("load_state", test_state_json)
+        test_state = SocketTest._read_json("tasks/gripped_test.json")
+        self.socketio_client.emit("load_state", test_state)
         self.socketio_client.get_received()
 
         # configuration
@@ -253,7 +251,7 @@ class SocketEventTest(unittest.TestCase):
         self.assertEqual(len(received), 1)
         self.assertEqual(received[0]["name"], "update_grippers")
 
-        original_rotation = test_state_json["objs"][obj]["rotation"]
+        original_rotation = test_state["objs"][obj]["rotation"]
         new_rotation = (
             received[0]["args"][0][test_gripper]["gripped"][obj]["rotation"]
         )
@@ -266,12 +264,8 @@ class SocketEventTest(unittest.TestCase):
         rotation of an empty gripper
         """
         # send a state
-        file_path = Path(f"{RESOURCE_DIR}/tasks/test_state.json")
-        with open(file_path, "r", encoding="utf-8") as f:
-            test_state_json = json.load(f)
-
-        # send state as dictionary
-        self.socketio_client.emit("load_state", test_state_json)
+        test_state = SocketTest._read_json("tasks/test_state.json")
+        self.socketio_client.emit("load_state", test_state)
         self.socketio_client.get_received()
 
         # configuration
@@ -290,12 +284,8 @@ class SocketEventTest(unittest.TestCase):
 
     def test_flip_object(self):
         # send a state
-        file_path = Path(f"{RESOURCE_DIR}/tasks/gripped_test.json")
-        with open(file_path, "r", encoding="utf-8") as f:
-            test_state_json = json.load(f)
-
-        # send state as dictionary
-        self.socketio_client.emit("load_state", test_state_json)
+        test_state = SocketTest._read_json("tasks/gripped_test.json")
+        self.socketio_client.emit("load_state", test_state)
         self.socketio_client.get_received()
 
         # configuration
@@ -313,7 +303,7 @@ class SocketEventTest(unittest.TestCase):
         self.assertEqual(received[0]["name"], "update_grippers")
 
         # check if object was mirrored
-        original_flip = test_state_json["objs"][obj]["mirrored"]
+        original_flip = test_state["objs"][obj]["mirrored"]
         new_flip = (
             received[0]["args"][0][test_gripper]["gripped"][obj]["mirrored"]
         )
@@ -324,12 +314,8 @@ class SocketEventTest(unittest.TestCase):
     def test_grip_object(self):
         """Test gripping and ungripping an object."""
         # send a state were an object is already gripped
-        file_path = Path(f"{RESOURCE_DIR}/tasks/gripped_test.json")
-        with open(file_path, "r", encoding="utf-8") as f:
-            test_state_json = json.load(f)
-
-        # send state as dictionary
-        self.socketio_client.emit("load_state", test_state_json)
+        test_state = SocketTest._read_json("tasks/gripped_test.json")
+        self.socketio_client.emit("load_state", test_state)
         received = self.socketio_client.get_received()
 
         # configuration
