@@ -46,7 +46,7 @@ class Config:
         """
         # make sure type_config can be parseds
         if isinstance(type_config, str):
-            self.type_config = Config.blocks_from_json(type_config)
+            self.type_config = Config.types_from_json(type_config)
         elif isinstance(type_config, dict):
             self.type_config = type_config
         else:
