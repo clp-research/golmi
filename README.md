@@ -90,11 +90,24 @@ objects and grippers. Leaves the config unchanged. |
 | parameter | type | description | example |
 | --- | --- | --- | --- |
 |width|int| number of blocks in horizontal dimension of the game environment / board | 20 | 
-|height|int| number of blocks in vertical dimension | 20 | 
+|height|int| number of blocks in vertical dimension | 20 |
 |actions|array / list of str|types of manipulation allowed by the model| \["move", "rotate", "flip"\]| 
+|snap_to_grid | bool | true to lock objects to the nearest block at gripper release| false |
+|prevent_overlap | bool | true to prohibit any action that would lead to objects overlapping | true |
+| move_step | float | step size for object movement, must be higher than 0 and evenly divide the interval between 0 and 1 | 0.25 |
 |rotation_step|int|angle change for a single rotation action|90| 
-|colors|array / list of str|available object colors| \["red", "black", "blue"\] |
+| action_interval | float | frequency of repeating looped actions in seconds, a smaller number smoothes movements but also increases network traffic | 0.1 |
+| verbose | bool | true to print additional (debug-) information to the server console after model changes, such as the object grid | false |
+| lock_on_target | bool | true to lock objects once they align on the grid with a matching target object | false |
+|colors|array / list of str|available object colors, can be color names, e.g., "red", or hex codes, e.g., "#ff0000" | \["red", "black", "blue"\] |
 |type_config| map: str -> list of lists / array of arrays|map that defines available object types (e.g. the twelve letters for Pentomino) to block matrices defining an object's shape. The matrices contain 0s and 1s, where a 1 signifies the presence of a block. Block matrices should be square to support rotation. Type names cannot start with an underscore. | {	"F": [ [0,0,0,0,0], [0,1,1,0,0], [0,0,1,1,0], [0,0,1,0,0], [0,0,0,0,0] ], "I": [ [0,0,1,0,0], [0,0,1,0,0], [0,0,1,0,0], [0,0,1,0,0], [0,0,1,0,0]]}
+
+_A note on **colors**_: To Golmi, colors are just strings assigned to objects, but the default is using hex codes. 
+The color attribute assigned to objects on the server side is the same as the attribute sent to clients upon
+object updates. If a client-side component needs *color names* (and doesn't want to convert the codes itself),
+there are easy ways to ensure Golmi is sending names:
+    * when using random state initialization: send to Golmi a Config that uses color names
+    * without random state initialization: use color names in the pre-generated states you send to Golmi
 
 ### State format
 The following is an example state, including one gripper and two objects.

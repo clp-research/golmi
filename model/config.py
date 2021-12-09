@@ -37,12 +37,12 @@ class Config:
                                 Default: 0.1
         @param verbose          True to print additional (debug-) information
                                 after model changes, such as the object grid.
-        @param lock_on_target  True to lock objects once they align on the
+        @param lock_on_target   True to lock objects once they align on the
                                 grid with a matching target object.
         @param colors           Available object colors, can be color names
                                 or html color codes.
-                                Default: ["red", "orange", "yellow", "green",
-                                "blue", "purple", "saddlebrown", "grey"]
+                                Default: ["#ff0000", "#ffa500", "#ffff00", "#008000",
+                                "#0000ff", "#800080", "#8b4513", "#808080"]
         """
         # make sure type_config can be parseds
         if isinstance(type_config, str):
