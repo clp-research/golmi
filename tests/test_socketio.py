@@ -184,7 +184,7 @@ class SocketEventTest(SocketTest):
         """
         test sending a configuration
         """
-        test_config, received = self.load_state("config/test_config.json")
+        test_config, received = self.load_config("config/test_config.json")
 
         # make sure just one event was received
         self.assertEqual(len(received), 1)
@@ -224,24 +224,23 @@ class SocketEventTest(SocketTest):
         old_x = test_state["grippers"][test_gripper]["x"]
         self.assertEqual(new_x, old_x + test_step_size)
 
-        # test bigger movement on y coordinate
-        test_step_size = 4
-        self.socketio_client.emit("move", {
-            "id": test_gripper,
-            "dx": 0,
-            "dy": 1,
-            "step_size": test_step_size
-        })
-        received = self.socketio_client.get_received()
+        for test_step_size in [0.05, 0.5, 4]:
+            self.socketio_client.emit("move", {
+                "id": test_gripper,
+                "dx": 0,
+                "dy": 1,
+                "step_size": test_step_size
+            })
+            received = self.socketio_client.get_received()
 
-        # make sure we only received one object
-        self.assertEqual(len(received), 1)
-        self.assertEqual(received[0]["name"], "update_grippers")
+            # make sure we only received one object
+            self.assertEqual(len(received), 1)
+            self.assertEqual(received[0]["name"], "update_grippers")
 
-        # make sure new coordinates are correct
-        new_y = received[0]["args"][0][test_gripper]["y"]
-        old_y = test_state["grippers"][test_gripper]["y"]
-        self.assertEqual(new_y, old_y + test_step_size)
+            # make sure new coordinates are correct
+            new_y = received[0]["args"][0][test_gripper]["y"]
+            old_y = test_state["grippers"][test_gripper]["y"]
+            self.assertEqual(new_y, old_y + test_step_size)
 
     def test_rotate_object(self):
         test_state, received = self.load_state("tasks/gripped_test.json")
@@ -362,4 +361,42 @@ class SocketEventTest(SocketTest):
         self.assertTrue(obj_gripped)
         self.assertTrue(gr_has_gripped)
 
+class ConfigTest(SocketTest):
+    """
+    Tests ensuring configuration parameters are working correctly.
+    """
+    def test_snap_to_grid(self):
+        _, received_state = self.load_state("tasks/gripped_test.json")
+        # set snap_to_grid and set move_step below 1
+
+        self.load_config("config/test_snap_to_grid.json")
+
+        test_gripper = "0"
+        obj = "4"
+
+        for dimension in ["x", "y"]:
+            # make sure we start at a full block:
+            start_state = received_state[0]["args"][0]
+            start_pos = start_state["grippers"][test_gripper][dimension]
+            if start_pos % 1 != 0:
+                self.socketio_client.emit("move", {
+                    "id": test_gripper,
+                    "dx": 1 if dimension == "x" else 0,
+                    "dy": 1 if dimension == "y" else 0,
+                    "step_size": 1 - (start_pos % 1),
+                    "loop": False
+                })
+            self.assertEqual(start_pos % 1, 0)
+            # now move half a block to trigger "snap to grid"
+            self.socketio_client.emit("move", {
+                "id": test_gripper,
+                "dx": 1 if dimension == "x" else 0,
+                "dy": 1 if dimension == "y" else 0,
+                "step_size": 0.5,
+                "loop": False
+            })
+            # now release the object
+            self.socketio_client.emit("grip", {"id": test_gripper})
+            # TODO: check object position
+            received = self.socketio_client.get_received()
     # --- create more test cases for extensions below --- #
