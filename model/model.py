@@ -276,7 +276,7 @@ class Model:
                 self._notify_views("update_objs", self.get_obj_dict())
                 self._notify_views("update_grippers", self.get_gripper_dict())
 
-    def start_moving(self, gr_id, x_steps, y_steps, step_size=None):
+    def start_moving(self, gr_id, x_steps, y_steps):
         """
         Start calling the function move periodically
         until stop_moving is called.
@@ -285,8 +285,6 @@ class Model:
                             Step size is defined by model configuration
         @param y_steps	    steps to move in y direction.
                             Step size is defined by model configuration
-        @param step_size 	Optional, size of step unit in blocks.
-                            Default: use move_step of config
         """
         # cancel any ongoing movement
         self.stop_moving(gr_id)
@@ -297,8 +295,7 @@ class Model:
             "move",
             gr_id,
             x_steps=x_steps,
-            y_steps=y_steps,
-            step_size=step_size
+            y_steps=y_steps
         )
 
     def stop_moving(self, gr_id):

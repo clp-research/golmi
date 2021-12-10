@@ -156,19 +156,17 @@ def move(params):
     good_params = check_parameters(params, model, {"id", "dx", "dy"})
 
     if good_params:
-        step_size = params["step_size"] if "step_size" in params else None
         # continuous / looped action
         if params.get("loop"):
             model.start_moving(
-                str(params["id"]), params["dx"], params["dy"], step_size)
+                str(params["id"]), params["dx"], params["dy"])
         # one-time action
         else:
             model.mover.apply_movement(
                 "move",
                 str(params["id"]),
                 x_steps=params["dx"],
-                y_steps=params["dy"],
-                step_size=step_size
+                y_steps=params["dy"]
             )
 
 
@@ -189,7 +187,7 @@ def rotate(params):
     good_params = check_parameters(params, model, {"id", "direction"})
 
     if good_params:
-        step_size = params["step_size"] if "step_size" in params else None
+        step_size = params.get("step_size")
         # continuous / looped action
         if params.get("loop"):
             model.start_rotating(

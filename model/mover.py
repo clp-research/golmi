@@ -142,7 +142,6 @@ class Mover:
         keyword arguments:
             - move:     - x_steps
                         - y_steps
-                        - step_size (optional)
 
             - rotate:   - direction
                         - rotation_step (optional)
@@ -155,11 +154,7 @@ class Mover:
 
         # calculate the distance if the movement is a move
         if movement_type == "move":
-            step_size = kwargs.get("step_size")
-
-            # overwrite with default if step size is not defined
-            if step_size is None:
-                step_size = self.model.config.move_step
+            step_size = self.model.config.move_step
 
             dx = kwargs["x_steps"] * step_size
             dy = kwargs["y_steps"] * step_size
@@ -177,7 +172,7 @@ class Mover:
                 # obtain direction and rotation step
                 # if nor present they will be initialized to None
                 direction = kwargs.get("direction")
-                rotation_step = kwargs.get("rotaion_step")
+                rotation_step = kwargs.get("rotation_step")
 
                 # obtain coordinates after movement
                 movement_result = self._get_new_coordinates(

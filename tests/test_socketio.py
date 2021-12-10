@@ -128,6 +128,19 @@ class SocketTest(unittest.TestCase):
         self.socketio_client.emit("load_config", test_config)
         return test_config, self.socketio_client.get_received()
 
+    def load_default_config_with_params(self, params):
+        """
+        Load a default Pentomino config, but modify the specified parameters.
+        @param params   dict with settings that should be changed from default
+        @return tuple: (sent, received), where sent is the parsed json emitted
+                to the server and received is the server's response, i.e., the
+                (corrected) config
+        """
+        default_config = SocketTest.read_json("config/pentomino_config.json")
+        default_config.update(params)
+        self.socketio_client.emit("load_config", default_config)
+        return default_config, self.socketio_client.get_received()
+
 class SocketEventTest(SocketTest):
     """
     Test event-based socket communication.
@@ -198,14 +211,14 @@ class SocketEventTest(SocketTest):
 
     def test_gripper_movement(self):
         """
-        test movements of grippers with normal
-        and user defined step size
+        test movements of grippers
         """
-        test_state, received = self.load_state("tasks/test_state.json")
-
         # configuration
         test_gripper = "0"
         test_step_size = 0.5
+
+        self.load_default_config_with_params({"move_step": test_step_size})
+        test_state, received = self.load_state("tasks/test_state.json")
 
         # send movement
         self.socketio_client.emit("move", {
@@ -223,24 +236,6 @@ class SocketEventTest(SocketTest):
         new_x = received[0]["args"][0][test_gripper]["x"]
         old_x = test_state["grippers"][test_gripper]["x"]
         self.assertEqual(new_x, old_x + test_step_size)
-
-        for test_step_size in [0.05, 0.5, 4]:
-            self.socketio_client.emit("move", {
-                "id": test_gripper,
-                "dx": 0,
-                "dy": 1,
-                "step_size": test_step_size
-            })
-            received = self.socketio_client.get_received()
-
-            # make sure we only received one object
-            self.assertEqual(len(received), 1)
-            self.assertEqual(received[0]["name"], "update_grippers")
-
-            # make sure new coordinates are correct
-            new_y = received[0]["args"][0][test_gripper]["y"]
-            old_y = test_state["grippers"][test_gripper]["y"]
-            self.assertEqual(new_y, old_y + test_step_size)
 
     def test_rotate_object(self):
         test_state, received = self.load_state("tasks/gripped_test.json")
@@ -366,37 +361,39 @@ class ConfigTest(SocketTest):
     Tests ensuring configuration parameters are working correctly.
     """
     def test_snap_to_grid(self):
-        _, received_state = self.load_state("tasks/gripped_test.json")
         # set snap_to_grid and set move_step below 1
-
-        self.load_config("config/test_snap_to_grid.json")
+        self.load_default_config_with_params({"snap_to_grid": True,
+                                              "move_step": 0.5})
+        _, received_state = self.load_state("tasks/gripped_test.json")
 
         test_gripper = "0"
-        obj = "4"
+        test_obj = "4"
 
         for dimension in ["x", "y"]:
             # make sure we start at a full block:
             start_state = received_state[0]["args"][0]
-            start_pos = start_state["grippers"][test_gripper][dimension]
-            if start_pos % 1 != 0:
-                self.socketio_client.emit("move", {
-                    "id": test_gripper,
-                    "dx": 1 if dimension == "x" else 0,
-                    "dy": 1 if dimension == "y" else 0,
-                    "step_size": 1 - (start_pos % 1),
-                    "loop": False
-                })
-            self.assertEqual(start_pos % 1, 0)
-            # now move half a block to trigger "snap to grid"
+            start_pos = start_state["objs"][test_obj][dimension]
+            self.assertEqual(start_pos % 1, 0,
+                             "Error in test state for test_snap_to_grid."
+                             f"Object {test_obj} must start at a full block "
+                             "(e.g., 10.0).")
+
+            # move half a block to trigger "snap to grid"
             self.socketio_client.emit("move", {
                 "id": test_gripper,
                 "dx": 1 if dimension == "x" else 0,
                 "dy": 1 if dimension == "y" else 0,
-                "step_size": 0.5,
                 "loop": False
             })
-            # now release the object
+            # release the object
             self.socketio_client.emit("grip", {"id": test_gripper})
-            # TODO: check object position
-            received = self.socketio_client.get_received()
+
+            # check whether the object "snapped back" to the nearest block
+            received_updates = self.socketio_client.get_received()
+            for update in received_updates:
+                if update["name"] == "update_objs":
+                    self.assertEqual(update["args"][0][test_obj][dimension] % 1, 0)
+                    return
+            raise RuntimeError("Did not receive 'update_objs' update")
+
     # --- create more test cases for extensions below --- #
