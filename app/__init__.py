@@ -5,6 +5,7 @@ from flask_socketio import (
 )
 from model.model import Model
 from model.config import Config
+
 # --- create the app --- #
 
 # has to be passed by clients to connect
@@ -65,6 +66,14 @@ def check_parameters(params, model, keys):
     return good_param and keys_in_param and gripper_not_none
 
 
+def param_is_integer(param):
+    """
+    @return True if param is of type int, or is a float and convertible to int
+    """
+    return isinstance(param, int) or \
+           (isinstance(param, float) and param.is_integer())
+
+
 # --- socketio events --- #
 # --- connection --- #
 @socketio.on("connect")
@@ -110,6 +119,7 @@ def reset_state():
 def load_config(json):
     client_models[request.sid].set_config(json)
 
+
 # --- pieces --- #
 @socketio.on("random_init")
 def init_from_Random(params):
@@ -124,6 +134,7 @@ def init_from_Random(params):
         model.set_random_state(
             **params
         )
+
 
 # --- gripper --- #
 @socketio.on("add_gripper")
@@ -144,6 +155,7 @@ def remove_gripper(gr_id=None):
     # delete the gripper
     client_models[request.sid].remove_gr(gr_id)
 
+
 # For all actions: move, flip, rotate, grip, there are 2 options:
 # 'one-time action' and 'looped action'.
 # See the documentation for details.
@@ -154,6 +166,9 @@ def move(params):
     model = client_models[request.sid]
     # check the arguments and make sure the gripper exists
     good_params = check_parameters(params, model, {"id", "dx", "dy"})
+    # dx and dy can only be integers:
+    good_params = good_params and \
+        param_is_integer(params["dx"]) and param_is_integer(params["dy"])
 
     if good_params:
         # continuous / looped action

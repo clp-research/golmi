@@ -66,7 +66,7 @@ loads the configuration. |
 objects and grippers. Leaves the config unchanged. |
 | add_gripper | client | optional: gripper id | Add gripper to model if it doesn't exist. If no id was sent, use the client's session id. Emit *attach_gripper* to client |
 | remove_gripper | client | optional: gripper id | Delete gripper from model if it exists. If no id was sent, use the client's session id. |
-| move | client | params: {"id": str, "dx": int/float, "dy": int/float \[, "loop": bool\]}| Start continuous movement or move once with the specified gripper (see *One-time vs. looped gripper actions*). dx is the x direction (negative = leftwards), dy the y direction (negative = upwards). |
+| move | client | params: {"id": str, "dx": int, "dy": int \[, "loop": bool\]}| Start continuous movement or move once with the specified gripper (see *One-time vs. looped gripper actions*). dx and dy must be ints. dx is the x direction (negative = leftwards), dy the y direction (negative = upwards). |
 | stop_move | client | params: {"id": str}| Stop continuous movement of the specified gripper. |
 | rotate | client | params: {"id": str, "direction": int, \[, "loop": bool, "step_size": int/float\]}| Start continuous rotation or rotate once a gripped object of the specified gripper (see *One-time vs. looped gripper actions*). Negative direction for leftwards, positive direction for rightwards rotation. |
 | stop_rotate | client | params: {"id": str}| Stop continuous rotation of the specified gripper. |

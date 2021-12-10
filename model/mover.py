@@ -155,9 +155,9 @@ class Mover:
         # calculate the distance if the movement is a move
         if movement_type == "move":
             step_size = self.model.config.move_step
-
-            dx = kwargs["x_steps"] * step_size
-            dy = kwargs["y_steps"] * step_size
+            # make dx and dy multiples of step_size
+            dx = round(kwargs["x_steps"]) * step_size
+            dy = round(kwargs["y_steps"]) * step_size
 
         # make sure gripper can move
         gripper_can_move = self._gripper_can_move(gr_id, dx, dy)
