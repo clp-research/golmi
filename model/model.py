@@ -1,11 +1,10 @@
 import eventlet
-import json
+import math
 
 from model.generator import Generator
 from model.config import Config
 from model.grid import Grid
 from model.gripper import Gripper
-from model.obj import Obj
 from model.state import State
 from model.mover import Mover
 
@@ -87,30 +86,39 @@ class Model:
     def set_random_state(self, n_objs, n_grippers, area_block="all",
                          area_target="all", create_targets=False,
                          random_gr_position=False):
-        generator = Generator(self.config)  # we could possibly hold a generator instance as well
-        new_state, new_obj_grid, new_trg_grid = generator.generate_random_state(n_objs, n_grippers, area_block,
-                                                                                area_target, create_targets,
-                                                                                random_gr_position)
+        # we could possibly hold a generator instance as well
+        generator = Generator(self.config)
+
+        # generate state and grids
+        (new_state,
+         new_obj_grid,
+         new_trg_grid) = generator.generate_random_state(
+             n_objs, n_grippers, area_block, area_target,
+             create_targets, random_gr_position
+        )
+
         # TODO state should include the grids ?!
-        self.object_grid = new_obj_grid
-        self.target_grid = new_trg_grid
         self.set_state(new_state)
 
     def set_state(self, state):
         """
         Initialize the model's (game) state.
-        @param state	State object or dict or JSON string
+        @param state	json file name or dict (e.g., parsed json)
+                        or State instance
         """
         # reset grids
         self.object_grid.clear_grid()
         self.target_grid.clear_grid()
 
-        # state is a JSON string or parsed JSON dictionary
-        if isinstance(state, (str, dict)):
-            self._state_from_json(state)
-        else:
-            # state is a State instance
+        if isinstance(state, str):
+            self.state = State.from_json(state, self.get_type_config())
+        elif isinstance(state, dict):
+            self.state = State.from_dict(state, self.get_type_config())
+        elif isinstance(state, State):
             self.state = state
+        else:
+            raise TypeError("Parameter state must be a json file name, "
+                            "dict, or State instance.")
 
         # add objects
         for obj in self.state.objs.values():
@@ -127,7 +135,8 @@ class Model:
         """
         Change the model's configuration. Overwrites any attributes
         passed in config and leaves the rest as before. New keys simply added.
-        @param config	Config object or dict or JSON filename
+        @param config	json file name or dict (e.g., parsed json)
+                        or Config instance
         """
         # config is a JSON string or parsed JSON dictionary
         if isinstance(config, str):
@@ -137,8 +146,8 @@ class Model:
         elif isinstance(config, Config):
             self.config = config
         else:
-            raise ValueError("Parameter config must be a file name, "
-                             "dict, or Config instance")
+            raise TypeError("Parameter config must be a json file name, "
+                            "dict, or Config instance")
 
         # create grids
         self.object_grid = Grid.create_from_config(self.config)
@@ -155,95 +164,6 @@ class Model:
         self.state = State()
         self.reset_loops()
         self._notify_views("update_state", self.state.to_dict())
-
-    # TODO: make sure pieces are on the board! (at least emit warning)
-    def _state_from_json(self, json_data):
-        if type(json_data) == str:
-            # a JSON string
-            json_data = json.loads(json_data)
-        # otherwise assume json_data is a dict
-        try:
-            # initialize an empty state
-            self.state = State()
-            # construct objects
-            if "objs" in json_data and type(json_data["objs"]) == dict:
-                for obj_name in json_data["objs"]:
-                    obj = str(obj_name)  # use string for consistency
-                    type_config = self.get_type_config()
-
-                    if "id_n" not in json_data["objs"][obj]:
-                        id_n = obj
-                    else:
-                        id_n = json_data["objs"][obj]["id_n"]
-
-                    # create object
-                    this_obj = Obj(
-                        id_n=id_n,
-                        obj_type=json_data["objs"][obj]["type"],
-                        x=float(json_data["objs"][obj]["x"]),
-                        y=float(json_data["objs"][obj]["y"]),
-                        width=float(json_data["objs"][obj]["width"]),
-                        height=float(json_data["objs"][obj]["height"]),
-                        block_matrix=(
-                            type_config[json_data["objs"][obj]["type"]]
-                        )
-                    )
-                    self.state.objs[obj] = this_obj
-                    # process optional info
-                    if "rotation" in json_data["objs"][obj]:
-                        # rotate the object
-                        self.state.rotate_obj(
-                            obj, float(json_data["objs"][obj]["rotation"])
-                        )
-                    if ("mirrored" in json_data["objs"][obj]
-                            and json_data["objs"][obj]["mirrored"]):
-                        # flip the object if "mirrored" is true in the JSON
-                        self.state.flip_obj(obj)
-
-                    if "color" in json_data["objs"][obj]:
-                        color = json_data["objs"][obj]["color"]
-                        self.state.objs[obj].color = color
-
-            # construct grippers
-            if "grippers" in json_data and type(json_data["grippers"]) == dict:
-                for gr_name in json_data["grippers"]:
-                    gr = str(gr_name)  # use string for consistency
-                    if "id_n" not in json_data["grippers"][gr]:
-                        id_n = gr
-                    else:
-                        id_n = json_data["grippers"][gr]["id_n"]
-
-                    self.state.grippers[gr] = Gripper(
-                        gr,
-                        float(json_data["grippers"][gr]["x"]),
-                        float(json_data["grippers"][gr]["y"])
-                    )
-
-                    # process optional info
-                    if "gripped" in json_data["grippers"][gr]:
-                        # cast object name to str, too
-                        gripped_id = str(json_data["grippers"][gr]["gripped"])
-                        self.state.grippers[gr].gripped = gripped_id
-                        self.state.objs[gripped_id].gripped = True
-
-                    if "width" in json_data["grippers"][gr]:
-                        width = json_data["grippers"][gr]["width"]
-                        self.state.grippers[gr].width = width
-
-                    elif "height" in json_data["grippers"][gr]:
-                        height = json_data["grippers"][gr]["height"]
-                        self.state.grippers[gr].height = height
-
-                    elif "color" in json_data["grippers"][gr]:
-                        color = json_data["grippers"][gr]["color"]
-                        self.state.grippers[gr].color = color
-
-        except KeyError:
-            raise KeyError(
-                "Error during state initialization: JSON data "
-                "does not have the right format.\n"
-                "Please refer to the documentation."
-            )
 
     # --- Gripper manipulation --- #
 
@@ -286,6 +206,50 @@ class Model:
         """
         self.stop_loop("grip", gr_id)
 
+    def can_ungrip(self, obj_id):
+        """
+        This function decides wether a block can be ungripped
+        if snap_to_grid is on and the object lies between
+        lines (coordinates are float), it will automatically
+        try to find a free spot and place the object there
+        """
+        # without snap to grid a gripper can always ungrip
+        if self.config.snap_to_grid is False:
+            return True
+
+        obj = self.state.get_obj_by_id(obj_id)
+
+        # integer positions are always plotted on the grid
+        if float(obj.x).is_integer() and float(obj.y).is_integer():
+            return True
+        else:
+            # x or y not on grid
+            possible_positions = [
+                (math.ceil(obj.x), math.ceil(obj.y)),
+                (math.ceil(obj.x), math.floor(obj.y)),
+                (math.floor(obj.x), math.ceil(obj.y)),
+                (math.floor(obj.x), math.floor(obj.y))
+            ]
+
+            for new_x, new_y in possible_positions:
+                occupied = obj.occupied(new_x, new_y)
+                if self.mover._is_legal_move(occupied, obj_id):
+                    # move object
+
+                    # 1 - remove obj from grid
+                    self.object_grid.remove_obj(obj)
+
+                    # 2 - change x and y in object
+                    obj.x = new_x
+                    obj.y = new_y
+
+                    # 3 - plot obj on grid
+                    self.object_grid.add_obj(obj)
+                    return True
+
+            # if no nearby position if free, cannot place it
+            return False
+
     def grip(self, gr_id):
         """
         Attempt a grip / ungrip.
@@ -294,11 +258,13 @@ class Model:
         # if some object is already gripped, ungrip it
         old_gripped = self.get_gripped_obj(gr_id)
         if old_gripped:
-            # state takes care of detaching object and gripper
-            self.state.ungrip(gr_id)
-            # notify view of object and gripper change
-            self._notify_views("update_objs", self.get_obj_dict())
-            self._notify_views("update_grippers", self.get_gripper_dict())
+            allowed = self.can_ungrip(old_gripped)
+            if allowed:
+                # state takes care of detaching object and gripper
+                self.state.ungrip(gr_id)
+                # notify view of object and gripper change
+                self._notify_views("update_objs", self.get_obj_dict())
+                self._notify_views("update_grippers", self.get_gripper_dict())
         else:
             # Check if gripper hovers over some object
             new_gripped = self._get_grippable(gr_id)
@@ -310,7 +276,7 @@ class Model:
                 self._notify_views("update_objs", self.get_obj_dict())
                 self._notify_views("update_grippers", self.get_gripper_dict())
 
-    def start_moving(self, gr_id, x_steps, y_steps, step_size=None):
+    def start_moving(self, gr_id, x_steps, y_steps):
         """
         Start calling the function move periodically
         until stop_moving is called.
@@ -319,8 +285,6 @@ class Model:
                             Step size is defined by model configuration
         @param y_steps	    steps to move in y direction.
                             Step size is defined by model configuration
-        @param step_size 	Optional, size of step unit in blocks.
-                            Default: use move_step of config
         """
         # cancel any ongoing movement
         self.stop_moving(gr_id)
@@ -331,8 +295,7 @@ class Model:
             "move",
             gr_id,
             x_steps=x_steps,
-            y_steps=y_steps,
-            step_size=step_size
+            y_steps=y_steps
         )
 
     def stop_moving(self, gr_id):

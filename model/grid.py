@@ -11,7 +11,6 @@ class Tile:
     class representing a tile of a grid, a tile
     knows:
         -its coordinates (x, y)
-        -if it's free
         -which object(s) on it
     """
     def __init__(self, x, y):
@@ -77,9 +76,9 @@ class Grid:
         self.clear_grid()
         self.converter = Converter(self.step)
 
-    @staticmethod
-    def create_from_config(config):
-        return Grid(
+    @classmethod
+    def create_from_config(cls, config):
+        return cls(
             config.width,
             config.height,
             config.move_step,
@@ -109,7 +108,7 @@ class Grid:
 
         expects converted coordinates
         """
-        if isinstance(i, int) or isinstance(i, float):
+        if isinstance(i, (int, float)):
             i = int(i)
             return self.grid[i]
 

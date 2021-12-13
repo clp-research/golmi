@@ -6,15 +6,13 @@ import json
 
 
 class Config:
-    def __init__(
-            self, type_config, width=20, height=20,
-            snap_to_grid=False, prevent_overlap=True,
-            actions=["move", "rotate", "flip", "grip"],
-            move_step=0.5, rotation_step=90,
-            action_interval=0.1, verbose=False,
-            block_on_target=True,
-            colors=["red", "orange", "yellow", "green",
-                    "blue", "purple", "saddlebrown", "grey"]):
+    def __init__(self, type_config, width=20, height=20,
+                 snap_to_grid=False, prevent_overlap=True,
+                 actions=["move", "rotate", "flip", "grip"],
+                 move_step=0.5, rotation_step=90, action_interval=0.1,
+                 verbose=False, lock_on_target=False,
+                 colors=["#ff0000", "#ffa500", "#ffff00", "#008000",
+                         "#0000ff", "#800080", "#8b4513", "#808080"]):
         """
         Constructor.
         @param type_config	    Json file name or dictionary mapping types
@@ -39,12 +37,12 @@ class Config:
                                 Default: 0.1
         @param verbose          True to print additional (debug-) information
                                 after model changes, such as the object grid.
-        @param block_on_target  True to lock objects once they align on the
+        @param lock_on_target   True to lock objects once they align on the
                                 grid with a matching target object.
         @param colors           Available object colors, can be color names
                                 or html color codes.
-                                Default: ["red", "orange", "yellow", "green",
-                                "blue", "purple", "saddlebrown", "grey"]
+                                Default: ["#ff0000", "#ffa500", "#ffff00", "#008000",
+                                "#0000ff", "#800080", "#8b4513", "#808080"]
         """
         # make sure type_config can be parseds
         if isinstance(type_config, str):
@@ -54,8 +52,8 @@ class Config:
         else:
             raise ValueError("type_config must be a json file name or dict")
         # make sure step size is allowed
-        allowed_step = self._evaluate_move_step(move_step)
-        if not allowed_step:
+        valid_step = Config.is_valid_move_step(move_step)
+        if not valid_step:
             raise ValueError(
                 f"Selected step size of {move_step} is not allowed\n"
                 "Please select a step size that satisfies the following "
@@ -70,14 +68,15 @@ class Config:
         self.rotation_step = rotation_step
         self.action_interval = action_interval
         self.verbose = verbose
-        self.block_on_target = block_on_target
+        self.lock_on_target = lock_on_target
         self.colors = colors
 
     def __repr__(self):
         properties = ", ".join(vars(self).keys())
         return f"Config({properties})"
 
-    def _evaluate_move_step(self, move_step):
+    @staticmethod
+    def is_valid_move_step(move_step):
         """
         Method to evaluate if the move step is allowed
         move steps must:
@@ -94,7 +93,6 @@ class Config:
         if isinstance(move_step, float):
             if not (1/(move_step % 1)).is_integer():
                 return False
-
         return True
 
     def get_types(self):
@@ -103,7 +101,7 @@ class Config:
     @staticmethod
     def types_from_json(filename):
         """
-        Parses a JSON file containing type matrices.
+        Parses a JSON file containing block matrices.
         The file should map each supported object type
         to a grid filled with 0s and 1s,
         where a 1 signifies the presence of a block and
@@ -116,8 +114,8 @@ class Config:
         # Ignore keys with underscores (used for comments)
         return Config.remove_json_comments(types)
 
-    @staticmethod
-    def from_json(filename):
+    @classmethod
+    def from_json(cls, filename):
         """
         @param filename String, name of a json file describing a Config.
             The key "type_config" mapping to a dictionary is mandatory.
@@ -125,16 +123,21 @@ class Config:
         """
         with open(filename, mode="r") as file:
             json_data = json.loads(file.read())
-        return Config.from_dict(json_data)
 
-    @staticmethod
-    def from_dict(source_dict):
+        # remove comments from json file
+        json_data = Config.remove_json_comments(json_data)
+
+        return cls.from_dict(json_data)
+
+    @classmethod
+    def from_dict(cls, source_dict):
         """
         @param source_dict  Dictionary containing Config constructor
-            parameters. The key "type_config" mapping to a dictionary is
-            mandatory.
+                            parameters. The key "type_config" mapping to a
+                            dictionary is mandatory.
         @return new Config instance with the given attributes
         """
+        # parameter checks
         if not isinstance(source_dict, dict):
             raise TypeError("source_dict must be of type dict")
         # check for mandatory parameter type_config
@@ -143,32 +146,21 @@ class Config:
             raise ValueError(
                 "source_dict must contain key 'type_config' mapping to a dict"
             )
+
+        # remove comments from dictionary
         types = Config.remove_json_comments(source_dict["type_config"])
-        new_config = Config(types)
-        # overwrite any setting given in the data, leave the rest as default
-        # new keys are also allowed
-        for attr_key, attr_value in source_dict.items():
-            if attr_key != "type_config":
-                setattr(new_config, attr_key, attr_value)
-        return new_config
+
+        # use source_dict as kwargs to construct a config object
+        source_dict["type_config"] = types
+        return cls(**source_dict)
 
     def to_dict(self):
         """
         Constructs a dictionary from this instance.
         """
         return {
-            "width": self.width,
-            "height": self.height,
-            "snap_to_grid": self.snap_to_grid,
-            "prevent_overlap": self.prevent_overlap,
-            "actions": self.actions,
-            "move_step": self.move_step,
-            "rotation_step": self.rotation_step,
-            "action_interval": self.action_interval,
-            "verbose": self.verbose,
-            "block_on_target": self.block_on_target,
-            "colors": self.colors,
-            "type_config": self.type_config
+            key: value for key, value in vars(self).items()
+            if not key.startswith("_")
         }
 
     @staticmethod

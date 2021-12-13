@@ -4,7 +4,7 @@ The Mover module implements all movements
 All helpers function needed to make a movement
 are also implemented here.
 """
-from model.state import State
+from model.obj import Obj
 
 
 class Mover:
@@ -49,7 +49,7 @@ class Mover:
             d_angle = direction * step_size
 
             # obtain rotated matrix
-            new_matrix = State.rotate_block_matrix(
+            new_matrix = Obj.rotate_block_matrix(
                 gr_obj.block_matrix, d_angle
             )
 
@@ -59,7 +59,7 @@ class Mover:
 
         elif kwargs["type"] == "flip":
             # obtain flipped matrix
-            new_matrix = self.model.state.flip_block_matrix(
+            new_matrix = Obj.flip_block_matrix(
                 gr_obj.block_matrix
             )
 
@@ -102,7 +102,7 @@ class Mover:
         )
 
         # check if object is on a target
-        if self.model.config.block_on_target is True:
+        if self.model.config.lock_on_target is True:
             obj = self.model.get_obj_by_id(gr_obj_id)
             on_target = self._obj_on_target(obj)
         else:
@@ -117,19 +117,19 @@ class Mover:
         self.model.state.move_gr(gr_id, dx, dy)
         self.model.state.move_obj(self.model.get_gripped_obj(gr_id), dx, dy)
 
-    def _rotate(self, gr_obj_id, d_angle, new_matrix):
+    def _rotate(self, gr_obj_id, d_angle):
         """
         rotate an object
         """
         # update state
-        self.model.state.rotate_obj(gr_obj_id, d_angle, new_matrix)
+        self.model.state.rotate_obj(gr_obj_id, d_angle)
 
-    def _flip(self, gr_obj_id, new_matrix):
+    def _flip(self, gr_obj_id):
         """
         flip an object
         """
         # update state
-        self.model.state.flip_obj(gr_obj_id, new_matrix)
+        self.model.state.flip_obj(gr_obj_id)
 
     def apply_movement(self, movement_type, gr_id, **kwargs):
         """
@@ -142,7 +142,6 @@ class Mover:
         keyword arguments:
             - move:     - x_steps
                         - y_steps
-                        - step_size (optional)
 
             - rotate:   - direction
                         - rotation_step (optional)
@@ -155,14 +154,10 @@ class Mover:
 
         # calculate the distance if the movement is a move
         if movement_type == "move":
-            step_size = kwargs.get("step_size")
-
-            # overwrite with default if step size is not defined
-            if step_size is None:
-                step_size = self.model.config.move_step
-
-            dx = kwargs["x_steps"] * step_size
-            dy = kwargs["y_steps"] * step_size
+            step_size = self.model.config.move_step
+            # make dx and dy multiples of step_size
+            dx = round(kwargs["x_steps"]) * step_size
+            dy = round(kwargs["y_steps"]) * step_size
 
         # make sure gripper can move
         gripper_can_move = self._gripper_can_move(gr_id, dx, dy)
@@ -177,7 +172,7 @@ class Mover:
                 # obtain direction and rotation step
                 # if nor present they will be initialized to None
                 direction = kwargs.get("direction")
-                rotation_step = kwargs.get("rotaion_step")
+                rotation_step = kwargs.get("rotation_step")
 
                 # obtain coordinates after movement
                 movement_result = self._get_new_coordinates(
@@ -203,10 +198,10 @@ class Mover:
                         self._move(gr_id, dx, dy)
 
                     elif movement_type == "flip":
-                        self._flip(gr_obj_id, new_matrix)
+                        self._flip(gr_obj_id)
 
                     elif movement_type == "rotate":
-                        self._rotate(gr_obj_id, d_angle, new_matrix)
+                        self._rotate(gr_obj_id, d_angle)
 
                     # add element to grid
                     self.model.object_grid.add_obj(gr_obj)

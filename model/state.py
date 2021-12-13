@@ -1,4 +1,7 @@
-import numpy as np
+import json
+
+from model.obj import Obj
+from model.gripper import Gripper
 
 
 class State:
@@ -22,12 +25,9 @@ class State:
     def get_object_ids(self):
         return self.objs.keys()
 
-    def get_obj_by_id(self, id):
-        """
-        @param id 	gripper id
-        """
-        if id in self.objs:
-            return self.objs[id]
+    def get_obj_by_id(self, obj_id):
+        if obj_id in self.objs:
+            return self.objs[obj_id]
         else:
             return None
 
@@ -53,85 +53,69 @@ class State:
     def get_gripper_ids(self):
         return self.grippers.keys()
 
-    def get_gripper_by_id(self, id):
-        if id in self.grippers:
-            return self.grippers[id]
+    def get_gripper_by_id(self, gr_id):
+        if gr_id in self.grippers:
+            return self.grippers[gr_id]
         else:
             return None
 
-    def get_gripper_coords(self, id):
+    def get_gripper_coords(self, gr_id):
         """
-        @param id 	gripper id
+        @param gr_id 	gripper id
         """
-        if id in self.grippers:
-            return [self.grippers[id].x, self.grippers[id].y]
+        if gr_id in self.grippers:
+            return [self.grippers[gr_id].x, self.grippers[gr_id].y]
         else:
             return list()
 
-    def get_gripped_obj(self, id):
+    def get_gripped_obj(self, gr_id):
         """
-        @param id 	gripper id
+        @param gr_id 	gripper id
         @return None or the id of the gripped object
         """
-        if id in self.grippers:
-            return self.grippers[id].gripped
+        if gr_id in self.grippers:
+            return self.grippers[gr_id].gripped
         else:
             return None
 
-    def move_gr(self, id, dx, dy):
+    def move_gr(self, gr_id, dx, dy):
         """
         Change gripper position by moving in direction (dx, dy).
-        @param id 	id of the gripper to move
-         @param dx 	x direction
+        @param gr_id 	id of the gripper to move
+        @param dx 	x direction
         @param dy 	y direction
         """
-        self.grippers[id].x += dx
-        self.grippers[id].y += dy
+        self.grippers[gr_id].x += dx
+        self.grippers[gr_id].y += dy
 
-    def move_obj(self, id, dx, dy):
+    def move_obj(self, obj_id, dx, dy):
         """
          Change an object's position by moving in direction (dx, dy).
-         @param id 	object id
+         @param obj_id 	object id
          @param dx 	x direction
          @param dy 	y direction
         """
-        self.get_obj_by_id(id).x += dx
-        self.get_obj_by_id(id).y += dy
+        self.get_obj_by_id(obj_id).x += dx
+        self.get_obj_by_id(obj_id).y += dy
 
-    def rotate_obj(self, id, d_angle, rotated_matrix=None):
+    def rotate_obj(self, obj_id, d_angle):
         """
         Change an object's goal_rotation by d_angle.
-        @param id  	object id
+        @param obj_id  	object id
         @param d_angle	current angle is changed by d_angle
-        @param rotated_matrix 	optional: pre-rotated block matrix
-                                otherwise the current matrix is rotated
         """
         if d_angle != 0:
-            obj = self.get_obj_by_id(id)
-            obj.rotation = (obj.rotation + d_angle) % 360
-            # update block matrix
-            if rotated_matrix:
-                obj.block_matrix = rotated_matrix
-            else:
-                obj.block_matrix = State.rotate_block_matrix(
-                    obj.block_matrix, d_angle
-                )
+            obj = self.get_obj_by_id(obj_id)
+            obj.rotate(d_angle)
 
-    def flip_obj(self, id, flipped_matrix=None):
+    def flip_obj(self, obj_id):
         """
         Mirror an object.
-        @param id 	object_id
-        @param flipped_matrix	optional: pre-flipped block matrix
-                                otherwise the current matrix is flipped
+        @param obj_id 	object_id
         """
         # change 'mirrored' attribute
-        obj = self.get_obj_by_id(id)
-        obj.mirrored = not obj.mirrored
-        # update the block matrix
-        if flipped_matrix:
-            obj.block_matrix = flipped_matrix
-        else:
-            obj.block_matrix = State.flip_block_matrix(obj.block_matrix)
+        obj = self.get_obj_by_id(obj_id)
+        obj.flip()
 
     def grip(self, gr_id, obj_id):
         """
@@ -142,58 +126,73 @@ class State:
         self.objs[obj_id].gripped = True
         self.grippers[gr_id].gripped = obj_id
 
-    def ungrip(self, id):
+    def ungrip(self, gr_id):
         """
         Detach the currently gripped object from the gripper.
-        @param id 	id of the gripper that ungrips
+        @param gr_id 	id of the gripper that ungrips
         """
-        self.objs[self.grippers[id].gripped].gripped = False
-        self.grippers[id].gripped = None
+        self.objs[self.grippers[gr_id].gripped].gripped = False
+        self.grippers[gr_id].gripped = None
 
-    @staticmethod
-    def rotate_block_matrix(old_matrix, d_angle):
-        """ TODO Seems to me more natural as a function of Obj?
-        Rearrange blocks of a 0/1 block matrix to apply some rotation.
-        Rotations are applied clockwise.
-        @param old_matrix 	block matrix describing the current block positions
-        @param d_angle 	    float or int, angle to apply.
-                            Can be negative for leftwards rotation.
-        @return the new block matrix with changed block position
+    @classmethod
+    def from_json(cls, filename, type_config):
         """
-        # normalize the angle (moves all values in the range [0-360])
-        d_angle = d_angle % 360
-
-        # can only process multiples of 90, so round to the next step here
-        approx_angle = round(d_angle/90) * 90
-
-        # nothing to do if rotation is 0
-        if approx_angle == 0:
-            return old_matrix
-
-        # otherwise compute rotation with numpy
-        matrix = np.array(old_matrix)
-
-        # choose k parameters for np.rot90
-        # k = how often a COUNTERclockwise rotation will be applied
-        angle_to_k = {
-            90: 3,
-            180: 2,
-            270: 1
-        }
-
-        # apply rotation and return matrix as a python list
-        k = angle_to_k[approx_angle]
-        return np.rot90(matrix, k).tolist()
-
-    @staticmethod
-    def flip_block_matrix(old_matrix):
-        """ TODO Seems to me more natural as a function of Obj?
-        Flips blocks using a horizontal axis of reflection.
-        @param old_matrix 	block matrix describing the current block positions
-        @return a new block matrix with 1s in horizontally mirrored positions
+        @param filename String, name of a json file describing a State.
+                        The key "type_config" mapping to a dict is mandatory.
+        @param type_config  dict mapping type names to block matrices
+        @return new State instance with the given attributes
         """
-        matrix = np.array(old_matrix)
-        return np.flip(matrix, axis=0).tolist()
+        with open(filename, mode="r") as file:
+            json_data = json.loads(file.read())
+        return cls.from_dict(json_data, type_config)
+
+    @classmethod
+    # TODO: make sure pieces are on the board! (at least emit warning)
+    def from_dict(cls, source_dict, type_config):
+        """
+        @param source_dict  Dict containing State constructor parameters.
+                            The keys "objs" and "grippers" are mandatory.
+                            Refer to the documentation for additional format
+                            instructions.
+        @param type_config  dict mapping type names to block matrices
+        @return new State instance with the given attributes
+        """
+        if not isinstance(source_dict.get("objs"), dict) or \
+                not isinstance(source_dict.get("grippers"), dict):
+            raise ValueError(
+                "source_dict must contain the keys 'objs' and 'grippers' "
+                "mapping to dictionaries."
+            )
+        # initialize an empty state
+        new_state = cls()
+        try:
+            # construct objects
+            for obj_name, obj_dict in source_dict["objs"].items():
+                # get identifier or use object key (use str for consistency)
+                id_n = obj_dict.get("id_n") or str(obj_name)
+
+                new_object = Obj.from_dict(id_n, obj_dict, type_config)
+                new_state.objs[id_n] = new_object
+
+            # construct grippers
+            for gr_name, gr_dict in source_dict["grippers"].items():
+                # get identifier or use gripper key (use str for consistency)
+                id_n = gr_dict.get("id_n") or str(gr_name)
+                new_gr = Gripper.from_dict(id_n, gr_dict)
+                new_state.grippers[id_n] = new_gr
+
+                # Not the nicest solution: Make sure any gripped object has
+                # its 'gripped' attribute set to True
+                if new_gr.gripped is not None:
+                    new_state.objs[new_gr.gripped].gripped = True
+
+        except KeyError:
+            raise KeyError(
+                "Error during state initialization: JSON data "
+                "does not have the right format.\n"
+                "Please refer to the documentation."
+            )
+        return new_state
 
     def to_dict(self):
         """

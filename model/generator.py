@@ -122,13 +122,13 @@ class Generator:
                 rotation = self.config.rotation_step * random_rot
 
                 # rotate matrix
-                block_matrix = State.rotate_block_matrix(block_matrix, rotation)
+                block_matrix = Obj.rotate_block_matrix(block_matrix, rotation)
 
             if "flip" in self.config.actions:
                 mirrored = bool(random.randint(0, 1))
                 if mirrored:
                     # flip matrix
-                    block_matrix = State.flip_block_matrix(block_matrix)
+                    block_matrix = Obj.flip_block_matrix(block_matrix)
 
             # create target object
             target_obj = Obj(
@@ -186,12 +186,12 @@ class Generator:
                     0, math.floor(360 / self.config.rotation_step)
                 )
                 rotation = self.config.rotation_step * random_rot
-                block_matrix = State.rotate_block_matrix(block_matrix, rotation)
+                block_matrix = Obj.rotate_block_matrix(block_matrix, rotation)
 
             if "flip" in self.config.actions:
                 mirrored = bool(random.randint(0, 1))
                 if mirrored:
-                    block_matrix = State.flip_block_matrix(block_matrix)
+                    block_matrix = Obj.flip_block_matrix(block_matrix)
 
             # generate object
             obj = Obj(
@@ -239,31 +239,16 @@ class Generator:
 
         return objects, targets
 
-    def generate_random_state(
-            self, n_objs, n_grippers, area_block="all",
-            area_target="all", create_targets=False,
-            random_gr_position=False):
-        # TODO There might be actually: BoardGenerator, ObjGenerator and ObjPlacer
-        object_grid = Grid.create_from_config(self.config)
-        target_grid = Grid.create_from_config(self.config)
-        state = self._generate_random_state(object_grid, target_grid,
-                                            n_objs, n_grippers, area_block,
-                                            area_target, create_targets,
-                                            random_gr_position)
-        # TODO state should include the grids (or the other way around)
-        return state, object_grid, target_grid
-
-    def _generate_random_state(self, obj_grid: Grid, trg_grid: Grid,
-                               n_objs, n_grippers, area_block="all",
-                               area_target="all", create_targets=False,
-                               random_gr_position=False):
+    def _initialize_random_state(
+            self, obj_grid, trg_grid, n_objs, n_grippers, area_block="all",
+            area_target="all", create_targets=False, random_gr_position=False):
         # get grippers
         grippers = self._generate_grippers(n_grippers, random_gr_position)
 
         # get objects
-        objects, target_objs = self._generate_objects(obj_grid, trg_grid,
-                                                      n_objs, area_block,
-                                                      area_target, create_targets)
+        objects, target_objs = self._generate_objects(
+            obj_grid, trg_grid, n_objs, area_block, area_target, create_targets
+        )
 
         # create state
         state = State()
@@ -272,3 +257,22 @@ class Generator:
         state.targets = target_objs
 
         return state
+
+    def generate_random_state(
+            self, n_objs, n_grippers, area_block="all",
+            area_target="all", create_targets=False,
+            random_gr_position=False):
+        # TODO There might be actually:
+        #  - BoardGenerator
+        #  - ObjGenerator
+        #  - ObjPlacer
+        object_grid = Grid.create_from_config(self.config)
+        target_grid = Grid.create_from_config(self.config)
+
+        # generate random state from parameters
+        state = self._initialize_random_state(
+            object_grid, target_grid, n_objs, n_grippers, area_block,
+            area_target, create_targets, random_gr_position
+        )
+        # TODO state should include the grids (or the other way around)
+        return state, object_grid, target_grid
