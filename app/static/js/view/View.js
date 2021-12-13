@@ -30,6 +30,7 @@ $(document).ready(function () {
 			// new state -> redraw object and gripper layer
 			this.socket.on("update_state", (state) => {
 				if (state["grippers"] && state["objs"]) {
+					this.onUpdateState(state) // hook
 					this.grippers = state["grippers"];
 					this.objs = state["objs"];
 					this.targets = state["targets"];
@@ -47,6 +48,7 @@ $(document).ready(function () {
 			});
 			// new object state -> redraw objects
 			this.socket.on("update_objs", (objs) => {
+				this.onUpdateObjects(objs); // hook
 				this.objs = objs;
 				this.redrawObjs();
 			});
@@ -149,6 +151,15 @@ $(document).ready(function () {
 		redrawGr() {
 			console.log("redrawGr() at View: not implemented");
 		}
+
+		onUpdateObjects(objs) {
+			console.log(`onUpdateObjects() at View: not implemented`);
+		}
+
+		onUpdateState(state) {
+			console.log(`onUpdateState() at View: not implemented`);
+		}
+
 
 		/**
 		 * Loads a configuration received from the model. The values are saved since the configuration is

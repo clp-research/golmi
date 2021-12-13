@@ -10,20 +10,21 @@
 	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
 	<meta name="description" content="Index page of the GOLMI framework">
-	<meta name="author" content="clpresearch, Karla Friedrichs">
+	<meta name="author" content="clpresearch">
 
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/layer_style.css') }}">
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
 </head>
 
 <body>
 	<h2>Welcome to GOLMI!</h2>
 	<p>This page could be the entry point to your new object manipulation interface!<p>
-	<!-- See views.py for available routes -->
-	<p>There are the following interfaces available:</p>
-	<ul>
-		<li><a href="/demo">Demo</a></li>
-	</ul>
+	<!-- See blueprints for available routes -->
+	<p>There are the following experiments available:</p>
+    <ul>
+        {% for exp in experiments %}
+		<li><a href="{{exp.ref}}">{{exp.name}}</a></li>
+        {% endfor %}
+      </ul>
 </body>
 
 </html>

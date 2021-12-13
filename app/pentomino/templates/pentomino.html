@@ -12,8 +12,8 @@
 	<meta name="description" content="Demo of a Pentomino interface build using the GOLM framework">
 	<meta name="author" content="clpresearch, Karla Friedrichs">
 
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/layer_style.css') }}">
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layer_style.css') }}">
 </head>
 
 <body>
@@ -21,7 +21,7 @@
 		<button id="start" autocomplete="off">Start</button>
 		<button id="stop" autocomplete="off">Stop</button>
 	</div>
-	<!-- The "viewport" id and three stacked canvases of the same size are needed to 
+	<!-- The "viewport" id and three stacked canvases of the same size are needed to
 		properly render using the LayerView class -->
 	<div id="viewport" style="height: 600px; width: 600px; padding: 10px;">
 		<canvas id="background" width="600" height="600"></canvas>
@@ -39,7 +39,7 @@
 	<script src="{{ url_for('static', filename='js/view/LView.js') }}"></script>
 	<script src="{{ url_for('static', filename='js/controller/LocalKeyController.js') }}"></script>
 	<!-- Interface specific functionality -->
-    <script src="{{ url_for('static', filename='js/pentoDemo.js') }}"></script>
+    <script src="{{ url_for('pentomino_bp.static', filename='js/pentomino.js') }}"></script>
 </body>
 
 </html>

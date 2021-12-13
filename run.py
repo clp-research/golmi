@@ -1,5 +1,6 @@
 import argparse
-from app import app, socketio
+from app import register_experiments
+from app.app import app, socketio
 
 # --- GOLMi's server --- #
 # author: clpresearch, Karla Friedrichs
@@ -21,7 +22,7 @@ parser.add_argument(
     help="Port to run the API on. (Default: %(default)s)"
 )
 
-
 if __name__ == "__main__":
     args = parser.parse_args()
+    register_experiments.register_app(app)
     socketio.run(app, host=args.host, port=args.port)
