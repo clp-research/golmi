@@ -72,10 +72,6 @@ $(document).ready(function () {
 					this.currentGrippers = state["grippers"];
 					this._addSnapshot(timeOffset, this._getFullState());
 				}
-				// uncomment to log the state
-				//else {
-				//	this._addSnapshot(timeOffset, state);
-				//}
 			})
 			this.socket.on("update_grippers", (grippers) => {
 				if (this.startTime) {
@@ -110,10 +106,6 @@ $(document).ready(function () {
 						this.currentObjs = objs;
 						this._addSnapshot(timeOffset, this._getFullState());
 					}
-					// uncomment this to log object changes
-					//else {
-					//	this._addSnapshot(timeOffset, {"objs": objs});
-					//}
 				}
 			});
 			this.socket.on("update_config", (config) => {
@@ -137,7 +129,7 @@ $(document).ready(function () {
 
 		// --- add, change, delete data --- // 
 
-		/** 
+		/**
 		 * Make a cut and store the data logged so far (or since the last segment) as a 
 		 * segment with key segmentTitle. Optionally add some extra info to the segment.
 		 * @param {key to store the logged data with, can not be "log"} segmentTitle
@@ -178,10 +170,13 @@ $(document).ready(function () {
 		}
 
 		/**
+		 * Func: addDataToSegment
 		 * Save additional data to an already created segment.
-		 * @param {name of an existing segment to save the data to} segment
-		 * @param {string, identifier for the data, 'log' is reserved} key
-		 * @param {data to save, can be any json-friendly format, e.g. object, list, string} data
+		 *
+		 * Params:
+		 * segment - name of an existing segment to save the _data_ to
+		 * key - string, identifier for _data_, 'log' is reserved
+		 * data - data to save, can be any json-friendly format, e.g. object, array, _str_
 		 */
 		addDataToSegment(segment, key, data) {
 			if (!this.data[segment]) {
@@ -208,10 +203,10 @@ $(document).ready(function () {
 
 		/**
 		 * Save the data on the server.
-		 * @param {route to POST the collected data to, default: /save_log} endpoint
+		 * @param {route to POST the collected data to, for example: /save_log} endpoint
 		 * @return true at success
 		 */
-		sendData(endpoint="/save_log") {
+		sendData(endpoint) {
 			fetch(new Request(endpoint, {
 				method:"POST", 
 				headers: { "Content-Type": "application/json;charset=utf-8" },
