@@ -144,7 +144,7 @@ class Config:
         if source_dict.get("type_config") is None or \
                 not isinstance(source_dict["type_config"], dict):
             raise ValueError(
-                "source_dict must contain key 'type_config' mapping to a dict"
+                f"source_dict must contain key 'type_config' mapping to a dict but is {source_dict}"
             )
 
         # remove comments from dictionary
