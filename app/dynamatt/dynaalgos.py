@@ -5,14 +5,13 @@ from model.obj import Obj
 
 class IncrementalAlgorithm:
 
-    def __init__(self, property_names, height: int, width: int):
+    def __init__(self, height: int, width: int):
         self.width = width
         self.height = height
-        self.property_names = property_names
         self.general_types = ["piece"]
         self.start_tokens = ["Take", "Select", "Get"]
 
-    def generate(self, pieces: list[Obj], selection: Obj):
+    def generate(self, property_names: list[str], pieces: list[Obj], selection: Obj):
         """
             pieces: a list of pieces (incl. the selection)
             selection: a selected pieces (within pieces)
@@ -21,7 +20,7 @@ class IncrementalAlgorithm:
         distractors.remove(selection)
         # property-value pairs are collected here
         properties = {}
-        for property_name in self.property_names:
+        for property_name in property_names:
             property_value = self._find_value(selection, property_name)
             # check what objects would be eliminated using this prop-val pair
             excluded_distractors = self._exclude(property_name, property_value, distractors)

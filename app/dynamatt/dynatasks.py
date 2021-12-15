@@ -1,10 +1,11 @@
 import abc
+import itertools
 import json
 import os
 import random
 from tqdm import tqdm
 
-from app.dynamatt import dynaalgos, dynatypes
+from app.dynamatt import dynaalgos
 from model import generator
 from model.config import Config
 
@@ -21,6 +22,17 @@ class GenerateCallback(abc.ABC):
         pass
 
 
+def task_to_dict(task, idx=None):
+    task_dict = {
+        "pieces": [p.to_dict() for p in task["pieces"]],
+        "target": task["target"].to_dict(),
+        "refs": task["refs"]
+    }
+    if idx is not None:
+        task_dict["task_id"] = idx
+    return task_dict
+
+
 class TaskInMemorySaver(GenerateCallback):
 
     def __init__(self):
@@ -30,13 +42,7 @@ class TaskInMemorySaver(GenerateCallback):
         self.samples = []
 
     def on_new_task(self, idx, task):
-        self.samples.append({
-            "task_id": idx,
-            "pieces": [p.to_dict() for p in task["pieces"]],
-            "target": task["target"].to_dict(),
-            "instr": task["instr"],
-            "props": task["props"]
-        })
+        self.samples.append(task_to_dict(task, idx))
 
     def on_generate_end(self):
         print(f"Samples: {len(self.samples)}")
@@ -54,39 +60,32 @@ class TaskStorageSaver(GenerateCallback):
         if not os.path.exists(self.output_path):
             raise Exception("Cannot find output_path: " + self.output_path)
         output_dir = os.path.join(self.output_path, "generated")
-        if os.path.exists(output_dir):
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
             print("output_dir:", output_dir)
-            try:
-                os.rmdir(output_dir)
-            except Exception:
-                raise Exception(
-                    "Output folder already exists and is not empty. Delete manually before and try again.")
-        os.mkdir(output_dir)
         self.output_dir = output_dir
 
 
 class TaskSingleFileStorageSaver(TaskStorageSaver):
 
-    def __init__(self, output_path):
+    def __init__(self, output_path, overwrite_output=False):
         super(TaskSingleFileStorageSaver, self).__init__(output_path)
         self.samples = []
+        self.file_path = None
+        self.overwrite_output = overwrite_output
 
     def on_generate_start(self):
         super().on_generate_start()
         self.samples = []
+        self.file_path = os.path.join(self.output_dir, f"tasks.json")
+        if os.path.exists(self.file_path) and not self.overwrite_output:
+            raise Exception("Output file already exists. Delete manually before and try again.")
 
     def on_new_task(self, idx, task):
-        self.samples.append({
-            "task_id": idx,
-            "pieces": [p.to_dict() for p in task["pieces"]],
-            "target": task["target"].to_dict(),
-            "instr": task["instr"],
-            "props": task["props"]
-        })
+        self.samples.append(task_to_dict(task, idx))
 
     def on_generate_end(self):
-        file_path = os.path.join(self.output_dir, f"tasks.json")
-        with open(file_path, "w") as f:
+        with open(self.file_path, "w") as f:
             json.dump(self.samples, f)
 
 
@@ -95,13 +94,7 @@ class TaskMultiFileStorageSaver(TaskStorageSaver):
     def on_new_task(self, idx, task):
         file_path = os.path.join(self.output_dir, f"task_{idx}.json")
         with open(file_path, "w") as f:
-            json.dump({
-                "task_id": idx,
-                "pieces": [p.to_dict() for p in task["pieces"]],
-                "target": task["target"].to_dict(),
-                "instr": task["instr"],
-                "props": task["props"]
-            }, f)
+            json.dump(task_to_dict(task, idx), f)
 
 
 class TaskSummarizer(GenerateCallback):
@@ -135,7 +128,7 @@ class TaskGenerator:
     def __init__(self, config: Config):
         self.property_names = ["color", "shape", "posRelBoard"]
         self.generator = generator.Generator(config)
-        self.incremental_algorithm = dynaalgos.IncrementalAlgorithm(self.property_names, config.height, config.width)
+        self.incremental_algorithm = dynaalgos.IncrementalAlgorithm(config.height, config.width)
 
     def list_random_samples(self, n: int, n_objects=5, shuffle=False):
         return [self.generate_random_sample(n_objects, shuffle) for _ in range(n)]
@@ -148,29 +141,42 @@ class TaskGenerator:
         for clb in callbacks:
             clb.on_generate_start()
         for idx, _ in enumerate(tqdm(range(number_of_samples))):
-            sample = self.generate_random_sample()
+            sample = self.generate_random_sample(permute_props=True)
             for clb in callbacks:
                 clb.on_new_task(idx, sample)
         for clb in callbacks:
             clb.on_generate_end()
 
-    def generate_random_sample(self, n_objects=5, shuffle_props=False) -> dict:
-        if shuffle_props:  # the discriminator is biased towards the first prop, thus you might want to re-shuffle
-            random.shuffle(self.property_names)
+    def _generate_situation(self, n_objects):
         state, _, _ = self.generator.generate_random_state(n_objects, n_grippers=0)
         pieces = list(state.objs.values())  # this is a map
         selection = random.choice(pieces)
-        instruction, props = self.incremental_algorithm.generate(pieces, selection)
+        return pieces, selection
+
+    def generate_random_sample(self, n_objects=5, shuffle_props=False, permute_props=False) -> dict:
+        pieces, selection = self._generate_situation(n_objects)
+        if shuffle_props:  # the discriminator is biased towards the first prop, thus you might want to re-shuffle
+            random.shuffle(self.property_names)
+        prop_seqs = [self.property_names]
+        if permute_props:  # we call the algo for each combination of props
+            prop_seqs = list(itertools.permutations(self.property_names))
+        refs = []
+        for prop_seq in prop_seqs:
+            instruction, props = self.incremental_algorithm.generate(prop_seq, pieces, selection)
+            refs.append({
+                "instr": instruction,  # the referring expression
+                "props": props,  # the discriminating properties
+                "props_pref": prop_seq  # the preference order
+            })
         return {
             "pieces": pieces,
             "target": selection,
-            "instr": instruction,  # the referring expression
-            "props": props  # the discriminating properties
+            "refs": refs
         }
 
     @classmethod
     def create(cls, n_colors=None, n_types=None):
-        config = Config(dynatypes.type_config)
+        config = Config.from_json("../app/dynamatt/static/resources/config/pentomino_config.json")
         if n_colors:
             config.colors = random.sample(config.colors, n_colors)
         if n_types:
