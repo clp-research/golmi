@@ -1,0 +1,51 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>Pentomino in GOLM</title>
+
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <meta name="description" content="Dynamatt interface build using the GOLM framework">
+    <meta name="author" content="clpresearch, Philipp Sadler">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layer_style.css') }}">
+</head>
+
+<body>
+<div style="padding:10px;">
+    <button id="start" autocomplete="off">Start</button>
+    <button id="restart" autocomplete="off">Restart</button>
+    <button id="stop" autocomplete="off">Stop</button>
+</div>
+
+<div style="padding:10px;">
+    <h5 id="instructions"></h5>
+</div>
+
+<div id="viewport" style="height: 600px; width: 600px; padding: 10px;">
+    <canvas id="background" width="600" height="600"></canvas>
+    <canvas id="objects" width="600" height="600"></canvas>
+</div>
+
+<!-- jquery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- socketio -->
+<script src="https://cdn.socket.io/4.1.2/socket.io.min.js"
+        integrity="sha384-toS6mmwu70G0fw54EGlWWeA4z3dyJ+dlXBtSURSKN4vyRFOcxd3Bzjj/AoOwY+Rg"
+        crossorigin="anonymous"></script>
+<!-- General GOLMi functionality -->
+<script src="{{ url_for('static', filename='js/view/View.js') }}"></script>
+<!-- Interface specific functionality -->
+<script src="{{ url_for('dynamatt_bp.static', filename='js/util.js') }}"></script>
+<script src="{{ url_for('dynamatt_bp.static', filename='js/DynaMattView.js') }}"></script>
+<script src="{{ url_for('dynamatt_bp.static', filename='js/Messages.js') }}"></script>
+<script src="{{ url_for('dynamatt_bp.static', filename='js/IncrementalAlgorithm.js') }}"></script>
+<script src="{{ url_for('dynamatt_bp.static', filename='js/dynamatt.js') }}"></script>
+</body>
+
+</html>
