@@ -1,0 +1,33 @@
+/**
+ * Fade out background when a dialog is open
+ */
+dialog::backdrop{
+	background: rgba(255, 255, 255, 1);
+}
+
+label{
+	display: inline-block;
+	padding-right: 5px;
+}
+
+#progress_bg{
+	width: 100%;
+	background-color: gainsboro;
+	padding: 5px;
+	margin: 5px;
+}
+
+#progress_bar{
+	width: 0%;
+	background-color: darkgrey;
+	text-align: center;
+	line-height: 30px;
+	color: white;
+}
+
+.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 10px;
+}

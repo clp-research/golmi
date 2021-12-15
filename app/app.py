@@ -24,7 +24,7 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 # enable cross-origin requests
 # TODO: restrict sources
-CORS(app)
+#CORS(app)
 # add socket io
 socketio = SocketIO(
     app,

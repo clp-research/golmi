@@ -1,0 +1,151 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+
+	<title>Collaborative reference in Pentomino</title>
+
+	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+	<meta name="description" content="Modeling collaborative reference in a Pentomino domain using the GOLMI framework">
+	<meta name="author" content="Karla Friedrichs">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layer_style.css') }}">
+	<link rel="stylesheet" href="{{ url_for('matthew_bp.static', filename='css/dialog-polyfill.css') }}">
+	<link rel="stylesheet" href="{{ url_for('matthew_bp.static', filename='css/style.css') }}">
+</head>
+
+<body>
+	<div style="padding:10px;">
+		<div id="progress_bg">
+			<div id="progress_bar">0%</div>
+		</div>
+		<h5 id="instructions"></h5>
+	</div>
+	
+	<!-- The "viewport" id and three stacked canvases of the same size are needed to 
+		properly render using the LayerView class -->
+	<div id="viewport" style="padding: 10px; overflow: visible;">
+		<canvas id="background" width="700" height="700"></canvas>
+		<canvas id="objects" width="700" height="700"></canvas>
+		<canvas id="gripper" width="700" height="700"></canvas>
+	</div>
+
+	<!-- dialogs -->
+	<!-- Welcome dialog -->
+	<dialog id="welcome">
+		<h2>Welcome to Pentomino!</h2>
+		<p>In this experiment, you will be instructed by your personal agent <strong>Matthew</strong> to pick up some Pentomino pieces such as this one:</p>
+		<img class="center" src="{{ url_for('matthew_bp.static', filename='resources/img/pentomino_piece.png') }}" width="100px">
+		<p>You can move around using the <strong>arrow keys</strong> and select an object with <strong>enter</strong> or <strong>space</strong>:</p>
+		<img src="{{ url_for('matthew_bp.static', filename='resources/img/arrow_keys.png') }}" width="150px" style="margin-left: 15%; margin-right: 5%;">
+		<img src="{{ url_for('matthew_bp.static', filename='resources/img/enter_space.png') }}" width="300px" style="margin-left: 5%; margin-right: 15%;">
+		<p>There will be one training example followed by <strong>12 tasks</strong>. Finally, you will be asked some <strong>questions</strong> about your experience.</p>
+		<p>The game should take around <strong>10-15 minutes</strong>. Please try to find a quiet place and complete the tasks in one go.</p>
+		<p>Thank you for supporting my project, and have fun!</p>
+		<button id="close_welcome" autocomplete="off">Continue</button>
+	</dialog>
+	<!-- Audio test -->
+	<dialog id="audiotest">
+		<h2>Can you hear Matthew?</h2>
+		<p>You will need to follow spoken instructions.</p>
+		<p><strong>Type what Matthew said in the text box below. He will repeat the message after a few seconds.</strong></p>
+		<p></p>
+		<label for="transcript">What did Matthew say?</label><input id="transcript" size="30" name="transcript"/>
+		<p>If you don't hear anything, automatic playing of audio might be disabled in your browser. Try enabling it:</p>
+		<p><strong>Firefox:</strong>: Type about:preferences#privacy in the address bar, go to Permissions (Berechtigungen) and change the Autoplay (automatische Wiedergabe) settings to allow autoplay.</p>
+		<p><strong>Safari:</strong>: Click on Safari -> Preferences for this Website... (Einstellungen für diese Website...) and activate Autoplay</p>
+		<p>If the problem persists, try another browser.</p>
+		<button id="close_audiotest">Continue</button>
+	</dialog>
+	<!-- Goodbye dialog -->
+	<dialog id="goodbye">
+		<h2>Thank you for participating!</h2>
+		You can now close this window.
+	</dialog>
+	<!-- Error screen -->
+	<dialog id="error">
+		<h2>Something went wrong!</h2>
+		<p>You can try to restart the experiment by returning to the link you were given. Please contact me and explain what you were doing when the error occured.</p>
+	</dialog>
+	<!-- Questionnaire -->
+	<dialog id="questionnaire">
+		<h2>Almost done!</h2>
+		<p>Please fill out the following fields to help me evaluating the experiment results.
+		<br>All personal information is optional and will be saved without an identifier so it cannot be traced back to you.</p>
+		<!-- Age -->
+		<label for="age">Age:</label><input id="age" name="age"><br>
+		<!-- Gender -->
+		<label for="gender">Gender:</label><input id="gender" name="gender"><br>
+		<!-- Education -->
+		<label for="education">Highest level of completed education:</label><input id="education" name="education"><br>
+		<!-- Language -->
+		<label for="language">Native language:</label><input id="language" name="language"><br>
+		<!-- Played Pentomino before -->
+		<input type="checkbox" id="pentoVeteran"><label for="pentoVeteran">I have played Pentomino before</label>
+		<!-- Fluency -->
+		<p>How fluent are you in English?</p>
+		<label for="fluency">limited fluency</label>
+		<input type="range" id="fluency" min="1" max="7" style="margin-bottom: 0;">
+		<label for="fluency">full fluency</label>
+		<hr>
+		<!-- Parts of the Godspeed questionnaire, taken from the link below: -->
+		<!-- https://www.bartneck.de/2008/03/11/the-godspeed-questionnaire-series/ -->
+		<p>Please rate your impression of Matthew on these scales:</p>
+		<!-- I: anthropomorphism -->
+		<label for="anthropomorphism1">machine-like</label>
+		<input type="range" id="anthropomorphism1" min="1" max="7" style="margin-bottom: 0;">
+		<label for="anthropomorphism1">human-like</label><br>
+		<label for="anthropomorphism2">unconscious</label>
+		<input type="range" id="anthropomorphism2" min="1" max="7" style="margin-bottom: 0;">
+		<label for="anthropomorphism2">conscious</label><br>
+		<label for="anthropomorphism3">artificial</label>
+		<input type="range" id="anthropomorphism3" min="1" max="7" style="margin-bottom: 0;">
+		<label for="anthropomorphism3">lifelike</label>
+		<hr>
+		<!-- III: likeability -->
+		<label for="likeability1">dislike</label>
+		<input type="range" id="likeability1" min="1" max="7" style="margin-bottom: 0;">
+		<label for="likeability1">like</label><br>
+		<label for="likeability2">unfriendly</label>
+		<input type="range" id="likeability2" min="1" max="7" style="margin-bottom: 0;">
+		<label for="likeability2">friendly</label><br>
+		<label for="likeability3">unpleasant</label>
+		<input type="range" id="likeability3" min="1" max="7" style="margin-bottom: 0;">
+		<label for="likeability3">pleasant</label>
+		<hr>
+		<!-- IV: perceived intelligence -->
+		<label for="intelligence1">incompetent</label>
+		<input type="range" id="intelligence1" min="1" max="7" style="margin-bottom: 0;">
+		<label for="intelligence1">competent</label><br>
+		<label for="intelligence2">irresponsible</label>
+		<input type="range" id="intelligence2" min="1" max="7" style="margin-bottom: 0;">
+		<label for="intelligence2">responsible</label><br>
+		<label for="intelligence3">unintelligent</label>
+		<input type="range" id="intelligence3" min="1" max="7" style="margin-bottom: 0;">
+		<label for="intelligence3">intelligent</label>
+		<hr>
+		<p>Any comments? Did something go wrong? Do you have an idea what this study is about?</p>
+		<textarea id="comments" rows="5" cols="33"></textarea><br>
+		<button id="close_questionnaire" autocomplete="off">Finish</button>
+	</dialog>
+
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script src="{{ url_for('matthew_bp.static', filename='js/dialog/dialog-polyfill.js') }}"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+	<!-- for production, use minimal version: -->
+	<!--<script src="https://cdn.socket.io/4.1.2/socket.io.min.js" integrity="sha384-toS6mmwu70G0fw54EGlWWeA4z3dyJ+dlXBtSURSKN4vyRFOcxd3Bzjj/AoOwY+Rg" crossorigin="anonymous"></script>-->
+	<script src="{{ url_for('static', filename='js/view/View.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/view/LayerView.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/view/LView.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/controller/LocalKeyController.js') }}"></script>
+
+    <script src="{{ url_for('matthew_bp.static', filename='js/util.js') }}"></script>
+    <script src="{{ url_for('matthew_bp.static', filename='js/view/IGView.js') }}"></script>
+    <script src="{{ url_for('matthew_bp.static', filename='js/matthew.js') }}"></script>
+</body>
+
+</html>
