@@ -5,9 +5,7 @@ from model.obj import Obj
 
 class IncrementalAlgorithm:
 
-    def __init__(self, height: int, width: int):
-        self.width = width
-        self.height = height
+    def __init__(self):
         self.general_types = ["piece"]
         self.start_tokens = ["Take", "Select", "Get"]
 
@@ -62,7 +60,7 @@ class IncrementalAlgorithm:
                 excluded_distractors.append(distractor)
         return excluded_distractors
 
-    def _find_value(self, obj: Obj, property_name: str):
+    def _find_value(self, obj, property_name: str):
         """
          * Determine the value an <Obj> has for a given property name.
          * Logs an error if the given property name is not implemented.
@@ -76,18 +74,5 @@ class IncrementalAlgorithm:
         if property_name == "color":
             return obj.color
         if property_name == "posRelBoard":
-            pos = ""
-            x = obj.x + (obj.width / 2)
-            y = obj.y + (obj.height / 2)
-            if y < 2 * self.height / 5:
-                pos = "top"
-            elif y >= 3 * self.height / 5:
-                pos = "bottom"
-            if x < 2 * self.width / 5:
-                pos = pos + " left" if len(pos) > 0 else "left"
-            elif x >= 3 * self.width / 5:
-                pos = pos + " right" if len(pos) > 0 else "right"
-            if not pos:
-                pos = "center"
-            return pos
+            return obj.posRelBoard
         raise Exception(f"Cannot resolve property with name: {property_name}")
