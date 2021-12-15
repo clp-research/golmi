@@ -25,7 +25,7 @@ def generate_samples(number_of_samples=10, output_path=None, store_strategy=None
     """
     saver = dynatasks.TaskInMemorySaver()
     if output_path is not None:
-        saver = dynatasks.TaskSingleFileStorageSaver(output_path)
+        saver = dynatasks.TaskSingleFileStorageSaver(output_path, overwrite_output=True)
         if store_strategy == "multi":
             saver = dynatasks.TaskMultiFileStorageSaver(output_path)
     callbacks = [saver]
