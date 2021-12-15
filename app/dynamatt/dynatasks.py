@@ -22,10 +22,16 @@ class GenerateCallback(abc.ABC):
         pass
 
 
+def piece_to_dict(piece):
+    piece_dict = piece.to_dict()
+    piece_dict["posRelBoard"] = piece.posRelBoard  # we attached this manually
+    return piece_dict
+
+
 def task_to_dict(task, idx=None):
     task_dict = {
-        "pieces": [p.to_dict() for p in task["pieces"]],
-        "target": task["target"].to_dict(),
+        "pieces": [piece_to_dict(p) for p in task["pieces"]],
+        "target": piece_to_dict(task["target"]),
         "refs": task["refs"]
     }
     if idx is not None:
@@ -128,7 +134,9 @@ class TaskGenerator:
     def __init__(self, config: Config):
         self.property_names = ["color", "shape", "posRelBoard"]
         self.generator = generator.Generator(config)
-        self.incremental_algorithm = dynaalgos.IncrementalAlgorithm(config.height, config.width)
+        self.incremental_algorithm = dynaalgos.IncrementalAlgorithm()
+        self.width = config.width
+        self.height = config.height
 
     def list_random_samples(self, n: int, n_objects=5, shuffle=False):
         return [self.generate_random_sample(n_objects, shuffle) for _ in range(n)]
@@ -147,9 +155,27 @@ class TaskGenerator:
         for clb in callbacks:
             clb.on_generate_end()
 
+    def _attach_prop_posRelBoard(self, obj):
+        pos = ""
+        x = obj.x + (obj.width / 2)
+        y = obj.y + (obj.height / 2)
+        if y < 2 * self.height / 5:
+            pos = "top"
+        elif y >= 3 * self.height / 5:
+            pos = "bottom"
+        if x < 2 * self.width / 5:
+            pos = pos + " left" if len(pos) > 0 else "left"
+        elif x >= 3 * self.width / 5:
+            pos = pos + " right" if len(pos) > 0 else "right"
+        if not pos:
+            pos = "center"
+        obj.posRelBoard = pos
+
     def _generate_situation(self, n_objects):
         state, _, _ = self.generator.generate_random_state(n_objects, n_grippers=0)
         pieces = list(state.objs.values())  # this is a map
+        # add "posRelBoard" as a property of the piece
+        [self._attach_prop_posRelBoard(p) for p in pieces]
         selection = random.choice(pieces)
         return pieces, selection
 
