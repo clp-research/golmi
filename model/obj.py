@@ -171,7 +171,7 @@ class Obj:
 
         # flip the object if "mirrored" is true in the dictionary
         if "mirrored" in source_dict and source_dict["mirrored"]:
-            new_obj.flip(source_dict["mirrored"])
+            new_obj.flip()
 
         # apply color
         if "color" in source_dict:
