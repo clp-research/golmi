@@ -1,0 +1,9 @@
+.instr_box {
+    margin: 10px;
+    padding: 10px;
+    background: rgba(206, 201, 201, 0.22);
+    border-radius: 25px;
+}
+.instr {
+    font-size: larger;
+}
