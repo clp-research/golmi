@@ -33,7 +33,7 @@ class RoomManager:
         """
         if config_file is None:
             config_file = self.default_config_file
-        new_model = Model(Config(config_file), self.socket, room_id)
+        new_model = Model(Config.from_json(config_file), self.socket, room_id)
         self.room_to_model[room_id] = new_model
         self.room_to_clients[room_id] = list()
 
