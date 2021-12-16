@@ -141,8 +141,7 @@ class Generator:
                 block_matrix=block_matrix,
                 rotation=rotation,
                 mirrored=mirrored,
-                color=color,
-                is_target=True
+                color=color
             )
 
             if target_grid.is_legal_position(
