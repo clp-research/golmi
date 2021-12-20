@@ -16,6 +16,125 @@ from model.gripper import Gripper
 from model.config import Config
 
 
+class CompositionalSceneGenerator:
+    """
+        Generates a scene, where objects differ on a controlled compositional basis.
+        For example, the objects might differ in "color" but not in "shape".
+
+        Note: This implementation is tightly coupled to the properties ["color", "shape", "position"] and Obj
+    """
+
+    def __init__(self, config, complexities: dict = None, ambiguities: dict = None):
+        """
+        :param complexities: dict of ("prop_name",int) with the number of other different values for the unique_props.
+        Zero, means all available are used. Defaults to all available properties.
+        :param ambiguities: dict of ("prop_name",int) applied, when there is more than 1 unique property.
+        Zero, means all other pieces share a property with the piece. Defaults to all shared.
+        For "position" it's always 1 (otherwise there might be too many pieces in a corner).
+        """
+        self.config = config
+        self.board_width = config.width
+        self.board_height = config.height
+        self.prop_names = ["color", "shape", "position"]
+        self.complexities = dict([(p, 0) for p in self.prop_names])
+        if complexities:  # overwrite defaults
+            for k in complexities:
+                self.complexities[k] = complexities[k]
+        self.ambiguities = dict([(p, 0) for p in self.prop_names])
+        if ambiguities:  # overwrite defaults
+            for k in ambiguities:
+                self.ambiguities[k] = ambiguities[k]
+        # For "position" it's always 1 (otherwise there might be too many pieces in a corner).
+        self.ambiguities["position"] = 1
+
+    def place_pieces(self, board: Grid, piece: Obj, unique_props: list[str], distractors: list[Obj]):
+        ...
+
+    def create_distractors(self, piece: Obj, unique_props: list[str], num_distractors: int = 1):
+        if "position" in unique_props:
+            unique_props = unique_props.copy()  # we handle position on placement (later)
+            unique_props.remove("position")
+        all_shapes = list(self.config.type_config.keys())
+        all_colors = self.config.colors
+        pools = {
+            "shape": all_shapes.copy(),
+            "color": all_colors.copy()
+        }
+        # remove uniq props from sampling distribution
+        for prop_name in unique_props:
+            if len(pools[prop_name]) < 2:
+                raise Exception("Cannot discriminate on a property with less than 2 possible values")
+            pools[prop_name].remove(self._get_prop_value(piece, prop_name))
+            prop_complexity = self.complexities[prop_name]
+            if prop_complexity > 0:
+                pools[prop_name] = random.sample(pools[prop_name], k=prop_complexity)
+        obj_configs = []
+        for _ in range(num_distractors):
+            obj_config = dict()
+            for prop_name in ["shape", "color"]:
+                obj_config[prop_name] = random.choice(pools[prop_name])
+            obj_configs.append(obj_config)
+        # make sure that there is at least one other piece with the piece prop value (so that 2 props are necessary)
+        if len(unique_props) == 2:  # this is a quite hard assumption!
+            ambiguous_prop = unique_props[0]  # we take in order
+            ambiguity = self.ambiguities[ambiguous_prop]
+            ambiguous_configs = obj_configs
+            if ambiguity > 0:
+                ambiguous_configs = random.sample(obj_configs, k=ambiguity)
+            for obj_config in ambiguous_configs:
+                obj_config[ambiguous_prop] = self._get_prop_value(piece, ambiguous_prop)
+        # TODO we need to force that other pieces have the same prop of a kind also when uniq_props == 1
+        if len(unique_props) == 1:  # this is a quite hard assumption!
+            ...
+        distractors = []
+        for idx, obj_config in enumerate(obj_configs):
+            distractors.append(Obj(idx, obj_config["shape"], x=0, y=0,
+                                   color=obj_config["color"],
+                                   # 'block_matrix' seems unnecessary here (but is required)!
+                                   block_matrix=self.config.type_config[obj_config["shape"]]
+                                   ))
+        return distractors
+
+    def generate_scene(self, board: Grid, piece: Obj, unique_props: list[str], num_distractors: int = 1):
+        """
+        :param board: where to establish the scene
+        :param piece: based on which the scene will be generated
+        :param unique_props: define the props that should uniquely identify the given piece. The order matters,
+        because when there is more than one unique property, then the later ones come last. Must be either or
+        a combination of ["color", "shape", "position"]
+        :param num_distractors: the number of other pieces in the scene
+        :return:
+        """
+        distractors = self.create_distractors(piece, unique_props, num_distractors)
+        self.place_pieces(board, piece, unique_props, distractors)
+        return board
+
+    def _get_prop_value(self, obj: Obj, prop_name):
+        if prop_name == "color":
+            return obj.color
+        if prop_name == "shape":
+            return obj.type
+        if prop_name == "position":
+            return self._get_pos(obj)
+        raise Exception(f"Cannot map {prop_name}. Supported are {self.prop_names}")
+
+    def _get_pos(self, obj):
+        pos = ""
+        x = obj.x + (obj.width / 2)
+        y = obj.y + (obj.height / 2)
+        if y < 2 * self.board_height / 5:
+            pos = "top"
+        elif y >= 3 * self.board_height / 5:
+            pos = "bottom"
+        if x < 2 * self.board_width / 5:
+            pos = pos + " left" if len(pos) > 0 else "left"
+        elif x >= 3 * self.board_width / 5:
+            pos = pos + " right" if len(pos) > 0 else "right"
+        if not pos:
+            pos = "center"
+        return pos
+
+
 class Generator:
     def __init__(self, config: Config, attempts: int = 100):
         self.config = config
@@ -136,8 +255,6 @@ class Generator:
                 obj_type=piece_type,
                 x=x,
                 y=y,
-                width=width,
-                height=height,
                 block_matrix=block_matrix,
                 rotation=rotation,
                 mirrored=mirrored,
@@ -198,8 +315,6 @@ class Generator:
                 obj_type=piece_type,
                 x=x,
                 y=y,
-                width=width,
-                height=height,
                 block_matrix=block_matrix,
                 rotation=rotation,
                 mirrored=mirrored,
