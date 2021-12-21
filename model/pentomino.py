@@ -191,9 +191,16 @@ class RelPositions(Enum):
 
 
 class PropertyNames(Enum):
-    COLOR = auto()
-    SHAPE = auto()
-    REL_POSITION = auto()
+    COLOR = "color"
+    SHAPE = "shape"
+    REL_POSITION = "rel_position"
+
+    @classmethod
+    def from_string(cls, name):
+        for pn in list(cls):
+            if pn.value == name:
+                return pn
+        return None
 
 
 class PieceConfig:
