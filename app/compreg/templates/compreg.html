@@ -1,0 +1,74 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>CompREG in GOLM</title>
+
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <meta name="description" content="CompREG interface built using the GOLM framework">
+    <meta name="author" content="clpresearch, Philipp Sadler">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layer_style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('compreg_bp.static', filename='css/semantic.css') }}">
+    <link rel="stylesheet" href="{{ url_for('compreg_bp.static', filename='css/compreg.css') }}">
+</head>
+
+<body>
+
+<div id="content" style="padding: 10px">
+    <div id="viewport" style="height: 600px; width: 600px; float: left">
+        <canvas id="background" width="600" height="600"></canvas>
+        <canvas id="objects" width="600" height="600"></canvas>
+    </div>
+    <div class="ui left floated grid" style="padding: 20px;">
+        <div class="row">
+            <h1 class="ui header">Controls</h1>
+        </div>
+        <div class="row">
+            <p>Select a unique property</p>
+        </div>
+        <div class="row">
+            <div class="two wide column">
+                <button id="select_color" class="ui inverted green button">Color</button>
+            </div>
+            <div class="two wide column">
+                <button id="select_shape" class="ui inverted blue button">Shape</button>
+            </div>
+            <div class="two wide column">
+                <button id="select_position" class="ui inverted yellow button">Position</button>
+            </div>
+        </div>
+        <div class="ui divider"></div>
+        <div class="row">
+            <div class="three wide column">
+                <button id="start" class="ui inverted secondary button">Connect</button>
+            </div>
+            <div class="three wide column">
+                <button id="restart" class="ui inverted secondary button">New Scene</button>
+            </div>
+            <div class="three wide column">
+                <button id="stop" class="ui inverted secondary button">Disconnect</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- jquery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- socketio -->
+<script src="https://cdn.socket.io/4.1.2/socket.io.min.js"
+        integrity="sha384-toS6mmwu70G0fw54EGlWWeA4z3dyJ+dlXBtSURSKN4vyRFOcxd3Bzjj/AoOwY+Rg"
+        crossorigin="anonymous"></script>
+<!-- General GOLMi functionality -->
+<script src="{{ url_for('static', filename='js/view/View.js') }}"></script>
+<!-- Interface specific functionality -->
+<script src="{{ url_for('compreg_bp.static', filename='js/semantic.js') }}"></script>
+<script src="{{ url_for('compreg_bp.static', filename='js/util.js') }}"></script>
+<script src="{{ url_for('compreg_bp.static', filename='js/PentoBoardView.js') }}"></script>
+<script src="{{ url_for('compreg_bp.static', filename='js/compreg.js') }}"></script>
+</body>
+
+</html>
