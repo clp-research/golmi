@@ -127,62 +127,81 @@ class RelPositions(Enum):
     CENTER = "center"
 
     def to_coords(self, board_width, board_height):
-        width_splits, height_splits = board_width / 5, board_height / 5
+        granularity = 3
+        width_step, height_step = board_width // granularity, board_height // granularity
+
+        # Uff, this is a bit harsh.
+        # Pieces coords is their upper-left corner!
+        # They are furthermore drawn on potentially 5x5 grids.
+        piece_grid_size = 5
+
+        # So when we sample (0,0) then the piece is in the upper left corner fully fit,
+        # but when we sample something at the right or bottom, then pieces cannot be fully drawn anymore
+        # so the actually possible coordinate space is smaller than what is shown on the board.
+        # We apply the "padding" at for all max values at the end of this method.
         x_min, x_max = 0, board_width
         y_min, y_max = 0, board_height
+
+        # This is in particular difficult, because we "see" the pieces on other coords (e.g. the center of a piece).
+        # So given the coords, an algorithm must actually "imagine" where the piece is actually drawn using an offset
+        # and cannot simply derive this from the coords itself
+        x_left = 0, width_step
+        x_right = 2 * width_step, board_width
+
+        y_top = 0, height_step
+        y_bottom = 2 * height_step, board_height
+
+        x_center = width_step, 2 * width_step
+        y_center = height_step, 2 * height_step
+
         if self == RelPositions.TOP_LEFT:
-            x_max = 2 * width_splits  # left
-            y_max = 2 * height_splits  # top
+            x_min, x_max = x_left
+            y_min, y_max = y_top
         if self == RelPositions.TOP_CENTER:
-            x_min = 2 * width_splits  # center width
-            x_max = 3 * width_splits  # center width
-            y_max = 2 * height_splits  # top
+            x_min, x_max = x_center
+            y_min, y_max = y_top
         if self == RelPositions.TOP_RIGHT:
-            x_min = 3 * width_splits  # right
-            y_max = 2 * height_splits  # top
+            x_min, x_max = x_right
+            y_min, y_max = y_top
         if self == RelPositions.CENTER_RIGHT:
-            x_min = 3 * width_splits  # right
-            y_min = 2 * height_splits  # center height
-            y_max = 3 * height_splits  # center height
+            x_min, x_max = x_right
+            y_min, y_max = y_center
         if self == RelPositions.BOTTOM_RIGHT:
-            x_min = 3 * width_splits  # right
-            y_min = 3 * height_splits  # bottom
+            x_min, x_max = x_right
+            y_min, y_max = y_bottom
         if self == RelPositions.BOTTOM_CENTER:
-            x_min = 2 * width_splits  # center width
-            x_max = 3 * width_splits  # center width
-            y_min = 3 * height_splits  # bottom
+            x_min, x_max = x_center
+            y_min, y_max = y_bottom
         if self == RelPositions.BOTTOM_LEFT:
-            x_max = 2 * width_splits  # left
-            y_min = 3 * height_splits  # bottom
+            x_min, x_max = x_left
+            y_min, y_max = y_bottom
         if self == RelPositions.CENTER_LEFT:
-            x_max = 2 * width_splits  # left
-            y_min = 2 * height_splits  # center height
-            y_max = 3 * height_splits  # center height
+            x_min, x_max = x_left
+            y_min, y_max = y_center
         if self == RelPositions.CENTER:
-            x_min = 2 * width_splits  # center width
-            x_max = 3 * width_splits  # center width
-            y_min = 2 * height_splits  # center height
-            y_max = 3 * height_splits  # center height
-        return random.randint(x_min, x_max), random.randint(y_min, y_max)
+            x_min, x_max = x_center
+            y_min, y_max = y_center
+        return random.randint(x_min, x_max - piece_grid_size), random.randint(y_min, y_max - piece_grid_size)
 
     @staticmethod
     def from_coords(x, y, board_width, board_height):
-        width_splits, height_splits = board_width / 5, board_height / 5
+        granularity = 3
+        width_step, height_step = board_width / granularity, board_height / granularity
         # x = obj.x + (obj.width / 2)
         # y = obj.y + (obj.height / 2)
         # TODO this actually looks wrong
         pos = None
-        if y < 2 * height_splits:
+        if y < 2 * height_step:
             pos = RelPositions.TOP_CENTER
-        elif y >= 3 * height_splits:
+        elif y >= 3 * height_step:
             pos = RelPositions.BOTTOM_CENTER
-        if x < 2 * width_splits:
+        if x < 2 * width_step:
             if pos == RelPositions.TOP_CENTER:
                 return RelPositions.TOP_LEFT
             if pos == RelPositions.BOTTOM_CENTER:
                 return RelPositions.BOTTOM_LEFT
             return RelPositions.CENTER_LEFT
-        elif x >= 3 * width_splits:
+        elif x >= 3 * width_step:
             if pos == RelPositions.TOP_CENTER:
                 return RelPositions.TOP_RIGHT
             if pos == RelPositions.BOTTOM_CENTER:
@@ -352,7 +371,7 @@ def create_distractor_configs(piece_config: PieceConfig,
                     logging.warning(f"Ignore unique prop {ambiguous_prop} in ambiguities {ambiguities}.")
                     continue
                 if ambiguous_count <= 0 or ambiguous_count >= num_distractors:
-                    continue # all should look the same in "non-unique" props
+                    continue  # all should look the same in "non-unique" props
                 differ_count = len(differ_piece_configs)
                 if ambiguous_count > 1:
                     differ_count = differ_count - ambiguous_count + 1  # one piece is always ambiguous
