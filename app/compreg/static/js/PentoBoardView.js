@@ -6,6 +6,7 @@ $(document).ready(function () {
             this.socket = modelSocket;
             this.bgCanvas = bgCanvas;
             this.objCanvas = objCanvas;
+            this.rel_position_granularity = 3
             this.clear();
         }
 
@@ -54,7 +55,7 @@ $(document).ready(function () {
         /**
          * Draws a grid black on white as the background.
          */
-        drawBg(drawGrid) {
+        drawBg() {
             // set updates
             let ctx = this.bgCanvas.getContext("2d");
 
@@ -62,23 +63,25 @@ $(document).ready(function () {
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 
-            if (drawGrid) {
-                ctx.lineStyle = "black";
-                ctx.lineWidth = 1;
+            ctx.strokeStyle = "#f3f0f0";
+            ctx.lineWidth = 1;
 
-                // horizontal lines
-                for (let row = 0; row <= this.rows; row++) {
-                    ctx.moveTo(0, row * this.blockSize);
-                    ctx.lineTo(this.canvasWidth, row * this.blockSize);
-                }
-                // vertical lines
-                for (let col = 0; col <= this.cols; col++) {
-                    ctx.moveTo(col * this.blockSize, 0);
-                    ctx.lineTo(col * this.blockSize, this.canvasHeight);
-                }
-                // draw to the screen
-                ctx.stroke()
+            let width_step = this.canvasWidth / this.rel_position_granularity
+            let height_step = this.canvasHeight / this.rel_position_granularity
+            // horizontal lines
+            for (let row = 0; row <= this.rel_position_granularity; row++) {
+                let offset = row * height_step;
+                ctx.moveTo(0, offset);
+                ctx.lineTo(this.canvasWidth, offset);
             }
+            // vertical lines
+            for (let col = 0; col <= this.rel_position_granularity; col++) {
+                let offset = col * width_step;
+                ctx.moveTo(offset, 0);
+                ctx.lineTo(offset, this.canvasHeight);
+            }
+            // draw to the screen
+            ctx.stroke()
         }
 
         /**
@@ -88,7 +91,7 @@ $(document).ready(function () {
          */
         redrawBg() {
             this.clearBg();
-            this.drawBg(false);
+            this.drawBg();
         }
 
         /**
