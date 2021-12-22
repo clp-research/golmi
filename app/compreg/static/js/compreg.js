@@ -20,19 +20,25 @@ $(document).ready(function () {
 
     // Set up the view js, this also sets up key listeners
     const layerView = new document.PentoBoardView(socket, bgLayer, objLayer);
-    const control_state = {
-        "property_name": "color"
+    const sceneConfig = {
+        target_piece: {
+            unique_properties: ["color"],
+        },
+        distractors: {
+            num_distractors: 4
+        },
+        varieties: {
+            num_colors: 0,
+            num_shapes: 0,
+            num_positions: 0
+        },
+        ambiguity: {
+            num_colors: 0,
+            num_shapes: 0,
+            num_positions: 0
+        }
     }
-
-    $("#select_color").click(() => {
-        control_state.property_name = "color"
-    })
-    $("#select_shape").click(() => {
-        control_state.property_name = "shape"
-    })
-    $("#select_position").click(() => {
-        control_state.property_name = "rel_position"
-    })
+    const sceneControls = new document.SceneConfigControls(sceneConfig)
 
     objLayer.onclick = function onBoardClick(event) {
         socket.emit("mouseclick", {
@@ -46,8 +52,8 @@ $(document).ready(function () {
     }
 
     function request_new_scene() {
-        console.log("new scene with " + control_state)
-        socket.emit("new_comp_scene", {"controls": control_state});
+        console.log("new scene with " + sceneConfig)
+        socket.emit("new_comp_scene", {"scene_config": sceneConfig});
     }
 
     var setup_complete = false;

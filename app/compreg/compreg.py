@@ -26,8 +26,15 @@ def compreg():
 
 @socketio.on("new_comp_scene")
 def on_new_comp_scene(event):
-    controls = event["controls"]
-    property_name = PropertyNames.from_string(controls["property_name"])
+    scene_config = event["scene_config"]
+    unique_properties = scene_config["target_piece"]["unique_properties"]
+    property_name = PropertyNames.from_string(unique_properties[0])
+    if property_name is None:
+        print(f"Cannot compose scene for '{property_name}'")
+
+    distractors_config = scene_config["distractors"]
+    varieties_config = scene_config["varieties"]
+    ambiguity_config = scene_config["ambiguity"]
 
     model = client_models[request.sid]
     target = PieceConfig(Colors.BLUE, Shapes.T, RelPositions.CENTER)
@@ -35,7 +42,17 @@ def on_new_comp_scene(event):
                                        board_height=model.config.height,
                                        piece_config=target,
                                        unique_props={property_name},
-                                       num_distractors=4)
+                                       num_distractors=distractors_config["num_distractors"],
+                                       varieties={
+                                           PropertyNames.COLOR: varieties_config["num_colors"],
+                                           PropertyNames.SHAPE: varieties_config["num_shapes"],
+                                           PropertyNames.REL_POSITION: varieties_config["num_positions"],
+                                       },
+                                       ambiguities={
+                                           PropertyNames.COLOR: ambiguity_config["num_colors"],
+                                           PropertyNames.SHAPE: ambiguity_config["num_shapes"],
+                                           PropertyNames.REL_POSITION: ambiguity_config["num_positions"],
+                                       })
     # uff this is ugly
     state = State()
     state.objs = dict([(piece.piece_id, piece.piece_obj) for piece in board.pieces])

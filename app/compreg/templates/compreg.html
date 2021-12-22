@@ -13,46 +13,123 @@
     <meta name="author" content="clpresearch, Philipp Sadler">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/layer_style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('compreg_bp.static', filename='css/semantic.css') }}">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.8/dist/semantic.min.css">
     <link rel="stylesheet" href="{{ url_for('compreg_bp.static', filename='css/compreg.css') }}">
 </head>
 
 <body>
 
 <div id="content" style="padding: 10px">
-    <div id="viewport" style="height: 600px; width: 600px; float: left">
-        <canvas id="background" width="600" height="600"></canvas>
-        <canvas id="objects" width="600" height="600"></canvas>
-    </div>
-    <div class="ui left floated grid" style="padding: 20px;">
-        <div class="row">
-            <h1 class="ui header">Controls</h1>
+    <div id="controls" class="ui container">
+        <div class="ui grid">
+            <div class="row">
+                <h1 class="ui header">Compositional Scene Configuration</h1>
+            </div>
+            <div class="row">
+                <div class="ui cards">
+                    <div class="ui card">
+                        <div class="content">
+                            <div class="header">Target Piece</div>
+                        </div>
+                        <div class="content">
+                            <div class="field">
+                                <label>Unique Properties</label>
+                                <div id="select_property" class="ui selection dropdown">
+                                    <div class="text">Color</div>
+                                    <i class="dropdown icon"></i>
+                                    <div class="scrollhint menu">
+                                        <div class="item" data-value="color">Color</div>
+                                        <div class="item" data-value="shape">Shape</div>
+                                        <div class="item" data-value="position">Position</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="extra content">
+                            Select a set of properties that are supposed to uniquely identify the target piece.
+                            <span class="ui label">Only one for now!</span>
+                        </div>
+                    </div>
+                    <div class="ui card">
+                        <div class="content">
+                            <div class="header">Distractors</div>
+                            <p class="ui floating blue label">Coming soon!</p>
+                        </div>
+                        <div class="content">
+                            <div class="field">
+                                <label>Number of Distractors</label>
+                                <div id="select_num_distractors" class="ui slider labeled ticked disabled"></div>
+                            </div>
+                        </div>
+                        <div class="extra content">
+                            Control the number of distractor pieces.
+                        </div>
+                    </div>
+                </div>
+                <div class="ui cards">
+                    <div class="ui card">
+                        <div class="content">
+                            <div class="header">Varieties</div>
+                        </div>
+                        <div class="content">
+                            <div class="field">
+                                <label>Colors</label>
+                                <div id="select_variety_num_colors" class="ui labeled ticked slider"></div>
+                            </div>
+                            <div class="field">
+                                <label>Shapes</label>
+                                <div id="select_variety_num_shapes" class="ui labeled ticked slider"></div>
+                            </div>
+                            <div class="field">
+                                <label>Positions</label>
+                                <div id="select_variety_num_positions" class="ui labeled ticked slider"></div>
+                            </div>
+                        </div>
+                        <div class="extra content">
+                            Control the number of values available for the piece properties. For a unique property there
+                            must be at least two values available.
+                        </div>
+                    </div>
+                    <div class="ui card">
+                        <div class="content">
+                            <div class="header">Ambiguity</div>
+                        </div>
+                        <div class="content">
+                            <div class="field">
+                                <label>Colors</label>
+                                <div id="select_ambiguous_num_colors" class="ui labeled ticked slider"></div>
+                            </div>
+                            <div class="field">
+                                <label>Shapes</label>
+                                <div id="select_ambiguous_num_shapes" class="ui labeled ticked slider"></div>
+                            </div>
+                            <div class="field">
+                                <label>Positions</label>
+                                <div id="select_ambiguous_num_positions" class="ui labeled ticked slider"></div>
+                            </div>
+                        </div>
+                        <div class="extra content">
+                            Control the number of distractor pieces that share the same values with the target piece for
+                            a particular property.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="three wide column">
+                    <button id="start" class="ui inverted secondary button">Connect</button>
+                </div>
+                <div class="three wide column">
+                    <button id="restart" class="ui inverted secondary button">New Scene</button>
+                </div>
+                <div class="three wide column">
+                    <button id="stop" class="ui inverted secondary button">Disconnect</button>
+                </div>
+            </div>
         </div>
-        <div class="row">
-            <p>Select a unique property</p>
-        </div>
-        <div class="row">
-            <div class="two wide column">
-                <button id="select_color" class="ui inverted green button">Color</button>
-            </div>
-            <div class="two wide column">
-                <button id="select_shape" class="ui inverted blue button">Shape</button>
-            </div>
-            <div class="two wide column">
-                <button id="select_position" class="ui inverted yellow button">Position</button>
-            </div>
-        </div>
-        <div class="ui divider"></div>
-        <div class="row">
-            <div class="three wide column">
-                <button id="start" class="ui inverted secondary button">Connect</button>
-            </div>
-            <div class="three wide column">
-                <button id="restart" class="ui inverted secondary button">New Scene</button>
-            </div>
-            <div class="three wide column">
-                <button id="stop" class="ui inverted secondary button">Disconnect</button>
-            </div>
+        <div id="viewport" class="ui container">
+            <canvas id="background" width="600" height="600"></canvas>
+            <canvas id="objects" width="600" height="600"></canvas>
         </div>
     </div>
 </div>
@@ -62,12 +139,13 @@
 <script src="https://cdn.socket.io/4.1.2/socket.io.min.js"
         integrity="sha384-toS6mmwu70G0fw54EGlWWeA4z3dyJ+dlXBtSURSKN4vyRFOcxd3Bzjj/AoOwY+Rg"
         crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.8/dist/semantic.min.js"></script>
 <!-- General GOLMi functionality -->
 <script src="{{ url_for('static', filename='js/view/View.js') }}"></script>
 <!-- Interface specific functionality -->
-<script src="{{ url_for('compreg_bp.static', filename='js/semantic.js') }}"></script>
 <script src="{{ url_for('compreg_bp.static', filename='js/util.js') }}"></script>
 <script src="{{ url_for('compreg_bp.static', filename='js/PentoBoardView.js') }}"></script>
+<script src="{{ url_for('compreg_bp.static', filename='js/SceneConfigControls.js') }}"></script>
 <script src="{{ url_for('compreg_bp.static', filename='js/compreg.js') }}"></script>
 </body>
 
