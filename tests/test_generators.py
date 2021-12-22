@@ -70,6 +70,23 @@ class CreateDistractorsTestCase(unittest.TestCase):
         count = sum([1 for distractor in distractors if distractor.rel_position == TARGET.rel_position])
         self.assertEqual(count, 1)
 
+    def test_with_color_with_given_variety_and_ambiguity_returns_single_ambiguity(self):
+        distractors = create_distractor_configs(TARGET,
+                                                unique_props={PropertyNames.COLOR},
+                                                num_distractors=4,
+                                                varieties={
+                                                    PropertyNames.COLOR: 0,
+                                                    PropertyNames.SHAPE: 0,
+                                                    PropertyNames.REL_POSITION: 0
+                                                },
+                                                ambiguities={
+                                                    PropertyNames.COLOR: 0,
+                                                    PropertyNames.SHAPE: 0,
+                                                    PropertyNames.REL_POSITION: 1
+                                                })
+        count = sum([1 for distractor in distractors if distractor.rel_position == TARGET.rel_position])
+        self.assertEqual(count, 1)
+
     def test_with_color_with_multi_ambiguities_returns_accordingly(self):
         distractors = create_distractor_configs(TARGET,
                                                 unique_props={PropertyNames.COLOR},
