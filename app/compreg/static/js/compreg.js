@@ -32,8 +32,8 @@ $(document).ready(function () {
             num_positions: 0
         },
         ambiguity: {
-            num_colors: 0,
-            num_shapes: 0,
+            num_colors: 1, // looks initially more interesting
+            num_shapes: 1, // looks initially more interesting
             num_positions: 1 // often only two pieces "fit" into a single area
         }
     }

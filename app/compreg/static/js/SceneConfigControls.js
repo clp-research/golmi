@@ -6,6 +6,7 @@ $(document).ready(function () {
             $("#select_property").dropdown({
                 onChange: function (value, text, $selectedItem) {
                     console.log("select_property: " + value)
+                    scene_config.target_piece.unique_properties = [value]
                 }
                 // TODO: If variety is set for this prop
                 // then set it to 2, if it is 1
@@ -22,6 +23,13 @@ $(document).ready(function () {
                 })
 
             // Varieties Configuration
+            $("#toggle_rotations").checkbox({
+                value: true,
+                onChecked: function () {
+                },
+                onUnchecked: function () {
+                }
+            })
             $("#select_variety_num_colors")
                 .slider({
                     min: 0, max: 8,
@@ -63,7 +71,7 @@ $(document).ready(function () {
             $("#select_ambiguous_num_colors")
                 .slider({
                     min: 0, max: 4,
-                    start: 0, step: 1,
+                    start: 1, step: 1,
                     onChange: function (value, text, $selectedItem) {
                         console.log("select_ambiguous_num_colors: " + value)
                         scene_config.ambiguity.num_colors = value
@@ -75,7 +83,7 @@ $(document).ready(function () {
             $("#select_ambiguous_num_shapes")
                 .slider({
                     min: 0, max: 4,
-                    start: 0, step: 1,
+                    start: 1, step: 1,
                     onChange: function (value, text, $selectedItem) {
                         console.log("select_ambiguous_num_shapes: " + value)
                         scene_config.ambiguity.num_shapes = value
