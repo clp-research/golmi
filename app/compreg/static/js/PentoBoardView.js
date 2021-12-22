@@ -55,7 +55,7 @@ $(document).ready(function () {
         /**
          * Draws a grid black on white as the background.
          */
-        drawBg() {
+        drawBg(drawGrid) {
             // set updates
             let ctx = this.bgCanvas.getContext("2d");
 
@@ -63,25 +63,27 @@ $(document).ready(function () {
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 
-            ctx.strokeStyle = "#f3f0f0";
-            ctx.lineWidth = 1;
+            if (drawGrid) {
+                ctx.strokeStyle = "#f3f0f0";
+                ctx.lineWidth = 1;
 
-            let width_step = this.canvasWidth / this.rel_position_granularity
-            let height_step = this.canvasHeight / this.rel_position_granularity
-            // horizontal lines
-            for (let row = 0; row <= this.rel_position_granularity; row++) {
-                let offset = row * height_step;
-                ctx.moveTo(0, offset);
-                ctx.lineTo(this.canvasWidth, offset);
+                let width_step = this.canvasWidth / this.rel_position_granularity
+                let height_step = this.canvasHeight / this.rel_position_granularity
+                // horizontal lines
+                for (let row = 0; row <= this.rel_position_granularity; row++) {
+                    let offset = row * height_step;
+                    ctx.moveTo(0, offset);
+                    ctx.lineTo(this.canvasWidth, offset);
+                }
+                // vertical lines
+                for (let col = 0; col <= this.rel_position_granularity; col++) {
+                    let offset = col * width_step;
+                    ctx.moveTo(offset, 0);
+                    ctx.lineTo(offset, this.canvasHeight);
+                }
+                // draw to the screen
+                ctx.stroke()
             }
-            // vertical lines
-            for (let col = 0; col <= this.rel_position_granularity; col++) {
-                let offset = col * width_step;
-                ctx.moveTo(offset, 0);
-                ctx.lineTo(offset, this.canvasHeight);
-            }
-            // draw to the screen
-            ctx.stroke()
         }
 
         /**
@@ -89,9 +91,9 @@ $(document).ready(function () {
          * In contrast to drawBg(), this function assumes the background has been drawn in the past
          * and the old drawing needs to be removed first.
          */
-        redrawBg() {
+        redrawBg(drawGrid) {
             this.clearBg();
-            this.drawBg();
+            this.drawBg(drawGrid);
         }
 
         /**
@@ -135,27 +137,27 @@ $(document).ready(function () {
 
         _drawBlockObj(ctx, bMatrix, params) {
             // Draw blocks
-            for (let r = 0; r < bMatrix.length; r++) {
-                bMatrix[r].forEach((block, c) => {
+            for (let row = 0; row < bMatrix.length; row++) {
+                bMatrix[row].forEach((block, col) => {
                     if (block) { // draw if matrix field contains a 1
-                        let x = params.x + c;
-                        let y = params.y + r;
+                        let x = params.x + col;
+                        let y = params.y + row;
                         this._drawBlock(ctx, x, y, params.color);
                         // draw object borders
                         // top
-                        if (r == 0 || !(bMatrix[r - 1][c])) {
+                        if (row === 0 || !(bMatrix[row - 1][col])) {
                             this._drawBorder(ctx, x, y, x + 1, y, params.highlight);
                         }
                         // right
-                        if (c == (bMatrix[r].length - 1) || !(bMatrix[r][c + 1])) {
+                        if (col === (bMatrix[row].length - 1) || !(bMatrix[row][col + 1])) {
                             this._drawBorder(ctx, x + 1, y, x + 1, y + 1, params.highlight);
                         }
                         // bottom
-                        if (r == (bMatrix.length - 1) || !(bMatrix[r + 1][c])) {
+                        if (row === (bMatrix.length - 1) || !(bMatrix[row + 1][col])) {
                             this._drawBorder(ctx, x, y + 1, x + 1, y + 1, params.highlight);
                         }
                         // left
-                        if (c == 0 || !(bMatrix[r][c - 1])) {
+                        if (col === 0 || !(bMatrix[row][col - 1])) {
                             this._drawBorder(ctx, x, y, x, y + 1, params.highlight);
                         }
                     }

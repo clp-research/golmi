@@ -10,7 +10,6 @@ $(document).ready(function () {
                 // TODO: If variety is set for this prop
                 // then set it to 2, if it is 1
             })
-
             // Piece Configuration
             $("#select_num_distractors")
                 .slider({
@@ -88,7 +87,7 @@ $(document).ready(function () {
             $("#select_ambiguous_num_positions")
                 .slider({
                     min: 0, max: 4,
-                    start: 0, step: 1,
+                    start: 1, step: 1,
                     onChange: function (value, text, $selectedItem) {
                         console.log("select_ambiguous_num_positions: " + value)
                         scene_config.ambiguity.num_positions = value

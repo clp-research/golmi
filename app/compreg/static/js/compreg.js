@@ -19,7 +19,6 @@ $(document).ready(function () {
     let objLayer = document.getElementById("objects");
 
     // Set up the view js, this also sets up key listeners
-    const layerView = new document.PentoBoardView(socket, bgLayer, objLayer);
     const sceneConfig = {
         target_piece: {
             unique_properties: ["color"],
@@ -35,10 +34,11 @@ $(document).ready(function () {
         ambiguity: {
             num_colors: 0,
             num_shapes: 0,
-            num_positions: 0
+            num_positions: 1 // often only two pieces "fit" into a single area
         }
     }
     const sceneControls = new document.SceneConfigControls(sceneConfig)
+    const layerView = new document.PentoBoardView(socket, bgLayer, objLayer);
 
     objLayer.onclick = function onBoardClick(event) {
         socket.emit("mouseclick", {
@@ -61,6 +61,19 @@ $(document).ready(function () {
         if (!setup_complete) {
             request_new_scene()
             setup_complete = true;
+        }
+    });
+    $("#toggle_show_grid").click(() => {
+        console.log("toggle_show_grid")
+        let el = $("#toggle_show_grid")
+        if (el.hasClass("active")) {
+            el.removeClass("active")
+            el.text("Show Grid")
+            layerView.redrawBg(false)
+        } else {
+            el.addClass("active")
+            el.text("Hide Grid")
+            layerView.redrawBg(true)
         }
     });
 

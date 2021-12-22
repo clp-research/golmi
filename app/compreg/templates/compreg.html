@@ -19,117 +19,129 @@
 
 <body>
 
-<div id="content" style="padding: 10px">
-    <div id="controls" class="ui container">
-        <div class="ui grid">
-            <div class="row">
-                <h1 class="ui header">Compositional Scene Configuration</h1>
-            </div>
-            <div class="row">
-                <div class="ui cards">
-                    <div class="ui card">
-                        <div class="content">
-                            <div class="header">Target Piece</div>
-                        </div>
-                        <div class="content">
-                            <div class="field">
-                                <label>Unique Properties</label>
-                                <div id="select_property" class="ui selection dropdown">
-                                    <div class="text">Color</div>
-                                    <i class="dropdown icon"></i>
-                                    <div class="scrollhint menu">
-                                        <div class="item" data-value="color">Color</div>
-                                        <div class="item" data-value="shape">Shape</div>
-                                        <div class="item" data-value="position">Position</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="extra content">
-                            Select a set of properties that are supposed to uniquely identify the target piece.
-                            <span class="ui label">Only one for now!</span>
-                        </div>
-                    </div>
-                    <div class="ui card">
-                        <div class="content">
-                            <div class="header">Distractors</div>
-                            <p class="ui floating blue label">Coming soon!</p>
-                        </div>
-                        <div class="content">
-                            <div class="field">
-                                <label>Number of Distractors</label>
-                                <div id="select_num_distractors" class="ui slider labeled ticked disabled"></div>
-                            </div>
-                        </div>
-                        <div class="extra content">
-                            Control the number of distractor pieces.
-                        </div>
-                    </div>
-                </div>
-                <div class="ui cards">
-                    <div class="ui card">
-                        <div class="content">
-                            <div class="header">Varieties</div>
-                        </div>
-                        <div class="content">
-                            <div class="field">
-                                <label>Colors</label>
-                                <div id="select_variety_num_colors" class="ui labeled ticked slider"></div>
-                            </div>
-                            <div class="field">
-                                <label>Shapes</label>
-                                <div id="select_variety_num_shapes" class="ui labeled ticked slider"></div>
-                            </div>
-                            <div class="field">
-                                <label>Positions</label>
-                                <div id="select_variety_num_positions" class="ui labeled ticked slider"></div>
-                            </div>
-                        </div>
-                        <div class="extra content">
-                            Control the number of values available for the piece properties. For a unique property there
-                            must be at least two values available.
-                        </div>
-                    </div>
-                    <div class="ui card">
-                        <div class="content">
-                            <div class="header">Ambiguity</div>
-                        </div>
-                        <div class="content">
-                            <div class="field">
-                                <label>Colors</label>
-                                <div id="select_ambiguous_num_colors" class="ui labeled ticked slider"></div>
-                            </div>
-                            <div class="field">
-                                <label>Shapes</label>
-                                <div id="select_ambiguous_num_shapes" class="ui labeled ticked slider"></div>
-                            </div>
-                            <div class="field">
-                                <label>Positions</label>
-                                <div id="select_ambiguous_num_positions" class="ui labeled ticked slider"></div>
-                            </div>
-                        </div>
-                        <div class="extra content">
-                            Control the number of distractor pieces that share the same values with the target piece for
-                            a particular property.
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="three wide column">
+<div id="content" class="ui equal width centered grid container">
+    <div class="row">
+        <h1 class="ui header">Compositional Scene Configuration</h1>
+    </div>
+    <div class="row">
+        <div id="viewport" class="column" style="margin-right: 30px">
+            <div class="ui padded grid">
+                <div class="row">
                     <button id="start" class="ui inverted secondary button">Connect</button>
-                </div>
-                <div class="three wide column">
                     <button id="restart" class="ui inverted secondary button">New Scene</button>
-                </div>
-                <div class="three wide column">
                     <button id="stop" class="ui inverted secondary button">Disconnect</button>
+                    <button id="toggle_show_grid" class="ui toggle button">Show Grid</button>
+                </div>
+                <div class="row">
+                    <canvas id="background" width="600" height="600"></canvas>
+                    <canvas id="objects" width="600" height="600"></canvas>
                 </div>
             </div>
         </div>
-        <div id="viewport" class="ui container">
-            <canvas id="background" width="600" height="600"></canvas>
-            <canvas id="objects" width="600" height="600"></canvas>
+        <div id="controls" class="column">
+            <div class="ui grid">
+                <div class="equal width row">
+                    <div class="column">
+                        <div class="ui card">
+                            <div class="content">
+                                <div class="header">Target Piece</div>
+                            </div>
+                            <div class="content">
+                                <div class="field">
+                                    <label>Unique Properties</label>
+                                    <div id="select_property" class="ui selection dropdown">
+                                        <div class="text">Color</div>
+                                        <i class="dropdown icon"></i>
+                                        <div class="scrollhint menu">
+                                            <div class="item" data-value="color">Color</div>
+                                            <div class="item" data-value="shape">Shape</div>
+                                            <div class="item" data-value="position">Position</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="extra content">
+                                Select a set of properties that are supposed to uniquely identify the target piece.
+                                <span class="ui label">Only one for now!</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="ui card">
+                            <div class="content">
+                                <div class="header">Distractors</div>
+                                <p class="ui floating blue label">Coming soon!</p>
+                            </div>
+                            <div class="content">
+                                <div class="field">
+                                    <label>Number of Distractors</label>
+                                    <div id="select_num_distractors"
+                                         class="ui slider labeled ticked disabled"></div>
+                                </div>
+                            </div>
+                            <div class="extra content">
+                                Control the number of distractor pieces.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="equal width row">
+                    <div class="column">
+                        <div class="ui card">
+                            <div class="content">
+                                <div class="header">Varieties</div>
+                            </div>
+                            <div class="content">
+                                <div class="field">
+                                    <label>Colors</label>
+                                    <div id="select_variety_num_colors" class="ui labeled ticked slider"></div>
+                                </div>
+                                <div class="field">
+                                    <label>Shapes</label>
+                                    <div id="select_variety_num_shapes" class="ui labeled ticked slider"></div>
+                                </div>
+                                <div class="field">
+                                    <label>Positions</label>
+                                    <div id="select_variety_num_positions" class="ui labeled ticked slider"></div>
+                                </div>
+                            </div>
+                            <div class="extra content">
+                                Control the number of values available for the piece properties. For a unique
+                                property
+                                there
+                                must be at least two values available.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="ui card">
+                            <div class="content">
+                                <div class="header">Ambiguity</div>
+                            </div>
+                            <div class="content">
+                                <div class="field">
+                                    <label>Colors</label>
+                                    <div id="select_ambiguous_num_colors" class="ui labeled ticked slider"></div>
+                                </div>
+                                <div class="field">
+                                    <label>Shapes</label>
+                                    <div id="select_ambiguous_num_shapes" class="ui labeled ticked slider"></div>
+                                </div>
+                                <div class="field">
+                                    <label>Positions</label>
+                                    <div id="select_ambiguous_num_positions" class="ui labeled ticked slider"></div>
+                                </div>
+                            </div>
+                            <div class="extra content">
+                                Control the number of distractor pieces that share the same values with the target
+                                piece
+                                for
+                                a particular property.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
