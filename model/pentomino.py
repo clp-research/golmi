@@ -100,6 +100,13 @@ class Shapes(Enum):
         return f"{self.value_name}"
 
 
+class Rotations(Enum):
+    DEGREE_0 = 0
+    DEGREE_90 = 90
+    DEGREE_180 = 180
+    DEGREE_270 = 270
+
+
 class Colors(Enum):
     RED = ("red", "#ff0000")
     ORANGE = ("orange", "#ffa500")
@@ -214,6 +221,7 @@ class PropertyNames(Enum):
     COLOR = "color"
     SHAPE = "shape"
     REL_POSITION = "rel_position"
+    ROTATION = "rotation"
 
     @classmethod
     def from_string(cls, name):
@@ -225,10 +233,11 @@ class PropertyNames(Enum):
 
 class PieceConfig:
 
-    def __init__(self, color: Colors, shape: Shapes, rel_position: RelPositions):
+    def __init__(self, color: Colors, shape: Shapes, rel_position: RelPositions, rotation=Rotations.DEGREE_0):
         self.color = color
         self.shape = shape
         self.rel_position = rel_position
+        self.rotation = rotation
 
     def __getitem__(self, prop_name: PropertyNames):
         if prop_name == PropertyNames.COLOR:
@@ -237,6 +246,8 @@ class PieceConfig:
             return self.shape
         if prop_name == PropertyNames.REL_POSITION:
             return self.rel_position
+        if prop_name == PropertyNames.ROTATION:
+            return self.rotation
         raise Exception(f"Cannot get {prop_name}.")
 
     def __setitem__(self, prop_name: PropertyNames, value):
@@ -248,6 +259,9 @@ class PieceConfig:
             return
         if prop_name == PropertyNames.REL_POSITION:
             self.rel_position = value
+            return
+        if prop_name == PropertyNames.ROTATION:
+            self.rotation = value
             return
         raise Exception(f"Cannot set {prop_name}.")
 
@@ -277,6 +291,8 @@ class Piece:
                         x=x, y=y,
                         block_matrix=piece_config.shape.value_matrix,
                         color=piece_config.color.value_name)
+        if piece_config.rotation:
+            piece_obj.rotate(piece_config.rotation.value)
         return cls(piece_id, piece_config, piece_obj)
 
 
@@ -311,6 +327,11 @@ class Board:
                              ambiguities: dict[PropertyNames, int] = None):
         distractors = create_distractor_configs(piece_config, unique_props, num_distractors, varieties, ambiguities)
         board = Board(board_width, board_height)
+        # TODO this is just a quick and dirty hack
+        possible_rotations = list(Rotations)
+        piece_config[PropertyNames.ROTATION] = random.choice(possible_rotations)
+        for d in distractors:
+            d[PropertyNames.ROTATION] = random.choice(possible_rotations)
         board.add_piece_from_config(piece_config)
         board.add_pieces_from_configs(distractors)
         return board
@@ -321,7 +342,8 @@ def reduce_atoms(piece_config: PieceConfig, unique_props: set[PropertyNames], va
     atoms = {
         PropertyNames.SHAPE: list(Shapes),
         PropertyNames.COLOR: list(Colors),
-        PropertyNames.REL_POSITION: list(RelPositions)
+        PropertyNames.REL_POSITION: list(RelPositions),
+        PropertyNames.ROTATION: list(Rotations)
     }
     for prop_name in unique_props:
         if len(atoms[prop_name]) < 2:
