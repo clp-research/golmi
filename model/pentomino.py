@@ -1,3 +1,4 @@
+import logging
 from enum import Enum, auto
 import random
 
@@ -307,7 +308,7 @@ def reduce_atoms(piece_config: PieceConfig, unique_props: set[PropertyNames], va
         if len(atoms[prop_name]) < 2:
             raise Exception("Cannot discriminate on a property with less than 2 possible values")
         atoms[prop_name].remove(piece_config[prop_name])
-        if varieties:
+        if varieties and prop_name in varieties:
             prop_variety = varieties[prop_name]
             if prop_variety > 0:
                 atoms[prop_name] = random.sample(atoms[prop_name], k=prop_variety)
@@ -342,17 +343,16 @@ def create_distractor_configs(piece_config: PieceConfig,
                 # We choose from a variable number of atoms for the prop to differ ("variety")
                 distractor_config[unique_prop] = random.choice(atoms_reduced_unique[unique_prop])
         if ambiguities and num_distractors > 1:
-            for unique_prop in unique_props:
-                if unique_prop in ambiguities:
-                    raise Exception(f"Unique prop {unique_prop} must not be in ambiguities {ambiguities}.")
             # We allow a more fine-grained control on how many distractors share exactly the same "non-unique"
             # properties as the target piece (at least one piece must be still identical in "non-unique" props)
             differ_piece_configs = random.sample(distractor_configs, k=num_distractors - 1)
             atoms_reduced_non_unique = reduce_atoms(piece_config, non_unique_props, varieties)
             for ambiguous_prop, ambiguous_count in ambiguities.items():
+                if ambiguous_prop in unique_props:
+                    logging.warning(f"Ignore unique prop {ambiguous_prop} in ambiguities {ambiguities}.")
+                    continue
                 if ambiguous_count <= 0 or ambiguous_count >= num_distractors:
-                    # all should look the same in "non-unique" props
-                    break
+                    continue # all should look the same in "non-unique" props
                 differ_count = len(differ_piece_configs)
                 if ambiguous_count > 1:
                     differ_count = differ_count - ambiguous_count + 1  # one piece is always ambiguous
