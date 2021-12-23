@@ -1,6 +1,7 @@
 import unittest
 
-from app import app
+from app.app import app
+from app import DEFAULT_CONFIG_FILE
 
 
 class Test(unittest.TestCase):
@@ -9,6 +10,9 @@ class Test(unittest.TestCase):
     """
 
     flask_test_client = app.test_client()
+    app.config[DEFAULT_CONFIG_FILE] = (
+        "app/pentomino/static/resources/config/pentomino_config.json"
+    )
 
     def test_get_response(self):
         """
