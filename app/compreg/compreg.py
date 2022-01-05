@@ -2,7 +2,6 @@ from flask_cors import cross_origin
 from flask import render_template, Blueprint, request
 from app import DEFAULT_CONFIG_FILE
 from app.app import socketio, client_models
-from app.neureg import tasks
 from model.pentomino import Board, PieceConfig, Colors, Shapes, RelPositions, PropertyNames
 from model.state import State
 
@@ -24,7 +23,7 @@ def compreg():
     return render_template("compreg.html")
 
 
-@socketio.on("new_comp_scene")
+@socketio.on("compreg_new_scene")
 def on_new_comp_scene(event):
     scene_config = event["scene_config"]
     unique_properties = scene_config["target_piece"]["unique_properties"]
@@ -59,7 +58,7 @@ def on_new_comp_scene(event):
     model.set_state(state)
 
 
-@socketio.on("mouseclick")
+@socketio.on("compreg_mouseclick")
 def on_mouseclick(event):
     # looks like we need a "mouse"-gripper b.c. everything expects a gripper instance
     model = client_models[request.sid]
