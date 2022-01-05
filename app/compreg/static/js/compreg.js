@@ -59,6 +59,10 @@ $(document).ready(function () {
         socket.emit("compreg_new_scene", {"scene_config": sceneConfig});
     }
 
+    socket.on("update_instructions", (instr) => {
+        $("#instructions").text(instr);
+    })
+
     let setup_complete = false;
     socket.on("update_config", (config) => {
         if (!setup_complete) {

@@ -2,7 +2,7 @@ from flask_cors import cross_origin
 from flask import render_template, Blueprint, request
 from app import DEFAULT_CONFIG_FILE
 from app.app import socketio, client_models
-from model.pentomino import Board, PieceConfig, Colors, Shapes, RelPositions, PropertyNames
+from model.pentomino import Board, PieceConfig, Colors, Shapes, RelPositions, PropertyNames, create_distractor_configs
 from model.state import State
 
 
@@ -23,6 +23,25 @@ def compreg():
     return render_template("compreg.html")
 
 
+def create_surface_structure(target: PieceConfig, properties: set[PropertyNames],
+                             always_mention: list[PropertyNames] = []):
+    shape = "piece"
+    color = ""
+    position = ""
+
+    if PropertyNames.SHAPE in properties or PropertyNames.SHAPE in always_mention:
+        shape = target[PropertyNames.SHAPE].value_name
+
+    if PropertyNames.COLOR in properties or PropertyNames.COLOR in always_mention:
+        color = target[PropertyNames.COLOR].value_name
+
+    if PropertyNames.REL_POSITION in properties or PropertyNames.REL_POSITION in always_mention:
+        position = f"in the {target[PropertyNames.REL_POSITION].value}"
+
+    ref_exp = f"{color} {shape} {position}".strip()  # strip whitespaces if s.t. is empty
+    return f"Take the {ref_exp}"
+
+
 @socketio.on("compreg_new_scene")
 def on_new_comp_scene(event):
     scene_config = event["scene_config"]
@@ -37,25 +56,29 @@ def on_new_comp_scene(event):
 
     model = client_models[request.sid]
     target = PieceConfig(Colors.BLUE, Shapes.T, RelPositions.CENTER)
-    board = Board.create_compositional(board_width=model.config.width,
-                                       board_height=model.config.height,
-                                       piece_config=target,
-                                       unique_props={property_name},
-                                       num_distractors=distractors_config["num_distractors"],
-                                       varieties={
-                                           PropertyNames.COLOR: varieties_config["num_colors"],
-                                           PropertyNames.SHAPE: varieties_config["num_shapes"],
-                                           PropertyNames.REL_POSITION: varieties_config["num_positions"],
-                                       },
-                                       ambiguities={
-                                           PropertyNames.COLOR: ambiguity_config["num_colors"],
-                                           PropertyNames.SHAPE: ambiguity_config["num_shapes"],
-                                           PropertyNames.REL_POSITION: ambiguity_config["num_positions"],
-                                       })
+    unique_props = {property_name}
+    distractors = create_distractor_configs(piece_config=target, unique_props=unique_props,
+                                            num_distractors=distractors_config["num_distractors"],
+                                            varieties={
+                                                PropertyNames.COLOR: varieties_config["num_colors"],
+                                                PropertyNames.SHAPE: varieties_config["num_shapes"],
+                                                PropertyNames.REL_POSITION: varieties_config["num_positions"],
+                                            },
+                                            ambiguities={
+                                                PropertyNames.COLOR: ambiguity_config["num_colors"],
+                                                PropertyNames.SHAPE: ambiguity_config["num_shapes"],
+                                                PropertyNames.REL_POSITION: ambiguity_config["num_positions"],
+                                            })
+    instruction = create_surface_structure(target, unique_props)
+    board = Board.create_compositional_from_configs(board_width=model.config.width, board_height=model.config.height,
+                                                    piece_config=target, distractors=distractors)
     # uff this is ugly
     state = State()
     state.objs = dict([(piece.piece_id, piece.piece_obj) for piece in board.pieces])
     model.set_state(state)
+
+    model._notify_views("update_instructions", instruction)
+
 
 
 @socketio.on("compreg_mouseclick")
