@@ -3,6 +3,61 @@ $(document).ready(function () {
     this.SceneConfigControls = class SceneConfigControls {
         constructor(scene_config) {
             // Unique Properties Configuration
+            $("#select_target_color").dropdown({
+                values: [
+                    {name: "random", value: "RANDOM"},
+                    {name: "red", value: "RED"},
+                    {name: "orange", value: "ORANGE"},
+                    {name: "yellow", value: "YELLOW"},
+                    {name: "green", value: "GREEN"},
+                    {name: "blue", value: "BLUE"},
+                    {name: "purple", value: "PURPLE"},
+                    {name: "brown", value: "BROWN"},
+                    {name: "grey", value: "GREY"}
+                ],
+                onChange: function (value, text, $selectedItem) {
+                    console.log("select_target_color: " + value)
+                    scene_config.target_piece.color = value
+                }
+            })
+            $("#select_target_shape").dropdown({
+                values: [
+                    {name: "random", value: "RANDOM"},
+                    {name: "F", value: "F"},
+                    {name: "I", value: "I"},
+                    {name: "L", value: "L"},
+                    {name: "N", value: "N"},
+                    {name: "T", value: "T"},
+                    {name: "U", value: "U"},
+                    {name: "V", value: "V"},
+                    {name: "W", value: "W"},
+                    {name: "X", value: "X"},
+                    {name: "Y", value: "Y"},
+                    {name: "Z", value: "Z"}
+                ],
+                onChange: function (value, text, $selectedItem) {
+                    console.log("select_target_shape: " + value)
+                    scene_config.target_piece.shape = value
+                }
+            })
+            $("#select_target_rel_position").dropdown({
+                values: [
+                    {name: "random", value: "RANDOM"},
+                    {value: "TOP_LEFT", name: "top left"},
+                    {value: "TOP_CENTER", name: "top"},
+                    {value: "TOP_RIGHT", name: "top right"},
+                    {value: "CENTER_RIGHT", name: "right"},
+                    {value: "BOTTOM_RIGHT", name: "bottom right"},
+                    {value: "BOTTOM_CENTER", name: "bottom"},
+                    {value: "BOTTOM_LEFT", name: "bottom left"},
+                    {value: "CENTER_LEFT", name: "left"},
+                    {value: "CENTER", name: "center"}
+                ],
+                onChange: function (value, text, $selectedItem) {
+                    console.log("select_target_rel_position: " + value)
+                    scene_config.target_piece.rel_position = value
+                }
+            })
             $("#select_property").dropdown({
                 onChange: function (value, text, $selectedItem) {
                     console.log("select_property: " + value)
@@ -20,8 +75,6 @@ $(document).ready(function () {
                         $("#select_ambiguous_num_positions").addClass("disabled")
                     }
                 }
-                // TODO: If variety is set for this prop
-                // then set it to 2, if it is 1
             })
             // Piece Configuration
             $("#select_num_distractors")

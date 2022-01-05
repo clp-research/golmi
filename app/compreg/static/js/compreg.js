@@ -19,10 +19,18 @@ $(document).ready(function () {
     let objLayer = document.getElementById("objects");
 
     // Set up the view js, this also sets up key listeners
-    let default_property_selected = "color"
+    let default_target_values = {
+        color: "BLUE",
+        shape: "T",
+        rel_position: "CENTER",
+        unique_prop: "color"
+    }
     const sceneConfig = {
         target_piece: {
-            unique_properties: [default_property_selected],
+            color: default_target_values.color,
+            shape: default_target_values.shape,
+            rel_position: default_target_values.rel_position,
+            unique_properties: [default_target_values.unique_prop],
         },
         distractors: {
             num_distractors: 4
@@ -39,7 +47,10 @@ $(document).ready(function () {
         }
     }
     const sceneControls = new document.SceneConfigControls(sceneConfig)
-    $("#select_property").dropdown("set selected", default_property_selected)
+    $("#select_property").dropdown("set selected", default_target_values.unique_prop)
+    $("#select_target_shape").dropdown("set selected", default_target_values.shape)
+    $("#select_target_color").dropdown("set selected", default_target_values.color)
+    $("#select_target_rel_position").dropdown("set selected", default_target_values.rel_position)
 
     const layerView = new document.PentoBoardView(socket, bgLayer, objLayer);
 

@@ -4,6 +4,7 @@ from app import DEFAULT_CONFIG_FILE
 from app.app import socketio, client_models
 from model.pentomino import Board, PieceConfig, Colors, Shapes, RelPositions, PropertyNames, create_distractor_configs
 from model.state import State
+import random
 
 
 def apply_config_to(app):
@@ -55,7 +56,24 @@ def on_new_comp_scene(event):
     ambiguity_config = scene_config["ambiguity"]
 
     model = client_models[request.sid]
-    target = PieceConfig(Colors.BLUE, Shapes.T, RelPositions.CENTER)
+    target_piece_color_selected = scene_config["target_piece"]["color"]
+    target_piece_shape_selected = scene_config["target_piece"]["shape"]
+    piece_rel_position_selected = scene_config["target_piece"]["rel_position"]
+
+    try:
+        target_piece_color = Colors[target_piece_color_selected]
+    except:
+        target_piece_color = random.choice(list(Colors))
+    try:
+        target_piece_shape = Shapes[target_piece_shape_selected]
+    except:
+        target_piece_shape = random.choice(list(Shapes))
+    try:
+        piece_rel_position = RelPositions[piece_rel_position_selected]
+    except:
+        piece_rel_position = random.choice(list(RelPositions))
+
+    target = PieceConfig(target_piece_color, target_piece_shape, piece_rel_position)
     unique_props = {property_name}
     distractors = create_distractor_configs(piece_config=target, unique_props=unique_props,
                                             num_distractors=distractors_config["num_distractors"],
@@ -78,7 +96,6 @@ def on_new_comp_scene(event):
     model.set_state(state)
 
     model._notify_views("update_instructions", instruction)
-
 
 
 @socketio.on("compreg_mouseclick")
