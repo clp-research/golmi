@@ -326,6 +326,11 @@ class Board:
                              varieties: dict[PropertyNames, int] = None,
                              ambiguities: dict[PropertyNames, int] = None):
         distractors = create_distractor_configs(piece_config, unique_props, num_distractors, varieties, ambiguities)
+        return cls.create_compositional_from_configs(board_width, board_height, piece_config, distractors)
+
+    @classmethod
+    def create_compositional_from_configs(cls, board_width, board_height,
+                                          piece_config: PieceConfig, distractors: list[PieceConfig]):
         board = Board(board_width, board_height)
         # TODO this is just a quick and dirty hack
         possible_rotations = list(Rotations)
