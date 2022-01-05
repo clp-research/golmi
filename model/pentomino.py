@@ -1,9 +1,11 @@
 import logging
-from enum import Enum, auto
+from enum import Enum
 import random
 
 from model.grid import Grid
 from model.obj import Obj
+
+import numpy as np
 
 
 class Shapes(Enum):
@@ -108,18 +110,19 @@ class Rotations(Enum):
 
 
 class Colors(Enum):
-    RED = ("red", "#ff0000")
-    ORANGE = ("orange", "#ffa500")
-    YELLOW = ("yellow", "#ffff00")
-    GREEN = ("green", "#008000")
-    BLUE = ("blue", "#0000ff")
-    PURPLE = ("purple", "#800080")
-    BROWN = ("brown", "#8b4513")
-    GREY = ("grey", "#808080")
+    RED = ("red", "#ff0000", [255, 0, 0])
+    ORANGE = ("orange", "#ffa500", [255, 165, 0])
+    YELLOW = ("yellow", "#ffff00", [255, 255, 0])
+    GREEN = ("green", "#008000", [0, 128, 0])
+    BLUE = ("blue", "#0000ff", [0, 0, 255])
+    PURPLE = ("purple", "#800080", [128, 0, 128])
+    BROWN = ("brown", "#8b4513", [139, 69, 19])
+    GREY = ("grey", "#808080", [128, 128, 128])
 
-    def __init__(self, value_name, value_hex):
+    def __init__(self, value_name, value_hex, value_rgb):
         self.value_name = value_name
         self.value_hex = value_hex
+        self.value_rgb = value_rgb
 
 
 class RelPositions(Enum):
@@ -300,9 +303,26 @@ class Board:
 
     def __init__(self, board_width, board_height):
         self.pieces = []
+        self.pieces_by_id = {}
         self.grid = Grid(board_width, board_height, step=1, prevent_overlap=True)
         self.board_width = board_width
         self.board_height = board_height
+
+    def to_rgb_array(self):
+        color_grid = []
+        for row in self.grid:
+            color_row = []
+            for tile in row:
+                tile_color = [255, 255, 255]  # white
+                if tile.objects:
+                    piece_id = tile.objects[0]
+                    tile_color = self.get_piece(piece_id).piece_config.color.value_rgb
+                color_row.append(tile_color)
+            color_grid.append(color_row)
+        return np.array(color_grid)
+
+    def get_piece(self, piece_id: int):
+        return self.pieces_by_id[piece_id]
 
     def add_pieces_from_configs(self, piece_configs: list[PieceConfig], max_attempts=100):
         for piece_config in piece_configs:
@@ -314,6 +334,7 @@ class Board:
             if self.grid.is_legal_position(piece.piece_obj.occupied(), piece.piece_id):
                 self.grid.add_obj(piece.piece_obj)
                 self.pieces.append(piece)
+                self.pieces_by_id[piece.piece_id] = piece
                 return True
         print(f"Max attempts reached, cannot add piece {piece_config}")
         return False
@@ -372,7 +393,8 @@ def create_distractor_configs(piece_config: PieceConfig,
     :param num_distractors:
     :param varieties: the number of other different values for the props. Zero, means all available are used.
         Defaults to all available properties.
-    :param ambiguities:
+    :param ambiguities: When not given (default), then all distractors share the same values with the target piece
+        (maximal ambiguity) except for the unique properties.
     :return:
     """
     if num_distractors < 1:
