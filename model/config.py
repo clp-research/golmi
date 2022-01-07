@@ -89,11 +89,17 @@ class Config:
         if move_step <= 0:
             return False
 
+        # test if a float is really an integer (1.0)
+        if move_step.is_integer():
+            return True
+
         # if move_step is a float it must divide
         # the interval between 0 and 1 evenly
         if isinstance(move_step, float):
             if not (1/(move_step % 1)).is_integer():
                 return False
+
+        # integers are always accepted
         return True
 
     def get_types(self):
