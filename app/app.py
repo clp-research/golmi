@@ -3,7 +3,9 @@ from flask_cors import CORS
 from flask_socketio import (
     SocketIO, emit, ConnectionRefusedError
 )
+
 from model.room_manager import RoomManager
+from app import DEFAULT_CONFIG_FILE
 
 # has to be passed by clients to connect
 # might want to set this in the environment variables:
@@ -29,12 +31,8 @@ socketio = SocketIO(
     engineio_logger=True,
     cors_allowed_origins='*'
 )
+room_manager = RoomManager(socketio)
 
-from app import DEFAULT_CONFIG_FILE
-# TODO: This is show it should work, but app.config["DEFAULT_CONFIG_FILE"] is not defined yet
-# as run.py calls register_experiments.register_app(app) after importing this module here
-#room_manager = RoomManager(socketio, app.config[DEFAULT_CONFIG_FILE])
-room_manager = RoomManager(socketio, "app/pentomino/static/resources/config/pentomino_config.json")
 
 def check_parameters(params, model, keys):
     """
@@ -63,8 +61,7 @@ def param_is_integer(param):
     """
     @return True if param is of type int, or is a float and convertible to int
     """
-    return isinstance(param, int) or \
-           (isinstance(param, float) and param.is_integer())
+    return isinstance(param, int) or (isinstance(param, float) and param.is_integer())
 
 
 # --- socketio events --- #
@@ -79,6 +76,7 @@ def client_connect(auth):
     if auth["password"] != AUTH:
         raise ConnectionRefusedError("authentication failed")
 
+
 @socketio.on("join")
 def join(params):
     # Assign a (new) room with the given id
@@ -86,16 +84,17 @@ def join(params):
         room_id = params["room_id"]
 
         if not room_manager.has_room(room_id):
-            # create a new model
-            room_manager.add_room(room_id)
+            # create a new default room
+            room_manager.add_room(room_id, app.config[DEFAULT_CONFIG_FILE])
     else:
-        # client gets their own room
+        # client gets their own default room
         room_id = request.sid + "_room"
-        room_manager.add_room(room_id)
+        room_manager.add_room(room_id, app.config[DEFAULT_CONFIG_FILE])
 
     room_manager.add_client_to_room(request.sid, room_id)
 
-    # inform client about room name, current config and state using their private channel
+    # inform client about room name, current config and state using their
+    # private channel
     emit("update_config", room_manager.get_model_of_room(room_id).config.to_dict())
     emit("update_state", room_manager.get_model_of_room(room_id).state.to_dict())
 
@@ -129,7 +128,7 @@ def load_config(json):
 
 # --- pieces --- #
 @socketio.on("random_init")
-def init_from_Random(params):
+def init_from_random(params):
     for model in room_manager.get_models_of_client(request.sid):
         good_params = check_parameters(
             params,
@@ -175,7 +174,8 @@ def move(params):
         good_params = check_parameters(params, model, {"id", "dx", "dy"})
         # dx and dy can only be integers:
         good_params = good_params and \
-            param_is_integer(params["dx"]) and param_is_integer(params["dy"])
+                      param_is_integer(params["dx"]) and \
+                      param_is_integer(params["dy"])
 
         if good_params:
             # continuous / looped action

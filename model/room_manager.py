@@ -7,9 +7,8 @@ class RoomManager:
     """
     Keeps track of and modifies rooms, the related models and joined users.
     """
-    def __init__(self, socket, default_config_file):
+    def __init__(self, socket):
         self.socket = socket
-        self.default_config_file = default_config_file
         # list of clients in a room
         self.room_to_clients = dict()
         # room ids mapped to Model instances
@@ -23,16 +22,14 @@ class RoomManager:
         """
         return self.room_to_model.get(room_id) is not None
 
-    def add_room(self, room_id, config_file=None):
+    def add_room(self, room_id, config_file):
         """
         Adds a room with a new model instance that has the default
         configuration.
         @param room_id identifier of the room for the new model instance
-        @param config_file  optional name of file containing a model
-            configuration in json format
+        @param config_file  name of file containing a model configuration in
+            json format
         """
-        if config_file is None:
-            config_file = self.default_config_file
         new_model = Model(Config.from_json(config_file), self.socket, room_id)
         self.room_to_model[room_id] = new_model
         self.room_to_clients[room_id] = list()
