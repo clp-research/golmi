@@ -41,8 +41,9 @@ class Config:
                                 grid with a matching target object.
         @param colors           Available object colors, can be color names
                                 or html color codes.
-                                Default: ["#ff0000", "#ffa500", "#ffff00", "#008000",
-                                "#0000ff", "#800080", "#8b4513", "#808080"]
+                                Default: ["#ff0000", "#ffa500", "#ffff00",
+                                "#008000","#0000ff", "#800080", "#8b4513",
+                                "#808080"]
         """
         # make sure type_config can be parseds
         if isinstance(type_config, str):
@@ -144,7 +145,8 @@ class Config:
         if source_dict.get("type_config") is None or \
                 not isinstance(source_dict["type_config"], dict):
             raise ValueError(
-                f"source_dict must contain key 'type_config' mapping to a dict but is {source_dict}"
+                f"source_dict must contain key 'type_config' "
+                f"mapping to a dict but is {source_dict}"
             )
 
         # remove comments from dictionary
