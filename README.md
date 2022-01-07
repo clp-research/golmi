@@ -209,14 +209,16 @@ For instance, in the use case of keyboard controls (as in our ```LocalKeyControl
 
 ## Tests
 To run all tests:
-```
-$ python -m unittest
+```bash
+python -m unittest
 ```
 
 To test only parts:
-```
-$ python -m unittest -k test_socketio
-$ python -m unittest -k test_flask_endpoints
+```bash
+python -m unittest -k test_socketio
+python -m unittest -k test_flask_endpoints
+python -m unittest -k test_grid
+python -m unittest -k test_socketio
 ```
 
 ## Troubleshooting
