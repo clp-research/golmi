@@ -1,0 +1,12 @@
+{
+  "n_players": 2,
+  "n_objs": 10,
+  "role_counts": {
+    "IG": 1,
+    "IF": 1
+  },
+  "area_block":"all",
+  "area_target": "all",
+  "create_targets": false,
+  "random_gr_position": false
+}
