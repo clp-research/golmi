@@ -34,11 +34,10 @@ class Test(unittest.TestCase):
 
         # add objects
         g.add_obj(o1)
-        g.add_obj(o2)
 
         # objects overlap, object 2 cannot be placed
         new_c = o2.occupied(o1.x, o1.y)
-        self.assertFalse(g.is_legal_position(new_c, 1))
+        self.assertFalse(g.is_legal_position(new_c, 2))
 
     def test_allow_overlap(self):
         g = Grid(width=5, height=5, step=0.5, prevent_overlap=False)
@@ -66,11 +65,10 @@ class Test(unittest.TestCase):
 
         # add objects
         g.add_obj(o1)
-        g.add_obj(o2)
 
         # objects overlap, object 2 can be placed
         new_c = o2.occupied(o1.x, o1.y)
-        self.assertTrue(g.is_legal_position(new_c, 1))
+        self.assertTrue(g.is_legal_position(new_c, 2))
 
     def test_add_object(self):
         g = Grid(width=5, height=5, step=0.5, prevent_overlap=False)
