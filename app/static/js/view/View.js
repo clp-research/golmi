@@ -52,6 +52,12 @@ $(document).ready(function () {
 				this.objs = objs;
 				this.redrawObjs();
 			});
+			// new target state -> redraw objects
+			this.socket.on("update_targets", (targets) => {
+				this.onUpdateTargets(targets); // hook
+				this.targets = targets;
+				this.redrawObjs();
+			});
 			// new configuration -> save values and redraw everything
 			this.socket.on("update_config", (config) => {
 				this._loadConfig(config);
@@ -154,6 +160,10 @@ $(document).ready(function () {
 
 		onUpdateObjects(objs) {
 			console.log(`onUpdateObjects() at View: not implemented`);
+		}
+
+		onUpdateTargets(objs) {
+			console.log(`onUpdateTargets() at View: not implemented`);
 		}
 
 		onUpdateState(state) {
