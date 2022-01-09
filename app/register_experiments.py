@@ -1,6 +1,7 @@
 from app import REGISTRY, Experiment
 from app.welcome import welcome
 from app.pentomino import pentomino
+from app.pentomino_game import pentomino_game
 
 
 def register_app(app):
@@ -8,6 +9,8 @@ def register_app(app):
     REGISTRY.append(Experiment("Welcome", "/", welcome.welcome_bp))
     # The demo experiment (you can comment this out, if you dont need it)
     REGISTRY.append(Experiment("Pentomino", "/pentomino/", pentomino.pentomino_bp, pentomino.apply_config_to))
+    # The multiplayer demo experiment (you can comment this out, if you dont need it)
+    REGISTRY.append(Experiment("Multiplayer Pentomino", "/pentomino_game/", pentomino_game.pentomino_game_bp, pentomino_game.apply_config_to))
     # Your custom experiments come here (uncomment and adjust the next line)
     # REGISTRY.append(Experiment("MyExp", "/myexp/", myexp.myexp_bp, myexp.apply_config_to))
 
