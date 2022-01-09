@@ -5,18 +5,10 @@ $(document).ready(function () {
     const MODEL = window.location.origin
     console.log("Connect to " + MODEL)
 
-    // parameters for random initial state
-    // (state is generated once the configuration is received)
-    const N_OBJECTS = 5;
-    const N_GRIPPERS = 0; // no pre-generated gripper
-
     // --- create a socket --- //
-    // don't connect yet
     let socket = io(MODEL, {
         auth: { "password": "GiveMeTheBigBluePasswordOnTheLeft" }
     });
-    // debug: print any messages to the console
-    localStorage.debug = 'socket.io-client:socket';
 
     // --- controller --- //
     // create a controller, we still need to attach a gripper in the model to it
@@ -37,6 +29,9 @@ $(document).ready(function () {
     // --- socket communication --- //
     socket.on("connect", () => {
         console.log("Connected to model server");
+        // This test room uses the default configuration and can only hold 2
+        // players. It will be created by the first connecting client.
+        socket.emit("join_game", {"room_id": "test_room", "role": "random"})
     });
 
     socket.on("joined_room", (data) => {
@@ -47,65 +42,11 @@ $(document).ready(function () {
         console.log("Disconnected from model server");
         // demo of the logView: send the logged data to the server
         logView.addData("test", true);
-        logView.sendData("/pentomino/save_log");
-    });
-
-    var setup_complete = false;
-    socket.on("update_config", (config) => {
-        // only do setup once (reconnections can occur, we don't want to reset the state every time)
-        if (!setup_complete) {
-            // ask model to load a random state
-            socket.emit("random_init", {"n_objs": N_OBJECTS,
-                                        "n_grippers": N_GRIPPERS,
-                                        "random_gr_position":false,
-                                        "area_block": "all"});
-            // manually add a gripper that will be assigned to the controller
-            // TODO: Should this happen somewhere else?
-            // Options:
-            // - automatically get gripper when joining room / use join parameter
-            //      -> but then why do we even need pre-generated grippers?
-            // - manually add gripper once room is joined
-            //      -> but then I need to know generated names? or same problem.
-            // so maybe there are 2 approaches that make sense:
-            // 1. random init on model side + automatically attach to some gripper that is generated on the fly
-            // 2. pass state & attach manually to specific gripper
-            socket.emit("add_gripper");
-            setup_complete = true;
-        }
+        logView.sendData("/pentomino_game/save_log");
     });
 
     // for debugging: log all events
     socket.onAny((eventName, ...args) => {
         console.log(eventName, args);
-    });
-
-    // --- stop and start drawing --- //
-    function start() {
-        // reset the controller in case any key is currently pressed
-        controller.resetKeys()
-        controller.attachModel(socket);
-        // join a GOLMI room with the name "test_room_id"
-        socket.emit("join", {"room_id": "test_room_id"});
-    }
-
-    function stop() {
-        // reset the controller in case any key is currently pressed
-        controller.resetKeys();
-        // disconnect the controller
-        controller.detachModel(socket);
-        // manually disconnect
-        socket.disconnect();
-    }
-
-    // --- buttons --- //
-    $("#start").click(() => {
-        start();
-        // disable this button, otherwise it is now in focus and Space/Enter will trigger the click again
-        $("#start").prop("disabled", true);
-    });
-    $("#stop").click(() => {
-        stop();
-        // reactive the start button
-        $("#start").prop("disabled", false);
     });
 }); // on document ready end

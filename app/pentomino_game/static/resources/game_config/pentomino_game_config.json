@@ -5,8 +5,8 @@
     "IG": 1,
     "IF": 1
   },
-  "area_block":"all",
-  "area_target": "all",
-  "create_targets": false,
+  "area_block":"top",
+  "area_target": "bottom",
+  "create_targets": true,
   "random_gr_position": false
 }
