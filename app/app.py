@@ -4,6 +4,7 @@ from flask_socketio import (
     SocketIO, emit, ConnectionRefusedError
 )
 
+from model.config import Config
 from model.room_manager import RoomManager
 from app import DEFAULT_CONFIG_FILE
 
@@ -79,24 +80,33 @@ def client_connect(auth):
 
 @socketio.on("join")
 def join(params):
-    # Assign a (new) room with the given id
-    if params.get("room_id"):
-        room_id = params["room_id"]
-
-        if not room_manager.has_room(room_id):
-            # create a new default room
-            room_manager.add_room(room_id, app.config[DEFAULT_CONFIG_FILE])
-    else:
-        # client gets their own default room
-        room_id = request.sid + "_room"
-        room_manager.add_room(room_id, app.config[DEFAULT_CONFIG_FILE])
+    # If no room_id was given, create a private room for the client using
+    # their session id for the name
+    room_id = params["room_id"] or request.sid + "_room"
+    if not room_manager.has_room(room_id):
+        # create a new default room
+        default_config = Config.from_json(app.config[DEFAULT_CONFIG_FILE])
+        room_manager.add_room(room_id, default_config)
 
     room_manager.add_client_to_room(request.sid, room_id)
 
-    # inform client about room name, current config and state using their
-    # private channel
+    # inform client about current config and state using their private channel
     emit("update_config", room_manager.get_model_of_room(room_id).config.to_dict())
     emit("update_state", room_manager.get_model_of_room(room_id).state.to_dict())
+
+
+# TODO: make Config + GameConfig updatable
+@socketio.on("add_room")
+def add_room(params):
+    """
+    Room is only added if it does not exist yet.
+    """
+    good_params = check_parameters(params, None, {"room_id"})
+    if good_params:
+        room_id = params["room_id"]
+        if not room_manager.has_room(room_id):
+            default_config = Config.from_json(app.config[DEFAULT_CONFIG_FILE])
+            room_manager.add_room(room_id, default_config)
 
 
 @socketio.on("disconnect")
