@@ -6,7 +6,10 @@ from flask import Blueprint, render_template, request, abort
 from flask_cors import cross_origin
 
 from app import DEFAULT_CONFIG_FILE
+from app.app import socketio, check_parameters, room_manager, app
 from app.pentomino_game import DEFAULT_GAME_CONFIG_FILE
+from model.config import Config
+from model.game_config import GameConfig
 
 
 def apply_config_to(app):
@@ -47,3 +50,40 @@ def save_log():
         f.write(json.dumps(json_data, indent=2))
     return "0", 200
 
+
+# TODO: make Config + GameConfig updatable
+@socketio.on("add_game_room")
+def add_game_room(params):
+    """
+    Room is only added if it does not exist yet.
+    """
+    good_params = check_parameters(params, None, ["room_id"])
+    if good_params:
+        room_id = params["room_id"]
+        if not room_manager.has_room(room_id):
+            default_config = Config.from_json(app.config[DEFAULT_CONFIG_FILE])
+            default_game_config = GameConfig.from_json(app.config[DEFAULT_GAME_CONFIG_FILE])
+            room_manager.add_game_room(room_id, default_config, default_game_config)
+
+# role is needed if the client wants to join a game
+    room_manager.add_client_to_room(request.sid, room_id, params.get("role"))
+
+
+@socketio.on("join_game")
+def join_game(params):
+    # Assign a (new) room with the given id
+    room_id = params["room_id"] or request.sid + "_room"
+
+    if not room_manager.has_room(room_id):
+        # create a new default room
+        default_config = Config.from_json(app.config[DEFAULT_CONFIG_FILE])
+        default_game_config = GameConfig.from_json(app.config[DEFAULT_GAME_CONFIG_FILE])
+        room_manager.add_game_room(room_id, default_config, default_game_config)
+
+    role = params.get("role") or "random"
+    try:
+        room_manager.add_client_to_room(request.sid, room_id, role)
+    # TODO: better error handling here
+    except RuntimeError as e:
+        print(e)
+        print("Client attempted to connected to game with no roles remaining")

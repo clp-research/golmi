@@ -9,6 +9,8 @@ Roles defined here
         - IF: sees gripper but not targets
         - OBSERVER: sees everything
 """
+import random
+
 from model.config import Config
 from model.game_config import GameConfig
 from model.model import Model
@@ -56,6 +58,15 @@ class Game(Model):
         self.player_roles[player_id] = role
         self.unassigned_roles.remove(role)
 
+    def assign_random_role(self, player_id):
+        """
+        Assign the player a random remaining role.
+        """
+        if len(self.unassigned_roles) == 0:
+            raise RuntimeError("No unassigned roles left")
+        random_role = random.choice(self.unassigned_roles)
+        self.assign_role(player_id, random_role)
+
     def get_unassigned_roles(self):
         return self.unassigned_roles
 
@@ -67,8 +78,13 @@ class Game(Model):
         @param start_once_full  Automatically start the game if the required
             number of players is present
         """
-        self.assign_role(player_sid, role)
-
+        if role == "random":
+            self.assign_random_role(player_sid)
+        else:
+            self.assign_role(player_sid, role)
+        self._notify_views_privately("update_config",
+                                     self.config.to_dict(),
+                                     player_sid)
         if start_once_full and self.has_enough_players():
             self.start()
 
@@ -125,8 +141,9 @@ class Game(Model):
             self._notify_views("update_objs", data["objs"])
             self._notify_views("update_targets", data["targets"])
             self._notify_views("update_grippers", data["grippers"])
-        skip_sids = self._get_skipped_sids(event_name)
-        self.socket.emit(event_name, data, room=self.room, skip_sid=skip_sids)
+        else:
+            skip_sids = self._get_skipped_sids(event_name)
+            self.socket.emit(event_name, data, room=self.room, skip_sid=skip_sids)
 
     def _get_skipped_sids(self, event_name):
         skipped_sids = list()

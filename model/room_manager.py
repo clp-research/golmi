@@ -1,3 +1,5 @@
+from model.game import Game
+from model.game_config import GameConfig
 from model.model import Model
 from model.config import Config
 from flask_socketio import emit, join_room, leave_room, close_room, rooms
@@ -22,16 +24,27 @@ class RoomManager:
         """
         return self.room_to_model.get(room_id) is not None
 
-    def add_room(self, room_id, config_file):
+    def add_room(self, room_id, config: Config):
         """
-        Adds a room with a new model instance that has the default
-        configuration.
-        @param room_id identifier of the room for the new model instance
-        @param config_file  name of file containing a model configuration in
-            json format
+        Adds a room with a new Model instance.
+        @param room_id identifier of the room for the new Model instance.
+        @param config Config instance to use for the newly created model.
         """
-        new_model = Model(Config.from_json(config_file), self.socket, room_id)
-        self.room_to_model[room_id] = new_model
+        new_model = Model(config, self.socket, room_id)
+        self._register_room(room_id, new_model)
+
+    def add_game_room(self, room_id, config: Config, game_config: GameConfig):
+        """
+        Adds an empty room with a new Game instance.
+        @param room_id identifier of the room for the new Model instance.
+        @param config Config instance to use for the newly created model.
+        @param game_config GameConfig for a new Game instance.
+        """
+        new_game = Game(config, self.socket, room_id, game_config)
+        self._register_room(room_id, new_game)
+
+    def _register_room(self, room_id, model: Model):
+        self.room_to_model[room_id] = model
         self.room_to_clients[room_id] = list()
 
     def remove_room(self, room_id):
@@ -68,7 +81,7 @@ class RoomManager:
             joined_rooms.remove(client_id)
         return joined_rooms
 
-    def add_client_to_room(self, client_id, room_id):
+    def add_client_to_room(self, client_id, room_id, role=None):
         """
         If the given room exists, add the client to it.
         """
@@ -77,6 +90,12 @@ class RoomManager:
             self.room_to_clients[room_id].append(client_id)
             # join the socketio room
             join_room(room_id, sid=client_id)
+
+            if role is not None:
+                model = self.get_model_of_room(room_id)
+                if isinstance(model, Game):
+                    model.add_player(client_id, role)
+
             # inform everyone in the room
             emit("joined_room",
                  {"room_id": room_id, "client_id": client_id},
@@ -109,6 +128,10 @@ class RoomManager:
         # leave socket room
         if room_id in rooms(client_id):
             leave_room(room_id, sid=client_id)
+        # only applicable to games: remove player from game
+        model = self.get_model_of_room(room_id)
+        if isinstance(model, Game):
+            model.remove_player(client_id)
         # optional: delete a room with no clients left
         if delete_empty_room and len(self.room_to_clients[room_id]) == 0:
             self.remove_room(room_id)
