@@ -11,8 +11,9 @@ $(document).ready(function () {
     });
 
     // --- controller --- //
-    // create a controller, we still need to attach a gripper in the model to it
+    // create a controller and wait until the model assigns a gripper
     let controller = new document.LocalKeyController();
+    controller.awaitGripperFrom(socket);
 
     // --- view --- //
     // Get references to the three canvas layers

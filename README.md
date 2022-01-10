@@ -194,7 +194,7 @@ As an example, `LocalKeyController.js` is provided. It interprets keyboard event
 | 83 | S | flip |
 | 87 | W | flip |
 
-`LocalKeyController` possesses the function `attachModel()` that needs to be called once to associate a socket connection to the Controller.
+`LocalKeyController` possesses the function `awaitGripperFrom()` that needs to be called once to associate a socket connection to the Controller.
 Once the model sends an 'attach_gripper' event with the assigned gripper id, the controller uses this id
 in subsequent action requests. However, the class is also able to connect to multiple models at once, (but only to one
 gripper per model), each would be sent the action requesting events.

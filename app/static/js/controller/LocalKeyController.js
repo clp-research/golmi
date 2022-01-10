@@ -37,10 +37,10 @@ $(document).ready(function () {
 		 * Subscribe a new model. Only one subscription per model is allowed,
 		 * meaning in one model, only one gripper can be controlled!
 		 * A gripper is controlled once the model sends an 'attach_gripper'
-		 * event. See requestGripper for manually adding a gripper.
+		 * event.
 		 * @param {socket of the model server to notify} socket
 		 */
-		attachModel(socket) {
+		awaitGripperFrom(socket) {
 			// make sure not to subscribe a model-gripper pair twice
 			for (let [existingSocket, g] of this.models) {
 				if (existingSocket.id == socket.id) {
@@ -57,7 +57,7 @@ $(document).ready(function () {
 		 * Remove a model from the internal list of models to notify. Remove the associated gripper.
 		 * @param {socket of the model API to unsubscribe} socket
 		 */
-		detachModel(socket) {
+		detachFrom(socket) {
             // remove any occurence of the socket
             for (let i = 0; i < this.models.length; i++) {
                 if (this.models[i][0].id == socket.id) {

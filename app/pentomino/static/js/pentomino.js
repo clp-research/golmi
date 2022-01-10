@@ -83,7 +83,7 @@ $(document).ready(function () {
     function start() {
         // reset the controller in case any key is currently pressed
         controller.resetKeys()
-        controller.attachModel(socket);
+        controller.awaitGripperFrom(socket);
         // join a GOLMI room with the name "test_room_id"
         socket.emit("join", {"room_id": "test_room_id"});
     }
@@ -92,7 +92,7 @@ $(document).ready(function () {
         // reset the controller in case any key is currently pressed
         controller.resetKeys();
         // disconnect the controller
-        controller.detachModel(socket);
+        controller.detachFrom(socket);
         // manually disconnect
         socket.disconnect();
     }
