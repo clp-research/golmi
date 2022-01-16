@@ -41,6 +41,10 @@ $(document).ready(function () {
 
     socket.on("disconnect", () => {
         console.log("Disconnected from model server");
+        // reset the controller in case any key is currently pressed
+        controller.resetKeys();
+        // disconnect the controller
+        controller.detachFrom(socket);
         // demo of the logView: send the logged data to the server
         logView.addData("test", true);
         logView.sendData("/pentomino_game/save_log");
