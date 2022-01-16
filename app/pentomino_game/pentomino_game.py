@@ -57,7 +57,7 @@ def add_game_room(params):
     """
     Room is only added if it does not exist yet.
     """
-    good_params = check_parameters(params, None, ["room_id"])
+    good_params = check_parameters(params, None, {"room_id"})
     if good_params:
         room_id = params["room_id"]
         if not room_manager.has_room(room_id):
