@@ -22,15 +22,14 @@ class RoomManager:
         """
         return self.room_to_model.get(room_id) is not None
 
-    def add_room(self, room_id, config_file):
+    def add_room(self, room_id, config: dict):
         """
         Adds a room with a new model instance that has the default
         configuration.
         @param room_id identifier of the room for the new model instance
-        @param config_file  name of file containing a model configuration in
-            json format
+        @param config  model configuration as a dictionary
         """
-        new_model = Model(Config.from_json(config_file), self.socket, room_id)
+        new_model = Model(Config.from_dict(config), self.socket, room_id)
         self.room_to_model[room_id] = new_model
         self.room_to_clients[room_id] = list()
 
