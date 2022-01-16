@@ -55,6 +55,7 @@ $(document).ready(function () {
             socket.emit("random_init", {"n_objs": N_OBJECTS,
                                         "n_grippers": N_GRIPPERS,
                                         "random_gr_position":false,
+                                        "create_targets": true,
                                         "area_block": "top",
                                         "area_target": "bottom"});
             // subscribe the controller to the only generated gripper
