@@ -3,6 +3,7 @@ Class to store settings such as board width, allowable actions, etc.
 """
 
 import json
+from os.path import exists
 
 
 class Config:
@@ -27,7 +28,7 @@ class Config:
                                 to objects overlapping. default:True
         @param actions 	        Array of strings naming allowed object
                                 manipulations.
-                                Default: ['move', 'rotate', "flip", "grip"]
+                                Default: ["move", "rotate", "flip", "grip"]
         @param move_step	    Step size for object movement.
                                 Default: 0.5 [blocks]
         @param rotation_step	Applied angle when object is rotated. Limitations
@@ -118,6 +119,8 @@ class Config:
         a 0 signifies the absence.
         @param filename 	path to json file
         """
+        if not exists(filename):
+            raise ValueError("filename must be the path to an existing file")
         with open(filename, "r", encoding="utf-8") as infile:
             types = json.load(infile)
 
@@ -131,10 +134,11 @@ class Config:
             The key "type_config" mapping to a dictionary is mandatory.
         @return new Config instance with the given attributes
         """
+        if not exists(filename):
+            raise ValueError("filename must be the path to an existing file")
         with open(filename, mode="r") as file:
             json_data = json.loads(file.read())
 
-        # remove comments from json file
         json_data = Config.remove_json_comments(json_data)
 
         return cls.from_dict(json_data)
@@ -158,11 +162,8 @@ class Config:
                 f"mapping to a dict but is {source_dict}"
             )
 
-        # remove comments from dictionary
-        types = Config.remove_json_comments(source_dict["type_config"])
+        source_dict = Config.remove_json_comments(source_dict)
 
-        # use source_dict as kwargs to construct a config object
-        source_dict["type_config"] = types
         return cls(**source_dict)
 
     def to_dict(self):
@@ -176,7 +177,14 @@ class Config:
 
     @staticmethod
     def remove_json_comments(parsed_json):
-        return {
-            key: value for key, value in parsed_json.items()
-            if not key.startswith("_")
-        }
+        """
+        Recursively removes keys from a dictionary that start with an
+        underscore ('_').
+        """
+        commentless_json = dict()
+        for key, value in parsed_json.items():
+            if not key.startswith("_"):
+                commentless_json[key] = value
+            elif isinstance(value, dict):
+                commentless_json[key] = Config.remove_json_comments(value)
+        return commentless_json
