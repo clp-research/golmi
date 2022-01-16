@@ -82,6 +82,9 @@ $(document).ready(function () {
 		drawBg() {
 			// set updates
 			let ctx = this.bgCanvas.getContext("2d");
+			// important: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/clearRect
+			// using beginPath() after clear() prevents odd behavior
+			ctx.beginPath();
 			ctx.fillStyle = "white";
 			ctx.lineStyle = "black";
 			ctx.lineWidth = 1;
@@ -93,6 +96,7 @@ $(document).ready(function () {
 			for (let row = 0; row <= this.rows; row++) {
 				ctx.moveTo(0, row*this.blockSize);
 				ctx.lineTo(this.canvasWidth, row*this.blockSize);
+				ctx.stroke();
 			}
 			// vertical lines
 			for (let col = 0; col <= this.cols; col++) {
@@ -118,6 +122,7 @@ $(document).ready(function () {
 		 */
 		drawObjs() {
 			// first draw targets
+			ctx.beginPath();
 			for (const obj of Object.values(this.targets))	{
 				// skip any gripped object here
 				if (obj.gripped) { continue; }
@@ -170,6 +175,7 @@ $(document).ready(function () {
 		drawGr() {
 			// set up
 			let ctx = this.grCanvas.getContext("2d");
+			ctx.beginPath();
 			for (const [grId, gripper] of Object.entries(this.grippers)) {
 				// draw any gripped object first (i.e. 'below' the gripper)
 				if (gripper.gripped) {
