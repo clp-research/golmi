@@ -1,3 +1,6 @@
+import json
+from os.path import exists
+
 from flask import Flask, request
 from flask_cors import CORS
 from flask_socketio import (
@@ -9,7 +12,7 @@ from app import DEFAULT_CONFIG_FILE
 
 # has to be passed by clients to connect
 # might want to set this in the environment variables:
-# AUTH = os.environ['GOLMI_AUTH']
+# AUTH = os.environ["GOLMI_AUTH"]
 AUTH = "GiveMeTheBigBluePasswordOnTheLeft"
 app = Flask(__name__)
 # --- app settings --- #
@@ -19,7 +22,7 @@ app = Flask(__name__)
 # (This is the recommendation by the Flask documentation:
 # https://flask.palletsprojects.com/en/2.0.x/quickstart/#sessions)
 app.config["SECRET_KEY"] = "change this to some random value!".encode("utf-8")
-app.config['CORS_HEADERS'] = 'Content-Type'
+app.config["CORS_HEADERS"] = "Content-Type"
 
 # enable cross-origin requests
 # TODO: restrict sources
@@ -29,7 +32,7 @@ socketio = SocketIO(
     app,
     logger=True,
     engineio_logger=True,
-    cors_allowed_origins='*'
+    cors_allowed_origins="*"
 )
 room_manager = RoomManager(socketio)
 
@@ -64,6 +67,19 @@ def param_is_integer(param):
     return isinstance(param, int) or (isinstance(param, float) and param.is_integer())
 
 
+def get_default_config():
+    """
+    @return default Model configuration as a dictionary
+    """
+    if DEFAULT_CONFIG_FILE not in app.config:
+        raise RuntimeError(f"{DEFAULT_CONFIG_FILE} not set")
+    elif not exists(app.config[DEFAULT_CONFIG_FILE]):
+        raise RuntimeError(f"file {app.config[DEFAULT_CONFIG_FILE]} not found")
+    with open(app.config[DEFAULT_CONFIG_FILE], mode="r") as default_file:
+        default_config = default_file.read()
+    return json.loads(default_config)
+
+
 # --- socketio events --- #
 # --- connection --- #
 @socketio.on("connect")
@@ -85,11 +101,11 @@ def join(params):
 
         if not room_manager.has_room(room_id):
             # create a new default room
-            room_manager.add_room(room_id, app.config[DEFAULT_CONFIG_FILE])
+            room_manager.add_room(room_id, get_default_config())
     else:
         # client gets their own default room
         room_id = request.sid + "_room"
-        room_manager.add_room(room_id, app.config[DEFAULT_CONFIG_FILE])
+        room_manager.add_room(room_id, get_default_config())
 
     room_manager.add_client_to_room(request.sid, room_id)
 
@@ -122,8 +138,10 @@ def reset_state():
 # --- configuration --- #
 @socketio.on("load_config")
 def load_config(json):
+    new_config = get_default_config()
+    new_config.update(json)
     for model in room_manager.get_models_of_client(request.sid):
-        model.set_config(json)
+        model.set_config(new_config)
 
 
 # --- pieces --- #
