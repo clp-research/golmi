@@ -27,18 +27,23 @@ $(document).ready(function () {
 		 * initialization, the view reacts to model updates.
 		 */
 		_initSocketEvents() {
-			// new state -> redraw object and gripper layer
+			// new state -> redraw object and gripper layer,
+			// if targets are given, redraw background
 			this.socket.on("update_state", (state) => {
 				if (state["grippers"] && state["objs"]) {
 					this.onUpdateState(state) // hook
 					this.grippers = state["grippers"];
 					this.objs = state["objs"];
-					this.targets = state["targets"];
 					this.redrawGr();
 					this.redrawObjs();
 				} else {
-					console.log("Error: Received state from model does not have the right format." + 
-						" Expected keys 'grippers' and 'objs'.");
+					console.log("Error: Received state from model does not " +
+					    "have the right format. " +
+						"Expected keys 'grippers' and 'objs'.");
+				}
+				if (state["targets"]) {
+					this.targets = state["targets"];
+					this.redrawBg();
 				}
 			});
 			// new gripper state -> redraw grippers
@@ -51,6 +56,12 @@ $(document).ready(function () {
 				this.onUpdateObjects(objs); // hook
 				this.objs = objs;
 				this.redrawObjs();
+			});
+			// new target state -> redraw background
+			this.socket.on("update_targets", (targets) => {
+				this.onUpdateTargets(targets); // hook
+				this.targets = targets;
+				this.redrawBg();
 			});
 			// new configuration -> save values and redraw everything
 			this.socket.on("update_config", (config) => {
@@ -154,6 +165,10 @@ $(document).ready(function () {
 
 		onUpdateObjects(objs) {
 			console.log(`onUpdateObjects() at View: not implemented`);
+		}
+
+		onUpdateTargets(targets) {
+			console.log(`onUpdateTargets() at View: not implemented`);
 		}
 
 		onUpdateState(state) {
