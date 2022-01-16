@@ -50,7 +50,7 @@ class GameConfig:
         if event_name == "update_targets":
             return ["IF"]
         elif event_name == "update_grippers":
-            return ["IG"]
+            return list()
         else:
             return list()
 
