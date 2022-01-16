@@ -34,19 +34,19 @@ $(document).ready(function () {
 		// --- (Un)Subscribing models ---
 
 		/**
-		 * Subscribe a new model. Duplicate subscription is prevented.
-		 * If no gripper with the given id exists, it will be added. If no id was
-		 * passed, the session id of the socket is used.
+		 * Subscribe a new model. Only one subscription per model is allowed,
+		 * meaning in one model, only one gripper can be controlled!
+		 * A gripper is controlled once the model sends an 'attach_gripper'
+		 * event. See requestGripper for manually adding a gripper.
 		 * @param {socket of the model server to notify} socket
-		 * @param {optional: id of the gripper to control, default: null} grId
 		 */
-		attachModel(socket, grId=null) {
+		attachModel(socket) {
 			// make sure not to subscribe a model-gripper pair twice
-			for (let [s, g] of this.models) {
-				if (s.id == socket.id && g == grId) { return; }
+			for (let [existingSocket, g] of this.models) {
+				if (existingSocket.id == socket.id) {
+				    return;
+				}
 			}
-			// register the gripper at the model
-			socket.emit("add_gripper", grId);
 			// use the id authoratively assigned by the model
 			socket.on("attach_gripper", (assignedId) => {
 				this.models.push([socket, assignedId]);
@@ -56,27 +56,15 @@ $(document).ready(function () {
 		/**
 		 * Remove a model from the internal list of models to notify. Remove the associated gripper.
 		 * @param {socket of the model API to unsubscribe} socket
-		 * @param {id of the gripper to unsubscribe, optional. If null, all grippers of the model url will be unsubscribed} grId
-		 * 
 		 */
-		detachModel(socket, grId=null) {
-			if (grId) {
-				// only remove pairs [socket, gripperId]
-				for (let i = 0; i < this.models.length; i++) {
-					if (this.models[i][0].id == socket.id && this.models[i][2] == grId) {
-						this.models[i][0].emit("remove_gripper", grId);
-						this.models.splice(i, 1); 
-					}
-				}
-			} else {
-				// remove any occurence of the socket
-				for (let i = 0; i < this.models.length; i++) {
-					if (this.models[i][0].id == socket.id) {
-						this.models[i][0].emit("remove_gripper", this.models[i][1]);
-						this.models.splice(i, 1); 
-					}
-				}
-			}
+		detachModel(socket) {
+            // remove any occurence of the socket
+            for (let i = 0; i < this.models.length; i++) {
+                if (this.models[i][0].id == socket.id) {
+                    this.models[i][0].emit("remove_gripper", this.models[i][1]);
+                    this.models.splice(i, 1);
+                }
+            }
 		}
 
 		// --- Notifying subscribed models ---
