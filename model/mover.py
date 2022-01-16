@@ -74,7 +74,8 @@ class Mover:
         for position in obj.occupied():
             # TODO: implement a function on grid side to get
             # converted coordinates from converter
-            for new_position in self.model.state.object_grid.converter(position):
+            converted = self.model.state.object_grid.converter(position)
+            for new_position in converted:
                 tile = self.model.state.target_grid[new_position]
                 if len(tile.objects) == 0:
                     # empty tile, return False

@@ -3,6 +3,8 @@ from flask_cors import CORS
 from flask_socketio import (
     SocketIO, emit, ConnectionRefusedError, join_room, rooms
 )
+
+from app import DEFAULT_CONFIG_FILE
 from model.model import Model
 from model.config import Config
 
@@ -37,9 +39,6 @@ socketio = SocketIO(
 # session ids mapped to Model instances
 client_models = dict()
 
-# import views
-from app import DEFAULT_CONFIG_FILE
-
 
 def check_parameters(params, model, keys):
     """
@@ -69,7 +68,7 @@ def param_is_integer(param):
     @return True if param is of type int, or is a float and convertible to int
     """
     return isinstance(param, int) or \
-           (isinstance(param, float) and param.is_integer())
+        (isinstance(param, float) and param.is_integer())
 
 
 # --- socketio events --- #
@@ -87,7 +86,9 @@ def client_connect(auth):
     # add client to the list, for now each client gets their own room
     # create and server for this client
     client_model = Model(
-        Config.from_json(app.config[DEFAULT_CONFIG_FILE]), socketio, request.sid
+        Config.from_json(app.config[DEFAULT_CONFIG_FILE]),
+        socketio,
+        request.sid
     )
     client_models[request.sid] = client_model
     room = session.get("room")

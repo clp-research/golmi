@@ -155,7 +155,6 @@ class Model:
         self._notify_views("update_state", self.state.to_dict())
 
     # --- Gripper manipulation --- #
-
     def add_gr(self, gr_id):
         """
         Add a new gripper to the internal state.

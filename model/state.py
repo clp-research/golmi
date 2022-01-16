@@ -12,7 +12,7 @@ class State:
         self.targets = targets
         self.object_grid = Grid.create_from_config(config)
         self.target_grid = Grid.create_from_config(config)
-        self.plot_objects_targets()       
+        self.plot_objects_targets()
 
     def plot_objects_targets(self):
         """
@@ -219,7 +219,8 @@ class State:
             targets = dict()
             if "targets" in source_dict:
                 for obj_name, obj_dict in source_dict["targets"].items():
-                    # get identifier or use object key (use str for consistency)
+                    # get identifier or use object key
+                    # (use str for consistency)
                     id_n = obj_dict.get("id_n") or str(obj_name)
 
                     new_object = Obj.from_dict(
