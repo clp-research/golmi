@@ -3,6 +3,7 @@ import unittest
 
 from model.model import Model
 from model.config import Config
+from app.app import app, DEFAULT_CONFIG_FILE
 
 
 class FakeSocket:
@@ -18,9 +19,7 @@ class Test(unittest.TestCase):
     """
     tests on model
     """
-    config = Path(
-        "app/pentomino/static/resources/config/pentomino_config.json"
-    )
+    config = Path(app.config[DEFAULT_CONFIG_FILE])
 
     def get_model(self):
         return Model(
