@@ -23,7 +23,7 @@ class Mover:
             "y": (gripper_y + dy)
         }
 
-        return self.model.object_grid.gripper_on_grid(new_gr_pos)
+        return self.model.state.object_grid.gripper_on_grid(new_gr_pos)
 
     def _get_new_coordinates(self, gr_obj, **kwargs):
         """
@@ -74,8 +74,8 @@ class Mover:
         for position in obj.occupied():
             # TODO: implement a function on grid side to get
             # converted coordinates from converter
-            for new_position in self.model.object_grid.converter(position):
-                tile = self.model.target_grid[new_position]
+            for new_position in self.model.state.object_grid.converter(position):
+                tile = self.model.state.target_grid[new_position]
                 if len(tile.objects) == 0:
                     # empty tile, return False
                     return False
@@ -97,7 +97,7 @@ class Mover:
         check if the movement is allowed
         """
         # tiles are free and within limits
-        obj_can_move = self.model.object_grid.is_legal_position(
+        obj_can_move = self.model.state.object_grid.is_legal_position(
             new_coordinates, gr_obj_id
         )
 
@@ -191,7 +191,7 @@ class Mover:
                 # apply movement
                 if good_move:
                     # remove object from grid
-                    self.model.object_grid.remove_obj(gr_obj)
+                    self.model.state.object_grid.remove_obj(gr_obj)
 
                     # apply movement according to type
                     if movement_type == "move":
@@ -204,7 +204,7 @@ class Mover:
                         self._rotate(gr_obj_id, d_angle)
 
                     # add element to grid
-                    self.model.object_grid.add_obj(gr_obj)
+                    self.model.state.object_grid.add_obj(gr_obj)
 
                     # print grid to terminal if verbose
                     if self.model.config.verbose is True:

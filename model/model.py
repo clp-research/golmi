@@ -13,11 +13,9 @@ class Model:
     def __init__(self, config, socket, room):
         self.socket = socket  # to communicate with subscribed views
         self.room = room
-        self.state = State()
+        self.state = State.empty_state(config)
         self.config = config
         self.mover = Mover(self)
-        self.object_grid = Grid.create_from_config(self.config)
-        self.target_grid = Grid.create_from_config(self.config)
 
         # Contains a dictionary for each available action. The nested dicts map
         # gripper ids to an eventlet greenthread instance if the respective
@@ -90,14 +88,11 @@ class Model:
         generator = Generator(self.config)
 
         # generate state and grids
-        (new_state,
-         new_obj_grid,
-         new_trg_grid) = generator.generate_random_state(
+        new_state = generator.generate_random_state(
              n_objs, n_grippers, area_block, area_target,
              create_targets, random_gr_position
         )
 
-        # TODO state should include the grids ?!
         self.set_state(new_state)
 
     def set_state(self, state):
@@ -106,27 +101,21 @@ class Model:
         @param state	json file name or dict (e.g., parsed json)
                         or State instance
         """
-        # reset grids
-        self.object_grid.clear_grid()
-        self.target_grid.clear_grid()
-
         if isinstance(state, str):
-            self.state = State.from_json(state, self.get_type_config())
+            self.state = State.from_json(
+                state, self.get_type_config(), self.config
+            )
         elif isinstance(state, dict):
-            self.state = State.from_dict(state, self.get_type_config())
+            self.state = State.from_dict(
+                state, self.get_type_config(), self.config
+            )
         elif isinstance(state, State):
             self.state = state
+            # replot objects and targets, just to be sure
+            self.state.plot_objects_targets()
         else:
             raise TypeError("Parameter state must be a json file name, "
                             "dict, or State instance.")
-
-        # add objects
-        for obj in self.state.objs.values():
-            self.object_grid.add_obj(obj)
-
-        # add targets
-        for target in self.state.targets.values():
-            self.target_grid.add_obj(target)
 
         # update views
         self._notify_views("update_state", self.state.to_dict())
@@ -161,7 +150,7 @@ class Model:
         """
         Reset the current state.
         """
-        self.state = State()
+        self.state = State.empty_state(self.config)
         self.reset_loops()
         self._notify_views("update_state", self.state.to_dict())
 
@@ -237,14 +226,14 @@ class Model:
                     # move object
 
                     # 1 - remove obj from grid
-                    self.object_grid.remove_obj(obj)
+                    self.state.object_grid.remove_obj(obj)
 
                     # 2 - change x and y in object
                     obj.x = new_x
                     obj.y = new_y
 
                     # 3 - plot obj on grid
-                    self.object_grid.add_obj(obj)
+                    self.state.object_grid.add_obj(obj)
                     return True
 
             # if no nearby position if free, cannot place it
@@ -368,7 +357,7 @@ class Model:
         # Gripper position. It is just a point.
         x, y = self.get_gripper_coords(gr_id)
 
-        tile = self.object_grid.get_single_tile({"x": x, "y": y})
+        tile = self.state.object_grid.get_single_tile({"x": x, "y": y})
         # if there is an object on tile, return last object
         if tile.objects:
             return tile.objects[-1]
