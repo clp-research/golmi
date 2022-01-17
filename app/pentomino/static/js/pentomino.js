@@ -8,12 +8,11 @@ $(document).ready(function () {
     // parameters for random initial state
     // (state is generated once the configuration is received)
     const N_OBJECTS = 5;
-    const N_GRIPPERS = 1;
+    const N_GRIPPERS = 0; // no pre-generated gripper
 
     // --- create a socket --- //
     // don't connect yet
     let socket = io(MODEL, {
-        autoConnect: false,
         auth: { "password": "GiveMeTheBigBluePasswordOnTheLeft" }
     });
     // debug: print any messages to the console
@@ -40,6 +39,10 @@ $(document).ready(function () {
         console.log("Connected to model server");
     });
 
+    socket.on("joined_room", (data) => {
+        console.log(`Joined room ${data.room_id} as client ${data.client_id}`);
+    })
+
     socket.on("disconnect", () => {
         console.log("Disconnected from model server");
         // demo of the logView: send the logged data to the server
@@ -55,10 +58,18 @@ $(document).ready(function () {
             socket.emit("random_init", {"n_objs": N_OBJECTS,
                                         "n_grippers": N_GRIPPERS,
                                         "random_gr_position":false,
-                                        "area_block": "top",
-                                        "area_target": "bottom"});
-            // subscribe the controller to the only generated gripper
-            controller.attachModel(socket, "0");
+                                        "area_block": "all"});
+            // manually add a gripper that will be assigned to the controller
+            // TODO: Should this happen somewhere else?
+            // Options:
+            // - automatically get gripper when joining room / use join parameter
+            //      -> but then why do we even need pre-generated grippers?
+            // - manually add gripper once room is joined
+            //      -> but then I need to know generated names? or same problem.
+            // so maybe there are 2 approaches that make sense:
+            // 1. random init on model side + automatically attach to some gripper that is generated on the fly
+            // 2. pass state & attach manually to specific gripper
+            socket.emit("add_gripper");
             setup_complete = true;
         }
     });
@@ -72,15 +83,16 @@ $(document).ready(function () {
     function start() {
         // reset the controller in case any key is currently pressed
         controller.resetKeys()
-        // manually establish a connection, connect the controller and load a state
-        socket.connect();
+        controller.attachModel(socket);
+        // join a GOLMI room with the name "test_room_id"
+        socket.emit("join", {"room_id": "test_room_id"});
     }
 
     function stop() {
         // reset the controller in case any key is currently pressed
         controller.resetKeys();
         // disconnect the controller
-        controller.detachModel(socket, "0");
+        controller.detachModel(socket);
         // manually disconnect
         socket.disconnect();
     }

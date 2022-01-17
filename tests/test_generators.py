@@ -7,7 +7,7 @@ TARGET = PieceConfig(Colors.BLUE, Shapes.T, RelPositions.CENTER)
 
 class CompositionalBoardTestCase(unittest.TestCase):
 
-    def test_compositional_board(self):
+    def test_manual_compositional_board(self):
         width, height = 40, 40
         board = Board.create_compositional(width, height, TARGET,
                                            unique_props={PropertyNames.COLOR},
@@ -23,7 +23,7 @@ class RelPositionsTestCase(unittest.TestCase):
     def test_symmetric(self):
         width, height = 500, 500
         for rel_position in list(RelPositions):
-            x, y = rel_position.to_coords(width, height)
+            x, y = rel_position.to_random_coords(width, height)
             self.assertEqual(RelPositions.from_coords(x, y, width, height), rel_position, f"x: {x}, y: {y}")
 
 

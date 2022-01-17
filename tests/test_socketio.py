@@ -2,12 +2,13 @@ import json
 from pathlib import Path
 import unittest
 
-from app import app, socketio, AUTH
+from app.app import app, socketio, AUTH
+from app import DEFAULT_CONFIG_FILE
 
 # directory html is served from
-TEMPLATE_DIR = "app/templates"
+TEMPLATE_DIR = "app/pentomino/templates"
 # directory containing resources
-RESOURCE_DIR = "app/static/resources"
+RESOURCE_DIR = "app/pentomino/static/resources"
 
 
 class ConnectionTest(unittest.TestCase):
@@ -21,8 +22,14 @@ class ConnectionTest(unittest.TestCase):
         self.flask_client = app.test_client()
         # create an unauthenticated client
         self.socketio_client = socketio.test_client(
-            app, flask_test_client=self.flask_client
+            app, flask_test_client=self.flask_client,
+            auth={"password": AUTH}
         )
+        app.config[DEFAULT_CONFIG_FILE] = (
+            "app/pentomino/static/resources/config/pentomino_config.json"
+        )
+
+        self.socketio_client.disconnect()
 
     def tearDown(self):
         """
@@ -41,13 +48,14 @@ class ConnectionTest(unittest.TestCase):
         self.socketio_client.connect(auth={"password": AUTH})
         self.assertTrue(self.socketio_client.is_connected())
 
-    def test_initial_messages(self):
+    def test_join_room(self):
         """
         Make sure the initial configuration
         and an empty state were sent.
         """
         # connect the socketio test client
         self.socketio_client.connect(auth={"password": AUTH})
+        self.socketio_client.emit("join", {"room_id": "test_room"})
 
         # obtain received objects
         received = self.socketio_client.get_received()
@@ -84,6 +92,7 @@ class SocketTest(unittest.TestCase):
         self.socketio_client = socketio.test_client(
             app, flask_test_client=self.flask_client, auth={"password": AUTH}
         )
+        self.socketio_client.emit("join", dict())
         # remove initially sent state and config
         self.socketio_client.get_received()
 
@@ -94,7 +103,7 @@ class SocketTest(unittest.TestCase):
         if self.socketio_client.is_connected():
             self.socketio_client.disconnect()
 
-    @staticmethod 
+    @staticmethod
     def read_json(filename):
         """
         @param filename file path relative to the resource directory. No / in
@@ -140,6 +149,7 @@ class SocketTest(unittest.TestCase):
         default_config.update(params)
         self.socketio_client.emit("load_config", default_config)
         return default_config, self.socketio_client.get_received()
+
 
 class SocketEventTest(SocketTest):
     """
@@ -356,6 +366,7 @@ class SocketEventTest(SocketTest):
         self.assertTrue(obj_gripped)
         self.assertTrue(gr_has_gripped)
 
+
 class ConfigTest(SocketTest):
     """
     Tests ensuring configuration parameters are working correctly.
@@ -392,7 +403,9 @@ class ConfigTest(SocketTest):
             received_updates = self.socketio_client.get_received()
             for update in received_updates:
                 if update["name"] == "update_objs":
-                    self.assertEqual(update["args"][0][test_obj][dimension] % 1, 0)
+                    self.assertEqual(
+                        update["args"][0][test_obj][dimension] % 1, 0
+                    )
                     return
             raise RuntimeError("Did not receive 'update_objs' update")
 

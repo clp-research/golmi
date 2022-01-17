@@ -194,7 +194,10 @@ As an example, `LocalKeyController.js` is provided. It interprets keyboard event
 | 83 | S | flip |
 | 87 | W | flip |
 
-`LocalKeyController` possesses the function `attachModel()` that needs to be called once to associate a gripper from a socket connection to the Controller. The model will respond with the assigned gripper id, which is used in subsequent action requests by the Controller. However, the class is also able to connect to multiple grippers (potentially from different models) at once, each would be sent the action requesting events.
+`LocalKeyController` possesses the function `attachModel()` that needs to be called once to associate a socket connection to the Controller.
+Once the model sends an 'attach_gripper' event with the assigned gripper id, the controller uses this id
+in subsequent action requests. However, the class is also able to connect to multiple models at once, (but only to one
+gripper per model), each would be sent the action requesting events.
 
 ### *One-time* vs. *looped* gripper actions
 For all gripper actions (move, rotate, flip, grip) there are two versions that can be used, determined by the event's `loop` parameter: firstly, for a *one-time* action, the model is requested to execute the action exactly once, e.g. move the gripper one unit or flip the gripped object. Secondly, a *looped* action will repeatedly attempt to execute the action until the appropriate *stop* (e.g. *stop_move*) event is sent. The loop interval is modified by the configuration.
@@ -209,14 +212,16 @@ For instance, in the use case of keyboard controls (as in our ```LocalKeyControl
 
 ## Tests
 To run all tests:
-```
-$ python -m unittest
+```bash
+python -m unittest
 ```
 
 To test only parts:
-```
-$ python -m unittest -k test_socketio
-$ python -m unittest -k test_flask_endpoints
+```bash
+python -m unittest -k test_socketio
+python -m unittest -k test_flask_endpoints
+python -m unittest -k test_grid
+python -m unittest -k test_socketio
 ```
 
 ## Troubleshooting

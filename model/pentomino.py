@@ -136,9 +136,13 @@ class RelPositions(Enum):
     CENTER_LEFT = "left"
     CENTER = "center"
 
-    def to_coords(self, board_width, board_height):
-        granularity = 3
-        width_step, height_step = board_width // granularity, board_height // granularity
+    def to_random_coords(self, board_width, board_height):
+        # the relative positions are derived from their own "grid"-like board
+        # with 3,3 there are as many RelPositions as cells in the grid, but
+        # we could have also "thinner" slices or put more "space" onto the edges
+        # TODO there is no general case yet
+        num_cols, num_rows = 3, 3
+        width_step, height_step = board_width // num_cols, board_height // num_rows
 
         # Uff, this is a bit harsh.
         # Pieces coords is their upper-left corner!
@@ -148,7 +152,7 @@ class RelPositions(Enum):
         # So when we sample (0,0) then the piece is in the upper left corner fully fit,
         # but when we sample something at the right or bottom, then pieces cannot be fully drawn anymore
         # so the actually possible coordinate space is smaller than what is shown on the board.
-        # We apply the "padding" at for all max values at the end of this method.
+        # We apply the "padding" for all max values at the end of this method.
         x_min, x_max = 0, board_width
         y_min, y_max = 0, board_height
 
@@ -195,28 +199,34 @@ class RelPositions(Enum):
 
     @staticmethod
     def from_coords(x, y, board_width, board_height):
-        granularity = 3
-        width_step, height_step = board_width / granularity, board_height / granularity
+        # the relative positions are derived from their own "grid"-like board
+        # with 3,3 there are as many RelPositions as cells in the grid, but
+        # we could have also "thinner" slices or put more "space" onto the edges
+        # TODO there is no general case yet
+        num_cols, num_rows = 3, 3
+        width_step, height_step = board_width // num_cols, board_height // num_rows
         # x = obj.x + (obj.width / 2)
         # y = obj.y + (obj.height / 2)
         # TODO this actually looks wrong
         pos = None
-        if y < 2 * height_step:
+        if y < 1 * height_step:
             pos = RelPositions.TOP_CENTER
-        elif y >= 3 * height_step:
+        elif y >= 2 * height_step:
             pos = RelPositions.BOTTOM_CENTER
-        if x < 2 * width_step:
+        if x < 1 * width_step:
             if pos == RelPositions.TOP_CENTER:
                 return RelPositions.TOP_LEFT
             if pos == RelPositions.BOTTOM_CENTER:
                 return RelPositions.BOTTOM_LEFT
             return RelPositions.CENTER_LEFT
-        elif x >= 3 * width_step:
+        elif x >= 2 * width_step:
             if pos == RelPositions.TOP_CENTER:
                 return RelPositions.TOP_RIGHT
             if pos == RelPositions.BOTTOM_CENTER:
                 return RelPositions.BOTTOM_RIGHT
             return RelPositions.CENTER_RIGHT
+        if pos:
+            return pos
         return RelPositions.CENTER
 
 
@@ -288,7 +298,7 @@ class Piece:
 
     @classmethod
     def from_config(cls, piece_id, piece_config, board_width, board_height):
-        x, y = piece_config.rel_position.to_coords(board_width, board_height)
+        x, y = piece_config.rel_position.to_random_coords(board_width, board_height)
         piece_obj = Obj(piece_id,
                         obj_type=piece_config.shape.value_name,
                         x=x, y=y,
@@ -393,8 +403,10 @@ def create_distractor_configs(piece_config: PieceConfig,
     :param num_distractors:
     :param varieties: the number of other different values for the props. Zero, means all available are used.
         Defaults to all available properties.
-    :param ambiguities: When not given (default), then all distractors share the same values with the target piece
-        (maximal ambiguity) except for the unique properties.
+    :param ambiguities: We allow a more fine-grained control on how many distractors share exactly the same "non-unique"
+            properties as the target piece (at least one piece must be still identical in "non-unique" props).
+            When not given (default), then all distractors share the same values with the target piece
+            (maximal ambiguity) except for the unique properties.
     :return:
     """
     if num_distractors < 1:
