@@ -143,11 +143,11 @@ class GameTest(unittest.TestCase):
         self.assertNotIn(player_without_gripper, self.game.player_grippers)
 
     def test_get_skipped_sids(self):
-        event_name = "update_grippers"
-        skipped_role = "IG"
-        skipped_players = ["IG1"]
-        non_skipped_role = "IF"
-        non_skipped_player = "IF1"
+        event_name = "update_targets"
+        skipped_role = "IF"
+        skipped_players = ["IF1"]
+        non_skipped_role = "IG"
+        non_skipped_player = "IG1"
         for player in skipped_players:
             self.game.add_player(player, skipped_role)
         self.game.add_player(non_skipped_player, non_skipped_role)
