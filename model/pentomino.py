@@ -136,7 +136,7 @@ class RelPositions(Enum):
     CENTER_LEFT = "left"
     CENTER = "center"
 
-    def to_coords(self, board_width, board_height):
+    def to_random_coords(self, board_width, board_height):
         granularity = 3
         width_step, height_step = board_width // granularity, board_height // granularity
 
@@ -288,7 +288,7 @@ class Piece:
 
     @classmethod
     def from_config(cls, piece_id, piece_config, board_width, board_height):
-        x, y = piece_config.rel_position.to_coords(board_width, board_height)
+        x, y = piece_config.rel_position.to_random_coords(board_width, board_height)
         piece_obj = Obj(piece_id,
                         obj_type=piece_config.shape.value_name,
                         x=x, y=y,
