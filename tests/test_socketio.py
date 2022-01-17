@@ -48,13 +48,14 @@ class ConnectionTest(unittest.TestCase):
         self.socketio_client.connect(auth={"password": AUTH})
         self.assertTrue(self.socketio_client.is_connected())
 
-    def test_initial_messages(self):
+    def test_join_room(self):
         """
         Make sure the initial configuration
         and an empty state were sent.
         """
         # connect the socketio test client
         self.socketio_client.connect(auth={"password": AUTH})
+        self.socketio_client.emit("join", {"room_id": "test_room"})
 
         # obtain received objects
         received = self.socketio_client.get_received()
@@ -91,6 +92,7 @@ class SocketTest(unittest.TestCase):
         self.socketio_client = socketio.test_client(
             app, flask_test_client=self.flask_client, auth={"password": AUTH}
         )
+        self.socketio_client.emit("join", dict())
         # remove initially sent state and config
         self.socketio_client.get_received()
 
