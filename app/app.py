@@ -82,7 +82,7 @@ def client_connect(auth):
 def join(params):
     # If no room_id was given, create a private room for the client using
     # their session id for the name
-    room_id = params["room_id"] or request.sid + "_room"
+    room_id = params.get("room_id") or request.sid + "_room"
     if not room_manager.has_room(room_id):
         # create a new default room
         default_config = Config.from_json(app.config[DEFAULT_CONFIG_FILE])
