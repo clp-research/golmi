@@ -22,14 +22,14 @@ def neureg():
     return render_template("neureg.html")
 
 
-@socketio.on("new_scene")
+@socketio.on("neureg_new_scene")
 def on_new_scene(event):
     model = client_models[request.sid]
     model.set_random_state(n_objs=event["n_objs"], n_grippers=0)
     model._notify_views("update_instructions", [])
 
 
-@socketio.on("mouseclick")
+@socketio.on("neureg_mouseclick")
 def on_mouseclick(event):
     # looks like we need a "mouse"-gripper b.c. everything expects a gripper instance
     model = client_models[request.sid]

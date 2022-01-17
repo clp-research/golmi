@@ -27,7 +27,7 @@ $(document).ready(function () {
     const layerView = new document.DynaMattView(socket, bgLayer, objLayer, () => restart());
     function onMouseClick(event) {
 
-        socket.emit("mouseclick", {
+        socket.emit("dynamatt_mouseclick", {
             "target_id": event.target.id,
             "offset_x": event.offsetX,
             "offset_y": event.offsetY,

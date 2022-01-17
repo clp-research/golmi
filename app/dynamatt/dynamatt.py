@@ -27,7 +27,7 @@ def dynamatt():
     return render_template("dynamatt.html")
 
 
-@socketio.on("mouseclick")
+@socketio.on("dynamatt_mouseclick")
 def on_mouseclick(event):
     # looks like we need a "mouse"-gripper b.c. everything expects a gripper instance
     model = client_models[request.sid]

@@ -28,7 +28,7 @@ $(document).ready(function () {
 
     function onMouseClick(event) {
 
-        socket.emit("mouseclick", {
+        socket.emit("neureg_mouseclick", {
             "target_id": event.target.id,
             "offset_x": event.offsetX,
             "offset_y": event.offsetY,
@@ -81,7 +81,7 @@ $(document).ready(function () {
         // reset the controller in case any key is currently pressed
         // controller.resetKeys()
         // request a new state on server which triggers update_state in the js view
-        socket.emit("new_scene", {"n_objs": 5});
+        socket.emit("neureg_new_scene", {"n_objs": 5});
     }
 
     function stop() {
