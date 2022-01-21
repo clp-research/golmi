@@ -24,7 +24,7 @@ pentomino_game_bp = Blueprint('pentomino_game_bp', __name__,
 
 @cross_origin
 @pentomino_game_bp.route("/", methods=["GET"])
-def pentomino():
+def pentomino_game():
     """
     Interactive interface.
     """
@@ -65,14 +65,11 @@ def add_game_room(params):
             default_game_config = GameConfig.from_json(app.config[DEFAULT_GAME_CONFIG_FILE])
             room_manager.add_game_room(room_id, default_config, default_game_config)
 
-# role is needed if the client wants to join a game
-    room_manager.add_client_to_room(request.sid, room_id, params.get("role"))
-
 
 @socketio.on("join_game")
 def join_game(params):
     # Assign a (new) room with the given id
-    room_id = params["room_id"] or request.sid + "_room"
+    room_id = params.get("room_id") or request.sid + "_room"
 
     if not room_manager.has_room(room_id):
         # create a new default room
@@ -86,4 +83,4 @@ def join_game(params):
     # TODO: better error handling here
     except RuntimeError as e:
         print(e)
-        print("Client attempted to connected to game with no roles remaining")
+        print("Client attempted to connect to game with no roles remaining")

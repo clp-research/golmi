@@ -95,6 +95,8 @@ class RoomManager:
                 model = self.get_model_of_room(room_id)
                 if isinstance(model, Game):
                     model.add_player(client_id, role)
+                else:
+                    raise ValueError("Accessed Model is not a Game instance")
 
             # inform everyone in the room
             emit("joined_room",
