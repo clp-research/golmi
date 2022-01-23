@@ -237,21 +237,17 @@ $(document).ready(function () {
                         let y = params.y + r;
                         this._drawBlock(ctx, x, y, params.color);
                         // draw object borders
-                        // top
-                        if (r == 0 || !(bMatrix[r-1][c])) {
-                            this._drawBorder(ctx, x, y, x+1, y, params.highlight);
+                        if (this._isUpperBorder(bMatrix, c, r)) {
+                            this._drawUpperBorder(ctx, x, y, params.highlight);
                         }
-                        // right
-                        if (c == (bMatrix[r].length-1) || !(bMatrix[r][c+1])) {
-                            this._drawBorder(ctx, x+1, y, x+1, y+1, params.highlight);
+                        if (this._isLowerBorder(bMatrix, c, r)) {
+                            this._drawLowerBorder(ctx, x, y, params.highlight);
                         }
-                        // bottom
-                        if (r == (bMatrix.length-1) || !(bMatrix[r+1][c])) {
-                            this._drawBorder(ctx, x, y+1, x+1, y+1, params.highlight);
+                        if (this._isLeftBorder(bMatrix, c, r)) {
+                            this._drawLeftBorder(ctx, x, y, params.highlight);
                         }
-                        // left
-                        if (c == 0 || !(bMatrix[r][c-1])) {
-                            this._drawBorder(ctx, x, y, x, y+1, params.highlight);
+                        if (this._isRightBorder(bMatrix, c, r)) {
+                            this._drawRightBorder(ctx, x, y, params.highlight);
                         }
                     }
                 });
@@ -272,8 +268,28 @@ $(document).ready(function () {
             ctx.fill(); // add color
         }
 
+        _drawUpperBorder(
+            ctx, x, y, highlight=false, borderColor="black", borderWidth=2) {
+            this._drawBorder(ctx, x, y, x+1, y, highlight);
+        }
+
+        _drawLowerBorder(
+            ctx, x, y, highlight=false, borderColor="black", borderWidth=2) {
+            this._drawBorder(ctx, x, y+1, x+1, y+1, highlight);
+        }
+
+        _drawLeftBorder(
+            ctx, x, y, highlight=false, borderColor="black", borderWidth=2) {
+            this._drawBorder(ctx, x, y, x, y+1, highlight);
+        }
+
+        _drawRightBorder(
+            ctx, x, y, highlight=false, borderColor="black", borderWidth=2) {
+            this._drawBorder(ctx, x+1, y, x+1, y+1, highlight);
+        }
+
         _drawBorder(ctx, x1, y1, x2, y2, highlight=false, borderColor="black",
-                    borderWidth=2) {
+            borderWidth=2) {
             // --- config ---
             // for no highlight, shadowBlur is set to 0 (= invisible)
             ctx.shadowBlur = highlight ? 5 : 0;
@@ -290,6 +306,30 @@ $(document).ready(function () {
 
         _toPxl(coord) {
             return coord * this.blockSize;
+        }
+
+        _isUpperBorder(blockMatrix, column, row) {
+            // true if 'row' is the top row OR there is no block above
+            return row == 0 || blockMatrix[row-1][column] == 0;
+        }
+
+        _isLowerBorder(blockMatrix, column, row) {
+            // true if 'row' is the bottom row OR there is no block below
+            return row == (blockMatrix.length-1) ||
+                blockMatrix[row+1][column] == 0;
+        }
+
+        _isLeftBorder(blockMatrix, column, row) {
+            // true if 'column' is the leftmost column OR there is no block
+            // to the left
+            return column == 0 || blockMatrix[row][column-1] == 0;
+        }
+
+        _isRightBorder(blockMatrix, column, row) {
+            // true if 'column' is the rightmost column OR there is no block
+            // to the right
+            return column == (blockMatrix[row].length-1) ||
+                blockMatrix[row][column+1] == 0;
         }
 
     }; // class LayerView end
