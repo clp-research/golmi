@@ -221,7 +221,7 @@ class Model:
 
             for new_x, new_y in possible_positions:
                 occupied = obj.occupied(new_x, new_y)
-                if self.mover._is_legal_move(occupied, obj_id):
+                if self.mover._is_legal_move(occupied, obj):
                     # move object
 
                     # 1 - remove obj from grid

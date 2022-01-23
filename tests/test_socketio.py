@@ -401,7 +401,6 @@ class ConfigTest(SocketTest):
 
             # check whether the object "snapped back" to the nearest block
             received_updates = self.socketio_client.get_received()
-            breakpoint()
             for update in received_updates:
                 if update["name"] == "update_objs":
                     self.assertEqual(
