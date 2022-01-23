@@ -359,7 +359,7 @@ class Model:
         tile = self.state.object_grid.get_single_tile({"x": x, "y": y})
         # if there is an object on tile, return last object
         if tile.objects:
-            return tile.objects[-1]
+            return tile.objects[-1].id_n
         return None
 
     # --- Loop functionality ---

@@ -140,13 +140,19 @@ class Grid:
 
         return self.grid[y][x]
 
+    def gripper_on_grid(self, position):
+        x = int(position["x"] * self.converter.multiplier)
+        y = int(position["y"] * self.converter.multiplier)
+
+        return {"x": x, "y": y} in self
+
     def add_obj(self, obj):  # change to coordinates
         """
         expects non converted coordinates
         """
         for cell in obj.occupied():
             for new_cell in self.converter(cell):
-                self[new_cell].objects.append(obj.id_n)
+                self[new_cell].objects.append(obj)
 
     def remove_obj(self, obj):  # change to coordinates
         """
@@ -154,20 +160,14 @@ class Grid:
         """
         for cell in obj.occupied():
             for new_cell in self.converter(cell):
-                self[new_cell].objects.remove(obj.id_n)
+                self[new_cell].objects.remove(obj)
 
-    def gripper_on_grid(self, position):
-        x = int(position["x"] * self.converter.multiplier)
-        y = int(position["y"] * self.converter.multiplier)
-
-        return {"x": x, "y": y} in self
-
-    def is_legal_position(self, coordinates, id_n):
+    def is_legal_position(self, coordinates, obj):
         """
         expects non converted coordinates
         --------------------------------------------
         checks if the passed coordinates are a valid
-        position for the passed item id
+        position for the passed item
         """
         for cell in coordinates:
             for new_cell in self.converter(cell):
@@ -179,37 +179,6 @@ class Grid:
                     # return false if cell is occupied by
                     # another object
                     if (len(self[new_cell].objects) > 0 and
-                            self[new_cell].objects != [id_n]):
+                            self[new_cell].objects[0] != obj):
                         return False
         return True
-
-
-if __name__ == "__main__":
-    g = Grid(width=5, height=5, step=0.5, prevent_overlap=True)
-    o1 = Obj(
-        1, "L", 0, 0, 5, 5,
-        block_matrix=[
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [1, 1, 1, 1, 1],
-            [0, 0, 0, 0, 1],
-            [0, 0, 0, 0, 0]
-        ]
-    )
-
-    o2 = Obj(
-        2, "L", 3, 3, 5, 5,
-        block_matrix=[
-            [0, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0]
-        ]
-    )
-
-    g.add_obj(o1)
-    g.add_obj(o2)
-    print(g)
-    new_c = o2.occupied(o1.x, o1.y)
-    print(g.is_legal_position(new_c, 1))

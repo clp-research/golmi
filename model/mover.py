@@ -93,19 +93,18 @@ class Mover:
                 if target_obj.color == obj.color:
                     return True
 
-    def _is_legal_move(self, new_coordinates, gr_obj_id):
+    def _is_legal_move(self, new_coordinates, gr_obj):
         """
         check if the movement is allowed
         """
         # tiles are free and within limits
         obj_can_move = self.model.state.object_grid.is_legal_position(
-            new_coordinates, gr_obj_id
+            new_coordinates, gr_obj
         )
 
         # check if object is on a target
         if self.model.config.lock_on_target is True:
-            obj = self.model.get_obj_by_id(gr_obj_id)
-            on_target = self._obj_on_target(obj)
+            on_target = self._obj_on_target(gr_obj)
         else:
             on_target = False
 
@@ -187,7 +186,7 @@ class Mover:
                 new_coordinates, new_matrix, d_angle = movement_result
 
                 # check if coordinates are legal
-                good_move = self._is_legal_move(new_coordinates, gr_obj_id)
+                good_move = self._is_legal_move(new_coordinates, gr_obj)
 
                 # apply movement
                 if good_move:
