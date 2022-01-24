@@ -83,9 +83,8 @@ class Model:
 
     # --- Set up and configuration --- #
 
-    def set_random_state(self, n_objs, n_grippers, area_block="all",
-                         area_target="all", create_targets=False,
-                         random_gr_position=False):
+    def set_random_state(self, n_objs, n_grippers, obj_area="all",
+                         target_area=None, random_gr_position=False):
         # we could possibly hold a generator instance as well
         generator = Generator(self.config)
 
@@ -93,8 +92,7 @@ class Model:
         (new_state,
          new_obj_grid,
          new_trg_grid) = generator.generate_random_state(
-             n_objs, n_grippers, area_block, area_target,
-             create_targets, random_gr_position
+            n_objs, n_grippers, obj_area, target_area, random_gr_position
         )
 
         # TODO state should include the grids ?!
