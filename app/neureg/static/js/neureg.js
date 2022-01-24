@@ -75,6 +75,7 @@ $(document).ready(function () {
         // controller.resetKeys()
         // manually establish a connection, connect the controller and load a state
         socket.connect();
+        socket.emit("join", {"room_id": "neureg_room"});
     }
 
     function restart() {

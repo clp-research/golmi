@@ -1,7 +1,7 @@
 from flask_cors import cross_origin
 from flask import render_template, Blueprint, request
 from app import DEFAULT_CONFIG_FILE
-from app.app import socketio, client_models
+from app.app import socketio, room_manager
 
 DATA_COLLECTION = "matthew_DATA_COLLECTION"
 TASKS = "matthew_TASKS"
@@ -30,7 +30,7 @@ def dynamatt():
 @socketio.on("dynamatt_mouseclick")
 def on_mouseclick(event):
     # looks like we need a "mouse"-gripper b.c. everything expects a gripper instance
-    model = client_models[request.sid]
+    model = room_manager.get_models_of_client(request.sid)[0]
     x, y = translate(event["offset_x"], event["offset_y"], event["block_size"])
 
     # I should not need to know "state

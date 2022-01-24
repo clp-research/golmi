@@ -97,6 +97,7 @@ $(document).ready(function () {
 
     $("#start").click(() => {
         socket.connect();
+        socket.emit("join", {"room_id": "compreg_room"});
         // disable this button, otherwise it is now in focus and Space/Enter will trigger the click again
         $("#start").prop("disabled", true);
     });

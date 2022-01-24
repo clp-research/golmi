@@ -78,6 +78,7 @@ $(document).ready(function () {
         // manually establish a connection, connect the controller and load a state
         socket.connect();
         layerView.welcome();
+        socket.emit("join", {"room_id": "dynamatt_room"});
     }
 
     function restart() {

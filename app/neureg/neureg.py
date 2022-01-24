@@ -1,7 +1,7 @@
 from flask_cors import cross_origin
 from flask import render_template, Blueprint, request
 from app import DEFAULT_CONFIG_FILE
-from app.app import socketio, client_models
+from app.app import socketio, room_manager
 from app.neureg import tasks
 
 
@@ -24,7 +24,7 @@ def neureg():
 
 @socketio.on("neureg_new_scene")
 def on_new_scene(event):
-    model = client_models[request.sid]
+    model = room_manager.get_models_of_client(request.sid)[0]
     model.set_random_state(n_objs=event["n_objs"], n_grippers=0)
     model._notify_views("update_instructions", [])
 
@@ -32,7 +32,7 @@ def on_new_scene(event):
 @socketio.on("neureg_mouseclick")
 def on_mouseclick(event):
     # looks like we need a "mouse"-gripper b.c. everything expects a gripper instance
-    model = client_models[request.sid]
+    model = room_manager.get_models_of_client(request.sid)[0]
     x, y = translate(event["offset_x"], event["offset_y"], event["block_size"])
 
     # deselect all
