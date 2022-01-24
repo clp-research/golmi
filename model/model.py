@@ -15,7 +15,7 @@ class Model:
         self.room = room
         self.state = State.empty_state(config)
         self.config = config
-        self.mover = Mover(self)
+        self.mover = Mover()
 
         # Contains a dictionary for each available action. The nested dicts map
         # gripper ids to an eventlet greenthread instance if the respective
@@ -221,7 +221,11 @@ class Model:
 
             for new_x, new_y in possible_positions:
                 occupied = obj.occupied(new_x, new_y)
-                if self.mover._is_legal_move(occupied, obj):
+                if self.mover._is_legal_move(
+                        occupied,
+                        obj,
+                        self.state,
+                        self.config):
                     # move object
 
                     # 1 - remove obj from grid
@@ -280,6 +284,9 @@ class Model:
             "move",
             gr_id,
             self.mover.apply_movement,
+            self.state,
+            self.config,
+            self,
             "move",
             gr_id,
             x_steps=x_steps,
@@ -310,6 +317,9 @@ class Model:
             "rotate",
             gr_id,
             self.mover.apply_movement,
+            self.state,
+            self.config,
+            self,
             "rotate",
             gr_id,
             direction=direction,
@@ -336,6 +346,9 @@ class Model:
             "flip",
             gr_id,
             self.mover.apply_movement,
+            self.state,
+            self.config,
+            self,
             "flip",
             gr_id
         )

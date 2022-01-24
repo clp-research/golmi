@@ -8,16 +8,13 @@ from model.obj import Obj
 
 
 class Mover:
-    def __init__(self, model):
-        self.model = model
-
     def _gripper_can_move(self, gr_id, dx, dy, state):
         """
         check if a gripper can be moved on the grid
         if the movement type is not move this function
         will always return True as dx and dy will be zero
         """
-        gripper_x, gripper_y = state.get_gripper_coords(gr_id) # state
+        gripper_x, gripper_y = state.get_gripper_coords(gr_id)
         new_gr_pos = {
             "x": (gripper_x + dx),
             "y": (gripper_y + dy)
@@ -42,7 +39,7 @@ class Mover:
 
         elif kwargs["type"] == "rotate":
             if kwargs.get("rotation_step") is None:
-                step_size = config.rotation_step # just pass config
+                step_size = config.rotation_step
 
             direction = kwargs["direction"]
             # determine the turning angle
@@ -103,7 +100,7 @@ class Mover:
         )
 
         # check if object is on a target
-        if config.lock_on_target is True: # pass config
+        if config.lock_on_target is True:
             on_target = self._obj_on_target(gr_obj)
         else:
             on_target = False
@@ -124,14 +121,15 @@ class Mover:
         # update state
         state.rotate_obj(gr_obj_id, d_angle)
 
-    def _flip(self, gr_obj_id):
+    def _flip(self, gr_obj_id, state):
         """
         flip an object
         """
         # update state
-        self.model.state.flip_obj(gr_obj_id)
+        state.flip_obj(gr_obj_id)
 
-    def apply_movement(self, movement_type, gr_id, **kwargs):
+    def apply_movement(
+            self, state, config, model, movement_type, gr_id, **kwargs):
         """
         this method applies a movement.
         Parameters:
@@ -154,20 +152,20 @@ class Mover:
 
         # calculate the distance if the movement is a move
         if movement_type == "move":
-            step_size = self.model.config.move_step
+            step_size = config.move_step
             # make dx and dy multiples of step_size
             dx = round(kwargs["x_steps"]) * step_size
             dy = round(kwargs["y_steps"]) * step_size
 
         # make sure gripper can move
-        gripper_can_move = self._gripper_can_move(gr_id, dx, dy)
+        gripper_can_move = self._gripper_can_move(gr_id, dx, dy, state)
 
         if gripper_can_move:
             # check if gripper has an object
-            gr_obj_id = self.model.get_gripped_obj(gr_id)
+            gr_obj_id = state.get_gripped_obj(gr_id)
             if gr_obj_id:
                 # obtain gripped object
-                gr_obj = self.model.get_obj_by_id(gr_obj_id)
+                gr_obj = state.get_obj_by_id(gr_obj_id)
 
                 # obtain direction and rotation step
                 # if nor present they will be initialized to None
@@ -176,6 +174,7 @@ class Mover:
 
                 # obtain coordinates after movement
                 movement_result = self._get_new_coordinates(
+                    config,
                     gr_obj,
                     type=movement_type,
                     dx=dx,
@@ -186,37 +185,38 @@ class Mover:
                 new_coordinates, new_matrix, d_angle = movement_result
 
                 # check if coordinates are legal
-                good_move = self._is_legal_move(new_coordinates, gr_obj)
+                good_move = self._is_legal_move(
+                    new_coordinates, gr_obj, state, config
+                )
 
                 # apply movement
                 if good_move:
                     # remove object from grid
-                    self.model.state.object_grid.remove_obj(gr_obj)
+                    state.object_grid.remove_obj(gr_obj)
 
                     # apply movement according to type
                     if movement_type == "move":
-                        self._move(gr_id, dx, dy)
+                        self._move(gr_id, dx, dy, state)
 
                     elif movement_type == "flip":
-                        self._flip(gr_obj_id)
+                        self._flip(gr_obj_id, state)
 
                     elif movement_type == "rotate":
-                        self._rotate(gr_obj_id, d_angle)
+                        self._rotate(gr_obj_id, d_angle, state)
 
                     # add element to grid
-                    self.model.state.object_grid.add_obj(gr_obj)
+                    state.object_grid.add_obj(gr_obj)
 
                     # print grid to terminal if verbose
-                    if self.model.config.verbose is True:
-                        print(self.model.state.object_grid)
+                    if config.verbose is True:
+                        print(state.object_grid)
 
             else:
                 # only move the gripper
-                self.model.state.move_gr(gr_id, dx, dy)
+                state.move_gr(gr_id, dx, dy)
 
-            # TODO: return something and let the model update the view
             # send update to views
-            self.model._notify_views(
+            model._notify_views(
                 "update_grippers",
-                self.model.get_gripper_dict()
+                model.get_gripper_dict()
             )

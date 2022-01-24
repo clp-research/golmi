@@ -3,8 +3,6 @@ import math
 
 import numpy as np
 
-from model.obj import Obj
-
 
 class Tile:
     """
