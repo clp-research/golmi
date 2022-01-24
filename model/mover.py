@@ -11,21 +11,21 @@ class Mover:
     def __init__(self, model):
         self.model = model
 
-    def _gripper_can_move(self, gr_id, dx, dy):
+    def _gripper_can_move(self, gr_id, dx, dy, state):
         """
         check if a gripper can be moved on the grid
         if the movement type is not move this function
         will always return True as dx and dy will be zero
         """
-        gripper_x, gripper_y = self.model.get_gripper_coords(gr_id)
+        gripper_x, gripper_y = state.get_gripper_coords(gr_id) # state
         new_gr_pos = {
             "x": (gripper_x + dx),
             "y": (gripper_y + dy)
         }
 
-        return self.model.state.object_grid.gripper_on_grid(new_gr_pos)
+        return state.object_grid.gripper_on_grid(new_gr_pos)
 
-    def _get_new_coordinates(self, gr_obj, **kwargs):
+    def _get_new_coordinates(self, config, gr_obj, **kwargs):
         """
         based on the type of movement this function will
         return the new coordinates after the movement
@@ -42,7 +42,7 @@ class Mover:
 
         elif kwargs["type"] == "rotate":
             if kwargs.get("rotation_step") is None:
-                step_size = self.model.config.rotation_step
+                step_size = config.rotation_step # just pass config
 
             direction = kwargs["direction"]
             # determine the turning angle
@@ -69,14 +69,14 @@ class Mover:
 
         return new_coordinates, new_matrix, d_angle
 
-    def _obj_on_target(self, obj):
+    def _obj_on_target(self, obj, state):
         objs_on_target = list()
         for position in obj.occupied():
             # TODO: implement a function on grid side to get
             # converted coordinates from converter
-            converted = self.model.state.object_grid.converter(position)
+            converted = state.object_grid.converter(position)
             for new_position in converted:
-                tile = self.model.state.target_grid[new_position]
+                tile = state.target_grid[new_position]
                 if len(tile.objects) == 0:
                     # empty tile, return False
                     return False
@@ -86,43 +86,43 @@ class Mover:
         # every position on target grid had only 1 element
         if len(set(objs_on_target)) == 1:
             target_id = objs_on_target[0]
-            target_obj = self.model.state.targets[target_id]
+            target_obj = state.targets[target_id]
 
             # object and target must have same form and color
             if target_obj.type == obj.type:
                 if target_obj.color == obj.color:
                     return True
 
-    def _is_legal_move(self, new_coordinates, gr_obj):
+    def _is_legal_move(self, new_coordinates, gr_obj, state, config):
         """
         check if the movement is allowed
         """
         # tiles are free and within limits
-        obj_can_move = self.model.state.object_grid.is_legal_position(
+        obj_can_move = state.object_grid.is_legal_position(
             new_coordinates, gr_obj
         )
 
         # check if object is on a target
-        if self.model.config.lock_on_target is True:
+        if config.lock_on_target is True: # pass config
             on_target = self._obj_on_target(gr_obj)
         else:
             on_target = False
 
         return obj_can_move and not on_target
 
-    def _move(self, gr_id, dx, dy):
+    def _move(self, gr_id, dx, dy, state):
         """
         move a gripper and the gripped object
         """
-        self.model.state.move_gr(gr_id, dx, dy)
-        self.model.state.move_obj(self.model.get_gripped_obj(gr_id), dx, dy)
+        state.move_gr(gr_id, dx, dy)
+        state.move_obj(state.get_gripped_obj(gr_id), dx, dy)
 
-    def _rotate(self, gr_obj_id, d_angle):
+    def _rotate(self, gr_obj_id, d_angle, state):
         """
         rotate an object
         """
         # update state
-        self.model.state.rotate_obj(gr_obj_id, d_angle)
+        state.rotate_obj(gr_obj_id, d_angle)
 
     def _flip(self, gr_obj_id):
         """
@@ -208,12 +208,13 @@ class Mover:
 
                     # print grid to terminal if verbose
                     if self.model.config.verbose is True:
-                        print(self.model.object_grid)
+                        print(self.model.state.object_grid)
 
             else:
                 # only move the gripper
                 self.model.state.move_gr(gr_id, dx, dy)
 
+            # TODO: return something and let the model update the view
             # send update to views
             self.model._notify_views(
                 "update_grippers",
