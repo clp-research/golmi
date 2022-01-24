@@ -2,12 +2,8 @@
 Game class:
     - holds players and their roles
     - initializes model once enough players are there
-    - makes sure player's only receive updates according to their roles
+    - makes sure players only receive updates according to their roles
     - attaches grippers
-Roles defined here
-        - IG: sees targets but not gripper
-        - IF: sees gripper but not targets
-        - OBSERVER: sees everything
 """
 import random
 
@@ -17,7 +13,8 @@ from model.model import Model
 
 
 class Game(Model):
-    def __init__(self, model_config: Config, socket, room, game_config: GameConfig):
+    def __init__(self, model_config: Config, socket, room,
+                 game_config: GameConfig):
         super().__init__(model_config, socket, room)
         self.game_config = game_config
         self.player_roles = dict() # map player to role
@@ -47,16 +44,11 @@ class Game(Model):
         for role, count in self.game_config.role_counts.items():
             self.unassigned_roles.extend([role] * count)
 
-    def assign_role(self, player_id, role):
-        if not self.game_config.is_valid_role(role):
-            raise ValueError(f"Attempting to use unknown role '{role}'")
-        if role not in self.unassigned_roles:
-            raise RuntimeError(f"No registrations for role {role} left")
-        # Remove any older registration
-        if self.player_roles.get(player_id) is not None:
-            self.remove_player(player_id)
-        self.player_roles[player_id] = role
-        self.unassigned_roles.remove(role)
+    def assign_role_by_name(self, player_id, role_name: str):
+        if not self.game_config.is_valid_role_name(role_name):
+            raise ValueError(f"Attempting to use unknown role '{role_name}'")
+        self._assign_role(player_id,
+                          self.game_config.get_role_by_name(role_name))
 
     def assign_random_role(self, player_id):
         """
@@ -65,23 +57,32 @@ class Game(Model):
         if len(self.unassigned_roles) == 0:
             raise RuntimeError("No unassigned roles left")
         random_role = random.choice(self.unassigned_roles)
-        self.assign_role(player_id, random_role)
+        self._assign_role(player_id, random_role)
+
+    def _assign_role(self, player_id, role):
+        if role not in self.unassigned_roles:
+            raise RuntimeError(f"No registrations for role {role} left")
+        # Remove any older registration
+        if self.player_roles.get(player_id) is not None:
+            self.remove_player(player_id)
+        self.player_roles[player_id] = role
+        self.unassigned_roles.remove(role)
 
     def get_unassigned_roles(self):
         return self.unassigned_roles
 
-    def add_player(self, player_sid, role, start_once_full=True):
+    def add_player(self, player_sid, role_name: str, start_once_full=True):
         """
         Add a player to the game. If the role requires it, assign a gripper
         @param player_sid   socket session id of the player
-        @param role role name, must be known by the GameConfig
+        @param role_name role name, must be known to GameConfig
         @param start_once_full  Automatically start the game if the required
             number of players is present
         """
-        if role == "random":
+        if role_name == "random":
             self.assign_random_role(player_sid)
         else:
-            self.assign_role(player_sid, role)
+            self.assign_role_by_name(player_sid, role_name)
         self._notify_views_privately("update_config",
                                      self.config.to_dict(),
                                      player_sid)

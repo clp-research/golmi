@@ -1,16 +1,15 @@
 """
 Class that stores
     - state generation parameters
-    - roles / how many instances of each role are needed
-    - rol
-Roles defined here
-        - IG: sees targets but not gripper
-        - IF: sees gripper but not targets
-        - OBSERVER: sees everything
+    - roles:
+        - what roles are defined
+        - how many instances of each role are needed
 """
 
 import json
 from os.path import exists
+
+from app.pentomino_game import ROLES
 
 
 class GameConfig:
@@ -24,42 +23,40 @@ class GameConfig:
         self.area_target = area_target
         self.create_targets = create_targets
         self.random_gr_position = random_gr_position
-        # roles defined and required number of instances for each role
-        # TODO: define a dict for each role that declares:
-        # - number of grippers
-        # - which updates to receive
-        self.roles = {"IG", "IF", "OBSERVER"}
+        # required number of instances for each role
         self.set_role_counts(role_counts)
 
     def __repr__(self):
         properties = ", ".join(vars(self).keys())
         return f"GameConfig({properties})"
 
-    def is_valid_role(self, role):
-        return role in self.roles
+    @staticmethod
+    def is_valid_role_name(role_name):
+        return role_name in ROLES.__members__
 
     def set_role_counts(self, role_counts):
         for role_name, role_count in role_counts.items():
-            if not self.is_valid_role(role_name):
+            if not self.is_valid_role_name(role_name):
                 raise KeyError(f"Attempting to use unknown role '{role_name}'")
-        self.role_counts = role_counts
+        self.role_counts = {
+            ROLES[name]: count for name, count in role_counts.items()
+        }
 
-    # TODO: change to use role dict
+    @staticmethod
+    def get_role_by_name(role_name):
+        return ROLES[role_name]
+
     @staticmethod
     def get_roles_ignoring_event(event_name):
-        if event_name == "update_targets":
-            return ["IF"]
-        elif event_name == "update_grippers":
-            return list()
-        else:
-            return list()
+        return [role for role in ROLES.__members__.values()
+                if event_name in role.ignore_events]
 
-    # TODO: change to use role dict
+    # TODO: update for case of multiple grippers
     @staticmethod
     def role_requires_gripper(role):
-        return role in {"IF"}
+        return role.n_grippers > 0
 
-    # TODO: read in role definitions
+    # TODO: make roles configurable
     @classmethod
     def from_json(cls, filename):
         """
@@ -78,7 +75,7 @@ class GameConfig:
         json_data = GameConfig.remove_json_comments(json_data)
         return cls.from_dict(json_data)
 
-    # TODO: read in role definitions
+    # TODO: make roles configurable
     @classmethod
     def from_dict(cls, source_dict):
         """

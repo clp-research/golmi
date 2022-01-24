@@ -5,7 +5,7 @@ from model.game import Game
 from model.game_config import GameConfig
 from app import DEFAULT_CONFIG_FILE
 from app.app import app, socketio, AUTH
-from app.pentomino_game import DEFAULT_GAME_CONFIG_FILE
+from app.pentomino_game import DEFAULT_GAME_CONFIG_FILE, ROLES
 
 app.config[DEFAULT_CONFIG_FILE] = (
     "app/pentomino/static/resources/config/pentomino_config.json"
@@ -20,7 +20,7 @@ class GameConfigTest(unittest.TestCase):
         self.game_config = GameConfig(
             4,  # number of players
             10,  # number of objects
-            {"IG": 1, "IF": 2, "OBSERVER":1},  # role counts
+            {"IG": 1, "IF": 2},  # role counts
             area_block="all",
             area_target="all",
             create_targets=False,
@@ -28,10 +28,10 @@ class GameConfigTest(unittest.TestCase):
         )
 
     def test_is_valid_role(self):
-        for valid_role in ["IG", "IF", "OBSERVER"]:
-            self.assertTrue(self.game_config.is_valid_role(valid_role))
+        for valid_role in ROLES.__members__:
+            self.assertTrue(self.game_config.is_valid_role_name(valid_role))
         for invalid_role in ["HACKER"]:
-            self.assertFalse(self.game_config.is_valid_role(invalid_role))
+            self.assertFalse(self.game_config.is_valid_role_name(invalid_role))
 
     def test_set_roles(self):
         # make sure an error is thrown when trying to use an invalid role here
@@ -85,45 +85,48 @@ class GameTest(unittest.TestCase):
 
     def test_get_players_with_role(self):
         player_id = "player1"
-        player_role = "IG"
+        player_role_name = "IG"
+        player_role = GameConfig.get_role_by_name(player_role_name)
         invalid_role = "HACKER"
-        self.game.add_player(player_id, player_role)
+        self.game.add_player(player_id, player_role_name)
 
         self.assertIn(player_id, self.game.get_players_with_role(player_role))
         self.assertListEqual(list(),
                              self.game.get_players_with_role(invalid_role))
 
     def test_unassigned_roles(self):
-        unassigned_roles = ["IG", "IF"]
+        unassigned_roles = [ROLES.IG, ROLES.IF]
 
         self.assertListEqual(unassigned_roles, self.game.unassigned_roles)
 
         # use add_player function to assign someone to a role
         player1_role = "IG"
         self.game.add_player("player1", player1_role)
-        unassigned_roles.remove(player1_role)
+        unassigned_roles.remove(GameConfig.get_role_by_name(player1_role))
 
         self.assertListEqual(unassigned_roles, self.game.unassigned_roles)
 
         # use assign_role function to assign someone to a role
         player2_role = "IF"
-        self.game.assign_role("player2", player2_role)
-        unassigned_roles.remove(player2_role)
+        self.game.assign_role_by_name("player2", player2_role)
+        unassigned_roles.remove(GameConfig.get_role_by_name(player2_role))
 
         self.assertListEqual(unassigned_roles, self.game.unassigned_roles)
 
     def test_add_player(self):
         player_id = "player1"
-        player_role = "IG"
-        self.game.add_player(player_id, player_role)
+        player_role_name = "IG"
+        player_role = GameConfig.get_role_by_name(player_role_name)
+        self.game.add_player(player_id, player_role_name)
 
         self.assertIn(player_id, self.game.player_roles)
         self.assertEqual(player_role, self.game.player_roles[player_id])
 
     def test_remove_player(self):
         player_id = "player1"
-        player_role = "IG"
-        self.game.add_player(player_id, player_role)
+        player_role_name = "IG"
+        player_role = GameConfig.get_role_by_name(player_role_name)
+        self.game.add_player(player_id, player_role_name)
         self.game.remove_player(player_id)
 
         self.assertNotIn(player_id, self.game.player_roles)
