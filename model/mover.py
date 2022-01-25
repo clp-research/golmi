@@ -128,8 +128,7 @@ class Mover:
         # update state
         state.flip_obj(gr_obj_id)
 
-    def apply_movement(
-            self, state, config, model, movement_type, gr_id, **kwargs):
+    def apply_movement(self, model, movement_type, gr_id, **kwargs):
         """
         this method applies a movement.
         Parameters:
@@ -146,6 +145,10 @@ class Mover:
 
             - flip:     does not require extra arguments
         """
+        # extract config and state from model
+        config = model.config
+        state = model.state
+
         # gripper only moves if we have a move type movement
         dx = 0
         dy = 0

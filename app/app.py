@@ -185,8 +185,6 @@ def move(params):
         # one-time action
         else:
             model.mover.apply_movement(
-                model.state,
-                model.config,
                 model,
                 "move",
                 str(params["id"]),
@@ -221,8 +219,6 @@ def rotate(params):
         # one-time action
         else:
             model.mover.apply_movement(
-                model.state,
-                model.config,
                 model,
                 "rotate",
                 str(params["id"]),
@@ -254,8 +250,6 @@ def flip(params):
         # one-time action
         else:
             model.mover.apply_movement(
-                model.state,
-                model.config,
                 model,
                 "flip",
                 str(params["id"])
