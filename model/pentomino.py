@@ -1,6 +1,7 @@
 import logging
 from enum import Enum
 import random
+from typing import List, Set, Dict
 
 from model.grid import Grid
 from model.obj import Obj
@@ -334,7 +335,7 @@ class Board:
     def get_piece(self, piece_id: int):
         return self.pieces_by_id[piece_id]
 
-    def add_pieces_from_configs(self, piece_configs: list[PieceConfig], max_attempts=100):
+    def add_pieces_from_configs(self, piece_configs: List[PieceConfig], max_attempts=100):
         for piece_config in piece_configs:
             self.add_piece_from_config(piece_config, max_attempts)
 
@@ -352,16 +353,16 @@ class Board:
     @classmethod
     def create_compositional(cls, board_width, board_height,
                              piece_config: PieceConfig,
-                             unique_props: set[PropertyNames],
+                             unique_props: Set[PropertyNames],
                              num_distractors: int = 1,
-                             varieties: dict[PropertyNames, int] = None,
-                             ambiguities: dict[PropertyNames, int] = None):
+                             varieties: Dict[PropertyNames, int] = None,
+                             ambiguities: Dict[PropertyNames, int] = None):
         distractors = create_distractor_configs(piece_config, unique_props, num_distractors, varieties, ambiguities)
         return cls.create_compositional_from_configs(board_width, board_height, piece_config, distractors)
 
     @classmethod
     def create_compositional_from_configs(cls, board_width, board_height,
-                                          piece_config: PieceConfig, distractors: list[PieceConfig]):
+                                          piece_config: PieceConfig, distractors: List[PieceConfig]):
         board = Board(board_width, board_height)
         # TODO this is just a quick and dirty hack
         possible_rotations = list(Rotations)
@@ -373,7 +374,7 @@ class Board:
         return board
 
 
-def reduce_atoms(piece_config: PieceConfig, unique_props: set[PropertyNames], varieties: dict = None):
+def reduce_atoms(piece_config: PieceConfig, unique_props: Set[PropertyNames], varieties: Dict = None):
     """ Remove uniq prop atom from the sampling distribution """
     atoms = {
         PropertyNames.SHAPE: list(Shapes),
@@ -393,10 +394,10 @@ def reduce_atoms(piece_config: PieceConfig, unique_props: set[PropertyNames], va
 
 
 def create_distractor_configs(piece_config: PieceConfig,
-                              unique_props: set[PropertyNames],
+                              unique_props: Set[PropertyNames],
                               num_distractors: int = 1,
-                              varieties: dict[PropertyNames, int] = None,
-                              ambiguities: dict[PropertyNames, int] = None):
+                              varieties: Dict[PropertyNames, int] = None,
+                              ambiguities: Dict[PropertyNames, int] = None):
     """
     :param piece_config:
     :param unique_props:
