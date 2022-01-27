@@ -247,7 +247,8 @@ class PropertyNames(Enum):
 
 class PieceConfig:
 
-    def __init__(self, color: Colors, shape: Shapes, rel_position: RelPositions, rotation=Rotations.DEGREE_0):
+    def __init__(self, color: Colors = None, shape: Shapes = None, rel_position: RelPositions = None,
+                 rotation=Rotations.DEGREE_0):
         self.color = color
         self.shape = shape
         self.rel_position = rel_position
@@ -280,7 +281,7 @@ class PieceConfig:
         raise Exception(f"Cannot set {prop_name}.")
 
     def __repr__(self):
-        return f"{self.shape}, {self.color}, {self.rel_position}"
+        return f"PieceConfig({self.shape}, {self.color}, {self.rel_position})"
 
     def copy(self):
         return PieceConfig(self.color, self.shape, self.rel_position)
@@ -374,14 +375,9 @@ class Board:
         return board
 
 
-def reduce_atoms(piece_config: PieceConfig, unique_props: Set[PropertyNames], varieties: Dict = None):
-    """ Remove uniq prop atom from the sampling distribution """
-    atoms = {
-        PropertyNames.SHAPE: list(Shapes),
-        PropertyNames.COLOR: list(Colors),
-        PropertyNames.REL_POSITION: list(RelPositions),
-        PropertyNames.ROTATION: list(Rotations)
-    }
+def reduce_atoms(piece_config: PieceConfig, unique_props: Set[PropertyNames],
+                 atoms: Dict[PropertyNames, List], varieties: Dict = None):
+    """ Remove uniq prop atom from the given atoms. This is basically a set operation. """
     for prop_name in unique_props:
         if len(atoms[prop_name]) < 2:
             raise Exception("Cannot discriminate on a property with less than 2 possible values")
@@ -402,8 +398,9 @@ def create_distractor_configs(piece_config: PieceConfig,
     :param piece_config:
     :param unique_props:
     :param num_distractors:
-    :param varieties: the number of other different values for the props. Zero, means all available are used.
-        Defaults to all available properties.
+    :param varieties: this is basically an "amount-based" white list for property values. Zero, means that all available
+            values are possible to choose from. Otherwise, the possible property values are reduced to the given number.
+            Defaults to use all available property values.
     :param ambiguities: We allow a more fine-grained control on how many distractors share exactly the same "non-unique"
             properties as the target piece (at least one piece must be still identical in "non-unique" props).
             When not given (default), then all distractors share the same values with the target piece
@@ -417,7 +414,12 @@ def create_distractor_configs(piece_config: PieceConfig,
     # When we have a single uniq prop, then all other pieces look the same except in that prop
     if len(unique_props) == 1:
         non_unique_props = set(PropertyNames)
-        atoms_reduced_unique = reduce_atoms(piece_config, unique_props, varieties)
+        atoms_reduced_unique = reduce_atoms(piece_config, unique_props, {
+            PropertyNames.SHAPE: list(Shapes),
+            PropertyNames.COLOR: list(Colors),
+            PropertyNames.REL_POSITION: list(RelPositions),
+            PropertyNames.ROTATION: list(Rotations)
+        }, varieties)
         for unique_prop in unique_props:
             non_unique_props.remove(unique_prop)
             for distractor_config in distractor_configs:
@@ -427,7 +429,12 @@ def create_distractor_configs(piece_config: PieceConfig,
             # We allow a more fine-grained control on how many distractors share exactly the same "non-unique"
             # properties as the target piece (at least one piece must be still identical in "non-unique" props)
             differ_piece_configs = random.sample(distractor_configs, k=num_distractors - 1)
-            atoms_reduced_non_unique = reduce_atoms(piece_config, non_unique_props, varieties)
+            atoms_reduced_non_unique = reduce_atoms(piece_config, non_unique_props, {
+                PropertyNames.SHAPE: list(Shapes),
+                PropertyNames.COLOR: list(Colors),
+                PropertyNames.REL_POSITION: list(RelPositions),
+                PropertyNames.ROTATION: list(Rotations)
+            }, varieties)
             for ambiguous_prop, ambiguous_count in ambiguities.items():
                 if ambiguous_prop in unique_props:
                     logging.warning(f"Ignore unique prop {ambiguous_prop} in ambiguities {ambiguities}.")
@@ -441,3 +448,121 @@ def create_distractor_configs(piece_config: PieceConfig,
                 for differ_distractor in differ_distractors:
                     differ_distractor[ambiguous_prop] = random.choice(atoms_reduced_non_unique[ambiguous_prop])
     return distractor_configs
+
+
+def create_all_distractor_configs(piece_config: PieceConfig,
+                                  unique_props: Set[PropertyNames],
+                                  num_distractors: int = 1,
+                                  prop_values: Dict[PropertyNames, List] = None
+                                  ) -> List[List[PieceConfig]]:
+    """
+    We generate and return all possible scenes for the given pieces config and number of distractors
+    based on the property values. The given piece config is always the first entry in the returned lists.
+
+    Here "ambiguity" is not necessary, as we include all scenes (also the more or less ambiguous ones).
+    Furthermore, "variety" is not necessary, as we directly give the allowed property values.
+
+    This is a special case of 'create_distractor_configs' where we directly sample a scene. Here, we generate all
+    possible scenes first. If we then choose randomly from the returned lists, then it's similar to sampling.
+
+    :param piece_config: of the target to generate the scene for
+    :param unique_props: that are necessary to identify the target
+    :param num_distractors: that are within the context
+    :param prop_values: that are allowed for the piece properties
+    :return: all scenes configs (lists of piece configs)
+    """
+    if num_distractors < 1:
+        raise Exception(f"There must be at least one distractor, but num_distractors is {num_distractors}")
+    # When we have a single uniq prop, then all other pieces look the same except in that prop
+    if len(unique_props) == 1:
+        generator = SingleUPVDistractorSetGenerator(piece_config, list(unique_props)[0], num_distractors, prop_values)
+        return generator.generate_all_sets()
+    return []
+
+
+class SingleUPVDistractorSetGenerator:
+    """ Single U(nique) P(roperty) V(alue) distractor set generator"""
+
+    def __init__(self, target_piece: PieceConfig, unique_prop: PropertyNames,
+                 num_distractors: int, prop_values: Dict[PropertyNames, List]):
+        if num_distractors < 1:
+            raise Exception(f"There must be at least one distractor, but num_distractors is {num_distractors}")
+        self.num_distractors = num_distractors
+        self.target_piece = target_piece
+        self.unique_prop = unique_prop
+        self.prop_values = prop_values
+        self.distractor_configs = None
+
+    def setup(self):
+        self.prop_values = reduce_atoms(self.target_piece, {self.unique_prop}, self.prop_values)
+        generator = DistractorConfigGenerator(self.prop_values)
+        self.distractor_configs = generator.generate_all_distractor_configs()
+        return self  # for fluent calls
+
+    def _is_last_or_single(self, slots):
+        return self.num_distractors == 1 or self.num_distractors == len(slots) + 1
+
+    def _copy_target_config(self):
+        return self.target_piece.copy()
+
+    def generate_all_sets(self):
+        if not self.distractor_configs:
+            raise Exception("Call setup() first")
+        return [s for s in self.yield_all_sets()]
+
+    def yield_all_sets(self):
+        if not self.distractor_configs:
+            raise Exception("Call setup() first")
+        yield from self._yield_distractor_config_sets([])
+
+    def _yield_distractor_config_sets(self, slots: List):
+        """
+        :return: all sets of distractor piece configs (order matters)
+        """
+        if self._is_last_or_single(slots):  # if last or only one distractor
+            # one distractor has to share all other properties, except unique one
+            # for simplicity here, we choose the last distractor to do this
+            unique_prop_values = self.prop_values[self.unique_prop]
+            for prop_value in unique_prop_values:
+                distractor_config = self._copy_target_config()
+                distractor_config[self.unique_prop] = prop_value
+                distractor_set = slots + [distractor_config]
+                yield distractor_set
+        else:
+            # go through all possible property combinations
+            # for this distractor at a specific slot position
+            for distractor_config in self.distractor_configs:
+                yield from self._yield_distractor_config_sets(slots + [distractor_config])
+
+
+class DistractorConfigGenerator:
+
+    def __init__(self, prop_values: Dict[PropertyNames, List], default_piece: PieceConfig = None):
+        self.default_piece = PieceConfig()
+        self.prop_values = prop_values
+        if default_piece:
+            self.default_piece = default_piece
+
+    def _prop_names(self):
+        return list(self.prop_values.keys())
+
+    def _default_config(self):
+        return self.default_piece.copy()
+
+    def generate_all_distractor_configs(self):
+        results = []
+        self._recursive_add(self._prop_names(), self._default_config(), results)
+        return results
+
+    def _recursive_add(self, prop_names: List, piece_config: PieceConfig, results: List[PieceConfig]):
+        """
+        :return: all possible piece configs, given the property values
+        """
+        current_prop_name = prop_names[0]
+        for prop_value in self.prop_values[current_prop_name]:
+            piece_config[current_prop_name] = prop_value
+            if len(prop_names) == 1:  # all property values are set
+                results.append(piece_config.copy())  # defensive copy
+            else:  # go further
+                remaining_names = prop_names[1:]
+                self._recursive_add(remaining_names, piece_config, results)
