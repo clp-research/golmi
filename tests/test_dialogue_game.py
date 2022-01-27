@@ -41,13 +41,20 @@ class DialogueGameConfigTest(unittest.TestCase):
                           self.game_config.set_role_counts,
                           invalid_counts)
 
-    # TODO
     def test_get_roles_ignoring_event(self):
-        pass
+        test_events = ["update_state", "update_grippers", "update_targets",
+                       "update_objs", "update_config"]
+        for event in test_events:
+            returned_roles = self.game_config.get_roles_ignoring_event(event)
+            for role in returned_roles:
+                self.assertIn(event, role.ignore_events)
 
-    # TODO
     def test_role_requires_gripper(self):
-        pass
+        for role in ROLES:
+            if self.game_config.role_requires_gripper(role):
+                self.assertGreater(role.n_grippers, 0)
+            else:
+                self.assertEqual(role.n_grippers, 0)
 
 
 class DialogueGameTest(unittest.TestCase):
