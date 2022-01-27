@@ -15,7 +15,7 @@ app.config[DEFAULT_DIALOGUE_GAME_CONFIG_FILE] = (
 )
 
 
-class GameConfigTest(unittest.TestCase):
+class DialogueGameConfigTest(unittest.TestCase):
     def setUp(self):
         self.game_config = DialogueGameConfig(
             4,  # number of players
@@ -50,7 +50,7 @@ class GameConfigTest(unittest.TestCase):
         pass
 
 
-class GameTest(unittest.TestCase):
+class DialogueGameTest(unittest.TestCase):
     def setUp(self):
         self.config = Config.from_json(app.config[DEFAULT_CONFIG_FILE])
         self.game_config = DialogueGameConfig.from_json(app.config[DEFAULT_DIALOGUE_GAME_CONFIG_FILE])
