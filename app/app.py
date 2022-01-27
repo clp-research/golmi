@@ -95,7 +95,7 @@ def join(params):
     emit("update_state", room_manager.get_model_of_room(room_id).state.to_dict())
 
 
-# TODO: make Config + GameConfig updatable
+# TODO: make Config + DialogueGameConfig updatable
 @socketio.on("add_room")
 def add_room(params):
     """

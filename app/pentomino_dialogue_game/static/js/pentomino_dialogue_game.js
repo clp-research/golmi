@@ -47,7 +47,7 @@ $(document).ready(function () {
         controller.detachFrom(socket);
         // demo of the logView: send the logged data to the server
         logView.addData("test", true);
-        logView.sendData("/pentomino_game/save_log");
+        logView.sendData("/pentomino_dialogue_game/save_log");
     });
 
     // for debugging: log all events

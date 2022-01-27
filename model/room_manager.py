@@ -1,5 +1,5 @@
-from model.game import Game
-from model.game_config import GameConfig
+from model.dialogue_game import DialogueGame
+from model.dialogue_game_config import DialogueGameConfig
 from model.model import Model
 from model.config import Config
 from flask_socketio import emit, join_room, leave_room, close_room, rooms
@@ -33,14 +33,14 @@ class RoomManager:
         new_model = Model(config, self.socket, room_id)
         self._register_room(room_id, new_model)
 
-    def add_game_room(self, room_id, config: Config, game_config: GameConfig):
+    def add_game_room(self, room_id, config: Config, game_config: DialogueGameConfig):
         """
-        Adds an empty room with a new Game instance.
+        Adds an empty room with a new DialogueGame instance.
         @param room_id identifier of the room for the new Model instance.
         @param config Config instance to use for the newly created model.
-        @param game_config GameConfig for a new Game instance.
+        @param game_config DialogueGameConfig for a new DialogueGame instance.
         """
-        new_game = Game(config, self.socket, room_id, game_config)
+        new_game = DialogueGame(config, self.socket, room_id, game_config)
         self._register_room(room_id, new_game)
 
     def _register_room(self, room_id, model: Model):
@@ -93,10 +93,10 @@ class RoomManager:
 
             if role is not None:
                 model = self.get_model_of_room(room_id)
-                if isinstance(model, Game):
+                if isinstance(model, DialogueGame):
                     model.add_player(client_id, role)
                 else:
-                    raise ValueError("Accessed Model is not a Game instance")
+                    raise ValueError("Accessed Model is not a DialogueGame instance")
 
             # inform everyone in the room
             emit("joined_room",
@@ -132,7 +132,7 @@ class RoomManager:
             leave_room(room_id, sid=client_id)
         # only applicable to games: remove player from game
         model = self.get_model_of_room(room_id)
-        if isinstance(model, Game):
+        if isinstance(model, DialogueGame):
             model.remove_player(client_id)
         # optional: delete a room with no clients left
         if delete_empty_room and len(self.room_to_clients[room_id]) == 0:

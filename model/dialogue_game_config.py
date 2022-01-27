@@ -9,10 +9,10 @@ Class that stores
 import json
 from os.path import exists
 
-from app.pentomino_game import ROLES
+from app.pentomino_dialogue_game import ROLES
 
 
-class GameConfig:
+class DialogueGameConfig:
     def __init__(self, n_players, n_objs, role_counts,
                  area_block="all", area_target="all",
                  create_targets=False, random_gr_position=False):
@@ -28,7 +28,7 @@ class GameConfig:
 
     def __repr__(self):
         properties = ", ".join(vars(self).keys())
-        return f"GameConfig({properties})"
+        return f"DialogueGameConfig({properties})"
 
     @staticmethod
     def is_valid_role_name(role_name):
@@ -60,8 +60,8 @@ class GameConfig:
     @classmethod
     def from_json(cls, filename):
         """
-        @param filename String, name of a json file describing a GameConfig.
-        @return new GameConfig instance with the given attributes
+        @param filename String, name of a json file describing a DialogueGameConfig.
+        @return new DialogueGameConfig instance with the given attributes
         """
         if not isinstance(filename, str):
             raise TypeError("filename must be of type str")
@@ -72,16 +72,16 @@ class GameConfig:
             json_data = json.loads(file.read())
 
         # remove comments marked by underscores
-        json_data = GameConfig.remove_json_comments(json_data)
+        json_data = DialogueGameConfig.remove_json_comments(json_data)
         return cls.from_dict(json_data)
 
     # TODO: make roles configurable
     @classmethod
     def from_dict(cls, source_dict):
         """
-        @param source_dict  Dictionary containing GameConfig constructor
+        @param source_dict  Dictionary containing DialogueGameConfig constructor
                             parameters.
-        @return new GameConfig instance with the given attributes
+        @return new DialogueGameConfig instance with the given attributes
         """
         if not isinstance(source_dict, dict):
             raise TypeError("source_dict must be of type dict")

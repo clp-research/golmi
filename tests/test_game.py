@@ -1,23 +1,23 @@
 import unittest
 
 from model.config import Config
-from model.game import Game
-from model.game_config import GameConfig
+from model.dialogue_game import DialogueGame
+from model.dialogue_game_config import DialogueGameConfig
 from app import DEFAULT_CONFIG_FILE
 from app.app import app, socketio, AUTH
-from app.pentomino_game import DEFAULT_GAME_CONFIG_FILE, ROLES
+from app.pentomino_dialogue_game import DEFAULT_DIALOGUE_GAME_CONFIG_FILE, ROLES
 
 app.config[DEFAULT_CONFIG_FILE] = (
     "app/pentomino/static/resources/config/pentomino_config.json"
 )
-app.config[DEFAULT_GAME_CONFIG_FILE] = (
-    "app/pentomino_game/static/resources/game_config/pentomino_game_config.json"
+app.config[DEFAULT_DIALOGUE_GAME_CONFIG_FILE] = (
+    "app/pentomino_dialogue_game/static/resources/game_config/pentomino_game_config.json"
 )
 
 
 class GameConfigTest(unittest.TestCase):
     def setUp(self):
-        self.game_config = GameConfig(
+        self.game_config = DialogueGameConfig(
             4,  # number of players
             10,  # number of objects
             {"IG": 1, "IF": 2},  # role counts
@@ -53,7 +53,7 @@ class GameConfigTest(unittest.TestCase):
 class GameTest(unittest.TestCase):
     def setUp(self):
         self.config = Config.from_json(app.config[DEFAULT_CONFIG_FILE])
-        self.game_config = GameConfig.from_json(app.config[DEFAULT_GAME_CONFIG_FILE])
+        self.game_config = DialogueGameConfig.from_json(app.config[DEFAULT_DIALOGUE_GAME_CONFIG_FILE])
         self.room = "test_room"
         self.socket = socketio.test_client(
             app,
@@ -61,7 +61,7 @@ class GameTest(unittest.TestCase):
             auth={"password": AUTH}
         )
 
-        self.game = Game(self.config, self.socket, self.room, self.game_config)
+        self.game = DialogueGame(self.config, self.socket, self.room, self.game_config)
 
     def test_has_started(self):
         self.assertFalse(self.game.has_started())
@@ -86,7 +86,7 @@ class GameTest(unittest.TestCase):
     def test_get_players_with_role(self):
         player_id = "player1"
         player_role_name = "IG"
-        player_role = GameConfig.get_role_by_name(player_role_name)
+        player_role = DialogueGameConfig.get_role_by_name(player_role_name)
         invalid_role = "HACKER"
         self.game.add_player(player_id, player_role_name)
 
@@ -102,21 +102,21 @@ class GameTest(unittest.TestCase):
         # use add_player function to assign someone to a role
         player1_role = "IG"
         self.game.add_player("player1", player1_role)
-        unassigned_roles.remove(GameConfig.get_role_by_name(player1_role))
+        unassigned_roles.remove(DialogueGameConfig.get_role_by_name(player1_role))
 
         self.assertListEqual(unassigned_roles, self.game.unassigned_roles)
 
         # use assign_role function to assign someone to a role
         player2_role = "IF"
         self.game.assign_role_by_name("player2", player2_role)
-        unassigned_roles.remove(GameConfig.get_role_by_name(player2_role))
+        unassigned_roles.remove(DialogueGameConfig.get_role_by_name(player2_role))
 
         self.assertListEqual(unassigned_roles, self.game.unassigned_roles)
 
     def test_add_player(self):
         player_id = "player1"
         player_role_name = "IG"
-        player_role = GameConfig.get_role_by_name(player_role_name)
+        player_role = DialogueGameConfig.get_role_by_name(player_role_name)
         self.game.add_player(player_id, player_role_name)
 
         self.assertIn(player_id, self.game.player_roles)
@@ -125,7 +125,7 @@ class GameTest(unittest.TestCase):
     def test_remove_player(self):
         player_id = "player1"
         player_role_name = "IG"
-        player_role = GameConfig.get_role_by_name(player_role_name)
+        player_role = DialogueGameConfig.get_role_by_name(player_role_name)
         self.game.add_player(player_id, player_role_name)
         self.game.remove_player(player_id)
 

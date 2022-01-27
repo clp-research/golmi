@@ -1,5 +1,5 @@
 """
-Game class:
+DialogueGame class:
     - holds players and their roles
     - initializes model once enough players are there
     - makes sure players only receive updates according to their roles
@@ -8,15 +8,15 @@ Game class:
 import random
 
 from model.config import Config
-from model.game_config import GameConfig
+from model.dialogue_game_config import DialogueGameConfig
 from model.model import Model
 
 
-class Game(Model):
+class DialogueGame(Model):
     def __init__(self, model_config: Config, socket, room,
-                 game_config: GameConfig):
+                 dialogue_game_config: DialogueGameConfig):
         super().__init__(model_config, socket, room)
-        self.game_config = game_config
+        self.game_config = dialogue_game_config
         self.player_roles = dict() # map player to role
         self.player_grippers = dict() # map player to gripper
 
@@ -75,7 +75,7 @@ class Game(Model):
         """
         Add a player to the game. If the role requires it, assign a gripper
         @param player_sid   socket session id of the player
-        @param role_name role name, must be known to GameConfig
+        @param role_name role name, must be known to DialogueGameConfig
         @param start_once_full  Automatically start the game if the required
             number of players is present
         """
@@ -107,7 +107,7 @@ class Game(Model):
         Add a gripper for each role that requires one and notify the players.
         """
         for player_id, role in self.player_roles.items():
-            if GameConfig.role_requires_gripper(role):
+            if DialogueGameConfig.role_requires_gripper(role):
                 gripper_id = player_id
                 self.add_gr(gripper_id)
                 self.player_grippers[player_id] = gripper_id
@@ -148,7 +148,7 @@ class Game(Model):
 
     def _get_skipped_sids(self, event_name):
         skipped_sids = list()
-        skipped_roles = GameConfig.get_roles_ignoring_event(event_name)
+        skipped_roles = DialogueGameConfig.get_roles_ignoring_event(event_name)
         for role in skipped_roles:
             skipped_sids.extend(self.get_players_with_role(role))
         return skipped_sids
