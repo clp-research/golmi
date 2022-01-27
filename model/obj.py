@@ -3,7 +3,7 @@ import numpy as np
 
 class Obj:
     def __init__(
-            self, id_n, obj_type, x, y, width, height, block_matrix,
+            self, id_n, obj_type, x, y, width=None, height=None, block_matrix=[],
             rotation=0, mirrored=False, color="blue", gripped=False):
         self.id_n = id_n
         self.type = obj_type
@@ -23,10 +23,10 @@ class Obj:
         return f"Object({self.type})"
 
     def get_center_x(self):
-        return self.x + (self.width/2)
+        return self.x + (self.width / 2)
 
     def get_center_y(self):
-        return self.y + (self.height/2)
+        return self.y + (self.height / 2)
 
     def get_left_edge(self):
         return self.x
@@ -106,7 +106,7 @@ class Obj:
         d_angle = d_angle % 360
 
         # can only process multiples of 90, so round to the next step here
-        approx_angle = round(d_angle/90) * 90
+        approx_angle = round(d_angle / 90) * 90
 
         # nothing to do if rotation is 0
         if approx_angle == 0:
