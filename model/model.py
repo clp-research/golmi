@@ -228,15 +228,15 @@ class Model:
                         self.config):
                     # move object
 
-                    # 1 - remove obj from grid
-                    self.state.object_grid.remove_obj(obj)
+                    # 1 - remove obj from state
+                    self.state.remove_object(obj)
 
                     # 2 - change x and y in object
                     obj.x = new_x
                     obj.y = new_y
 
-                    # 3 - plot obj on grid
-                    self.state.object_grid.add_obj(obj)
+                    # 3 - add object to state
+                    self.state.add_object(obj)
                     return True
 
             # if no nearby position if free, cannot place it

@@ -236,6 +236,39 @@ class State:
             )
         return cls(objs, grippers, targets, config)
 
+    def remove_object(self, obj, object_is_target=False):
+        """
+        removes an object from the state dictionary and the grid
+        @param obj  the object to remove
+        @param object_is_target if True the object is a target
+        """
+        if object_is_target:
+            dictionary = self.targets
+            grid = self.target_grid
+        else:
+            dictionary = self.objs
+            grid = self.object_grid
+
+        del dictionary[obj.id_n]
+        grid.remove_obj(obj)
+
+    def add_object(self, obj, object_is_target=False):
+        """
+        adds an object to the state dictionary and the grid
+        @param obj  the object to add
+        @param object_is_target if True the object is a target
+        """
+        if object_is_target:
+            dictionary = self.targets
+            grid = self.target_grid
+        else:
+            dictionary = self.objs
+            grid = self.object_grid
+
+        dictionary[obj.id_n] = obj
+        grid.add_obj(obj)
+
+
     def to_dict(self):
         """
         Create a JSON-friendly representation of the current state
