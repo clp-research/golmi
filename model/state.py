@@ -268,6 +268,18 @@ class State:
         dictionary[obj.id_n] = obj
         grid.add_obj(obj)
 
+    def get_tile(self, x, y, obj_is_target=False):
+        """
+        returns the tile from a grid (object or target) at
+        coordinates x, y
+        """
+        if obj_is_target is True:
+            grid = self.target_grid
+        else:
+            grid = self.object_grid
+
+        return grid.get_single_tile({"x": x, "y": y})
+
 
     def to_dict(self):
         """
