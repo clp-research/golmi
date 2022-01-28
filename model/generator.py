@@ -238,11 +238,6 @@ class Generator:
             self, n_objs, n_grippers, area_block="all",
             area_target="all", create_targets=False,
             random_gr_position=False):
-        # TODO There might be actually:
-        #  - BoardGenerator
-        #  - ObjGenerator
-        #  - ObjPlacer
-
         # get grippers
         grippers = self._generate_grippers(n_grippers, random_gr_position)
 
