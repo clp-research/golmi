@@ -368,45 +368,65 @@ $(document).ready(function () {
             return updates;
         }
 
-        //TODO
         /**
          * @return object mapping gripper ids to changed grippers
          */
         _getGrUpdates(newGrs) {
-            /*let updates = new Object();
+            let updates = new Object();
             for (let [id, gr] of Object.entries(newGrs)) {
                 if (this.currentGrippers[id]) {
                     // check if any property changed
-                    for (let [prop, value] of Object.entries(obj)) {
-                        if (prop == "gripped" && value != null) {
-                            //TODO
+                    for (let [prop, value] of Object.entries(gr)) {
+                        // check if new object is gripped
+                        if (prop == "gripped" && this._grippedStateChanged(
+                                gr, this.currentGrippers[id])) {
+                            console.log(value)
+                            updates[id] = gr;
+                            break;
                         }
                         // skip arrays for now. Only occur for block_matrix
                         // which does not change without modification to other
                         // properties
                         if (!(value instanceof Array) &&
-                            (this.currentObjs[id][prop] != value)) {
-                            updates[id] = obj;
+                            (this.currentGrippers[id][prop] != value)) {
+                            updates[id] = gr;
                             break;
                         }
                     }
                 } else {
-                    // new object
-                    updates[id] = obj;
+                    // new gripper
+                    updates[id] = gr;
                 }
             }
-            return updates;*/
-            return newGrs;
+            return updates;
         }
 
         /**
-         * TODO: not yet implemented
+         * TODO: not yet implemented: to further reduce the log size, only
+         * changed configurations could be logged here
          * @return object containing changed configurations
          */
         _getConfigUpdates(newConfig) {
             //console.log("oldConf", this.currentConfig)
             //console.log("newConf", newConfig)
             return newConfig;
+        }
+
+        /**
+         * Compare the "gripped" property of two grippers.
+         * @return true if an object was gripped, ungripped or a different
+         *      object is gripped.
+         */
+        _grippedStateChanged(newGr, oldGr) {
+            // true if:
+            // (1) new gripper gripped an object
+            // (2) new gripper ungripped object
+            // (3) both grippers grip an object, but different ones (not an
+            // expected case, but is covered here for completeness
+            return ((newGr["gripped"] != null) && (oldGr["gripped"] == null)) ||
+                   ((newGr["gripped"] == null) && (oldGr["gripped"] != null)) ||
+                   ((newGr["gripped"] == null) && (oldGr["gripped"] != null) &&
+                    (newGr["gripped"]["id_n"] != oldGr["gripped"]["id_n"]));
         }
 
         /**
