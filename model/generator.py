@@ -90,8 +90,8 @@ class Generator:
         return (x_start, x_end), (y_start, y_end)
 
     def _generate_target(
-            self, target_grid, index, piece_type,
-            width, height, block_matrix, area, color):
+            self, target_grid: Grid, index, piece_type, width, height,
+            block_matrix, area, color):
         """
         this function generates a target block for the object maintaining:
             - index
@@ -149,7 +149,7 @@ class Generator:
 
         return target_obj
 
-    def _generate_objects(self, n_objs, area_block, area_target, create_tgts):
+    def _generate_objects(self, n_objs, obj_area, target_area):
         objects = dict()
         targets = dict()
         attempt = 0
@@ -157,7 +157,7 @@ class Generator:
         target_grid = Grid.create_from_config(self.config)
 
         (x_start, x_end), (y_start, y_end) = self._restricted_coordinates(
-            area_block
+            obj_area
         )
 
         while len(objects) < n_objs:
@@ -209,14 +209,14 @@ class Generator:
                 object_grid.add_obj(obj)
 
                 # create a target
-                if create_tgts:
+                if target_area is not None:
                     target_obj = self._generate_target(
                         target_grid,
                         index,
                         piece_type,
                         width, height,
                         block_matrix,
-                        area_target,
+                        target_area,
                         color
                     )
 
@@ -235,16 +235,14 @@ class Generator:
         return objects, targets
 
     def generate_random_state(
-            self, n_objs, n_grippers, area_block="all",
-            area_target="all", create_targets=False,
-            random_gr_position=False):
+            self, n_objs, n_grippers, obj_area="all",
+            target_area="all", random_gr_position=False):
         # get grippers
         grippers = self._generate_grippers(n_grippers, random_gr_position)
 
         # get objects
         objects, target_objs = self._generate_objects(
-            n_objs, area_block, area_target, create_targets
-        )
+            n_objs, obj_area, target_area)
 
         # return a new state from generated objects, targets and grippers
         return State(objects, grippers, target_objs, self.config)
