@@ -132,6 +132,7 @@ class Mover:
         """
         this method applies a movement.
         Parameters:
+            - Model instance
             - movement type {"move", "flip", "rotate"}
             - gr_id: id of the gripper
 

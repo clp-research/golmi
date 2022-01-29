@@ -391,7 +391,7 @@ class Model:
     def _loop(self, fn, *args, **kwargs):
         # rotations and flips can be slow (0.5)
         # movements should be as fast as in config
-        if args[0] == "move":
+        if args[1] == "move":
             action_interval = self.config.action_interval
         else:
             action_interval = 0.5
