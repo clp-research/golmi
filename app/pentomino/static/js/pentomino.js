@@ -65,7 +65,9 @@ $(document).ready(function () {
             socket.emit("random_init", {"n_objs": N_OBJECTS,
                                         "n_grippers": N_GRIPPERS,
                                         "random_gr_position":false,
-                                        "area_block": "all"});
+                                        "create_targets": true,
+                                        "area_block": "top",
+                                        "area_target": "bottom"});
             // manually add a gripper that will be assigned to the controller
             // TODO: Should this happen somewhere else?
             // Options:
