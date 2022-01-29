@@ -16,6 +16,7 @@ $(document).ready(function () {
             this.grId;
             // only used if logFullState is true
             this.currentObjs = new Object();
+            this.currentTargets = new Object();
             this.currentGrippers = new Object();
             this.currentConfig = new Object();
             this.registeredLocalEvents = [
@@ -64,7 +65,8 @@ $(document).ready(function () {
                 if (!this.startTime) {
                     // don't start logging if an empty state was sent
                     if (Object.keys(state["objs"]).length == 0 &&
-                        Object.keys(state["grippers"]).length == 0) {
+                        Object.keys(state["grippers"]).length == 0 &&
+                        Object.keys(state["targets"]).length == 0) {
                         return;
                     }
                     this.startTime = Date.now();
@@ -74,14 +76,16 @@ $(document).ready(function () {
                 }
                 if (this.logFullState) {
                     this.currentObjs = state["objs"];
+                    this.currentTargets = state["targets"];
                     this.currentGrippers = state["grippers"];
                     this._addTimestamp(timeStamp, this._getFullState());
                 }
                 else {
-                    // save snapshot of changes to the state
+                    // save snapshot of changes to the state, save afterwards
                     this._addTimestamp(timeStamp,
                                        this._getStateUpdates(state));
                     this.currentObjs = state["objs"];
+                    this.currentTargets = state["targets"];
                     this.currentGrippers = state["grippers"];
                 }
             })
@@ -122,13 +126,29 @@ $(document).ready(function () {
                 if (this.startTime) {
                     if (this.logFullState) {
                         this.currentObjs = objs;
-                        this._addTimestamp(this._getTimestamp(), this._getFullState());
+                        this._addTimestamp(this._getTimestamp(),
+                                           this._getFullState());
                     }
                     else {
                         this._addTimestamp(this._getTimestamp(), {
                             "objs": this._getObjUpdates(objs)
                         });
                         this.currentObjs = objs;
+                    }
+                }
+            });
+            this.socket.on("update_targets", (targets) => {
+                if (this.startTime) {
+                    if (this.logFullState) {
+                        this.currentTargets = targets;
+                        this._addTimestamp(this._getTimestamp(),
+                                           this._getFullState());
+                    }
+                    else {
+                        this._addTimestamp(this._getTimestamp(), {
+                            "targets": this._getTargetUpdates(targets)
+                        });
+                        this.currentTargets = targets;
                     }
                 }
             });
@@ -188,6 +208,7 @@ $(document).ready(function () {
         /**
          * Add additional data to the current log. Will be saved at
          * the top-level of the log object.
+         * Formerly named addData.
          * @param {string, identifier for the data, 'log' is reserved} key
          * @param {data to save, can be any json-friendly format, e.g. object,
          *         list, string} data
@@ -230,6 +251,7 @@ $(document).ready(function () {
             this.data["log"] = new Array();
             this.startTime = undefined;
             this.currentObjs = new Object();
+            this.currentTargets = new Object();
             this.currentGrippers = new Object();
         }
 
@@ -274,6 +296,7 @@ $(document).ready(function () {
         _getFullState() {
             return {
                 "objs": this.currentObjs,
+                "targets": this.currentTargets,
                 "grippers": this.currentGrippers,
                 "config": this.currentConfig
             };
@@ -285,6 +308,7 @@ $(document).ready(function () {
         _getStateUpdates(newState) {
             return {
                 "objs": this._getObjUpdates(newState["objs"]),
+                "targets": this._getTargetUpdates(newState["targets"]),
                 "grippers": this._getGrUpdates(newState["grippers"])};
         }
 
@@ -292,7 +316,7 @@ $(document).ready(function () {
          * Currently has no way of detecting "deleted" objects.
          * Gripped objects have the "gripped" property set to true, so the
          * LayerView knows not to draw them on the object layer
-         * @return object mapping obj ids to changed objs
+         * @return Object mapping obj ids to changed objs
          */
         _getObjUpdates(newObjs) {
             let updates = new Object();
@@ -312,6 +336,33 @@ $(document).ready(function () {
                 } else {
                     // new object
                     updates[id] = obj;
+                }
+            }
+            return updates;
+        }
+
+        /**
+         * Currently has no way of detecting "deleted" targets.
+         * @return Object mapping target ids to changed targets
+         */
+        _getTargetUpdates(newTargets) {
+            let updates = new Object();
+            for (let [id, tgt] of Object.entries(newTargets)) {
+                if (this.currentTargets[id]) {
+                    // check if any property changed
+                    for (let [prop, value] of Object.entries(tgt)) {
+                        // skip arrays for now. Only occur for block_matrix
+                        // which does not change without modification to other
+                        // properties
+                        if (!(value instanceof Array) &&
+                                (this.currentTargets[id][prop] != value)) {
+                            updates[id] = tgt;
+                            break;
+                        }
+                    }
+                } else {
+                    // new object
+                    updates[id] = tgt;
                 }
             }
             return updates;
