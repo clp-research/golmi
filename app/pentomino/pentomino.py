@@ -17,7 +17,6 @@ pentomino_bp = Blueprint('pentomino_bp', __name__,
                          static_folder='static',
                          url_prefix="/pentomino")
 
-
 @cross_origin
 @pentomino_bp.route("/", methods=["GET"])
 def pentomino():
@@ -36,8 +35,8 @@ def save_log():
     # as a filename that
     # (1) can not be manipulated by a client
     # (2) has a negligible chance of collision
-    # a simple timestamp is used
-    filename = str(time_ns() / 100) + ".json"
+    # a timestamp is used
+    filename = str(time_ns()) + ".json"
     # check if "data_collection" directory exists, create if necessary
     save_path = "app/pentomino/static/resources/data_collection"
     if not os.path.exists(save_path):
