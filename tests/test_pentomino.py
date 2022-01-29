@@ -108,5 +108,5 @@ class CreateDistractorsTestCase(unittest.TestCase):
                                                    PropertyNames.SHAPE: 2})
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

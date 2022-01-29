@@ -428,11 +428,11 @@ def create_distractor_configs(piece_config: PieceConfig,
             differ_piece_configs = random.sample(distractor_configs, k=num_distractors - 1)
             atoms_reduced_non_unique = reduce_atoms(piece_config, non_unique_props, varieties)
             for ambiguous_prop, ambiguous_count in ambiguities.items():
-                if ambiguous_prop in unique_props:
-                    logging.warning(f"Ignore unique prop {ambiguous_prop} in ambiguities {ambiguities}.")
-                    continue
                 if ambiguous_count <= 0 or ambiguous_count >= num_distractors:
                     continue  # all should look the same in "non-unique" props
+                elif ambiguous_prop in unique_props:
+                    raise Exception(f"Property {ambiguous_prop} cannot be in "
+                                    f"unique and ambiguous properties at once")
                 differ_count = len(differ_piece_configs)
                 if ambiguous_count > 1:
                     differ_count = differ_count - ambiguous_count + 1  # one piece is always ambiguous
