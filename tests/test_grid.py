@@ -95,7 +95,7 @@ class Test(unittest.TestCase):
 
         # there is only one object on the grid
         # a block with ID = 1
-        self.assertTrue(objs == set([1]))
+        self.assertTrue(objs == set([o1]))
 
     def test_remove_object(self):
         g = Grid(width=5, height=5, step=0.5, prevent_overlap=False)

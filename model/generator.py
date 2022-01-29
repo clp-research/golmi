@@ -90,8 +90,8 @@ class Generator:
         return (x_start, x_end), (y_start, y_end)
 
     def _generate_target(
-            self, target_grid: Grid,
-            index, piece_type, width, height, block_matrix, area, color):
+            self, target_grid, index, piece_type,
+            width, height, block_matrix, area, color):
         """
         this function generates a target block for the object maintaining:
             - index
@@ -149,12 +149,12 @@ class Generator:
 
         return target_obj
 
-    def _generate_objects(
-            self, object_grid: Grid, target_grid: Grid,
-            n_objs, area_block, area_target, create_targets):
+    def _generate_objects(self, n_objs, area_block, area_target, create_tgts):
         objects = dict()
         targets = dict()
         attempt = 0
+        object_grid = Grid.create_from_config(self.config)
+        target_grid = Grid.create_from_config(self.config)
 
         (x_start, x_end), (y_start, y_end) = self._restricted_coordinates(
             area_block
@@ -209,7 +209,7 @@ class Generator:
                 object_grid.add_obj(obj)
 
                 # create a target
-                if create_targets:
+                if create_tgts:
                     target_obj = self._generate_target(
                         target_grid,
                         index,
@@ -234,40 +234,17 @@ class Generator:
 
         return objects, targets
 
-    def _initialize_random_state(
-            self, obj_grid, trg_grid, n_objs, n_grippers, area_block="all",
-            area_target="all", create_targets=False, random_gr_position=False):
+    def generate_random_state(
+            self, n_objs, n_grippers, area_block="all",
+            area_target="all", create_targets=False,
+            random_gr_position=False):
         # get grippers
         grippers = self._generate_grippers(n_grippers, random_gr_position)
 
         # get objects
         objects, target_objs = self._generate_objects(
-            obj_grid, trg_grid, n_objs, area_block, area_target, create_targets
+            n_objs, area_block, area_target, create_targets
         )
 
-        # create state
-        state = State()
-        state.grippers = grippers
-        state.objs = objects
-        state.targets = target_objs
-
-        return state
-
-    def generate_random_state(
-            self, n_objs, n_grippers, area_block="all",
-            area_target="all", create_targets=False,
-            random_gr_position=False):
-        # TODO There might be actually:
-        #  - BoardGenerator
-        #  - ObjGenerator
-        #  - ObjPlacer
-        object_grid = Grid.create_from_config(self.config)
-        target_grid = Grid.create_from_config(self.config)
-
-        # generate random state from parameters
-        state = self._initialize_random_state(
-            object_grid, target_grid, n_objs, n_grippers, area_block,
-            area_target, create_targets, random_gr_position
-        )
-        # TODO state should include the grids (or the other way around)
-        return state, object_grid, target_grid
+        # return a new state from generated objects, targets and grippers
+        return State(objects, grippers, target_objs, self.config)

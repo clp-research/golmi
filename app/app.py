@@ -4,6 +4,7 @@ from flask_socketio import (
     SocketIO, emit, ConnectionRefusedError
 )
 
+
 from model.room_manager import RoomManager
 from app import DEFAULT_CONFIG_FILE
 
@@ -31,8 +32,8 @@ socketio = SocketIO(
     engineio_logger=True,
     cors_allowed_origins='*'
 )
-room_manager = RoomManager(socketio)
 
+room_manager = RoomManager(socketio)
 
 def check_parameters(params, model, keys):
     """
@@ -61,6 +62,7 @@ def param_is_integer(param):
     """
     @return True if param is of type int, or is a float and convertible to int
     """
+
     return isinstance(param, int) or (isinstance(param, float) and param.is_integer())
 
 
@@ -75,7 +77,6 @@ def client_connect(auth):
         raise ConnectionRefusedError("authentication failed")
     if auth["password"] != AUTH:
         raise ConnectionRefusedError("authentication failed")
-
 
 @socketio.on("join")
 def join(params):
@@ -185,12 +186,12 @@ def move(params):
             # one-time action
             else:
                 model.mover.apply_movement(
+                    model,
                     "move",
                     str(params["id"]),
                     x_steps=params["dx"],
                     y_steps=params["dy"]
                 )
-
 
 @socketio.on("stop_move")
 def stop_move(params):
@@ -218,12 +219,12 @@ def rotate(params):
             # one-time action
             else:
                 model.mover.apply_movement(
+                    model,
                     "rotate",
                     str(params["id"]),
                     direction=params["direction"],
                     rotation_step=step_size
                 )
-
 
 @socketio.on("stop_rotate")
 def stop_rotate(params):
@@ -248,6 +249,7 @@ def flip(params):
             # one-time action
             else:
                 model.mover.apply_movement(
+                    model,
                     "flip",
                     str(params["id"])
                 )

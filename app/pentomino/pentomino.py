@@ -7,7 +7,9 @@ from time import time_ns
 
 
 def apply_config_to(app):
-    app.config[DEFAULT_CONFIG_FILE] = "app/pentomino/static/resources/config/pentomino_config.json"
+    app.config[DEFAULT_CONFIG_FILE] = (
+        "app/pentomino/static/resources/config/pentomino_config.json"
+    )
 
 
 pentomino_bp = Blueprint('pentomino_bp', __name__,
@@ -40,6 +42,8 @@ def save_log():
     save_path = "app/pentomino/static/resources/data_collection"
     if not os.path.exists(save_path):
         os.mkdir(save_path)
-    with open(os.path.join(save_path, filename), encoding="utf-8", mode="w") as f:
+
+    outputfile = os.path.join(save_path, filename)
+    with open(outputfile, encoding="utf-8", mode="w") as f:
         f.write(json.dumps(json_data, indent=2))
     return "0", 200

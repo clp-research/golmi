@@ -2,13 +2,39 @@ import json
 
 from model.obj import Obj
 from model.gripper import Gripper
+from model.grid import Grid
 
 
 class State:
-    def __init__(self):
-        self.objs = dict()  # maps ids to Objs
-        self.grippers = dict()
-        self.targets = dict()
+    def __init__(self, objs, grippers, targets, config):
+        self.objs = objs
+        self.grippers = grippers
+        self.targets = targets
+        self.object_grid = Grid.create_from_config(config)
+        self.target_grid = Grid.create_from_config(config)
+        self.plot_objects_targets()
+
+    def plot_objects_targets(self):
+        """
+        clear grids and replot all objects and targets
+        """
+        # clear grids
+        self.object_grid.clear_grid()
+        self.target_grid.clear_grid()
+
+        # plot objects
+        for obj in self.objs.values():
+            self.object_grid.add_obj(obj)
+
+        # plot targets
+        for target in self.targets.values():
+            self.target_grid.add_obj(target)
+
+    @classmethod
+    def empty_state(cls, config):
+        return cls(
+            dict(), dict(), dict(), config
+        )
 
     def get_obj_dict(self):
         """
@@ -135,7 +161,7 @@ class State:
         self.grippers[gr_id].gripped = None
 
     @classmethod
-    def from_json(cls, filename, type_config):
+    def from_json(cls, filename, type_config, config):
         """
         @param filename String, name of a json file describing a State.
                         The key "type_config" mapping to a dict is mandatory.
@@ -144,11 +170,11 @@ class State:
         """
         with open(filename, mode="r") as file:
             json_data = json.loads(file.read())
-        return cls.from_dict(json_data, type_config)
+        return cls.from_dict(json_data, type_config, config)
 
     @classmethod
     # TODO: make sure pieces are on the board! (at least emit warning)
-    def from_dict(cls, source_dict, type_config):
+    def from_dict(cls, source_dict, type_config, config):
         """
         @param source_dict  Dict containing State constructor parameters.
                             The keys "objs" and "grippers" are mandatory.
@@ -163,28 +189,44 @@ class State:
                 "source_dict must contain the keys 'objs' and 'grippers' "
                 "mapping to dictionaries."
             )
-        # initialize an empty state
-        new_state = cls()
+
         try:
             # construct objects
+            objs = dict()
             for obj_name, obj_dict in source_dict["objs"].items():
                 # get identifier or use object key (use str for consistency)
                 id_n = obj_dict.get("id_n") or str(obj_name)
 
-                new_object = Obj.from_dict(id_n, obj_dict, type_config)
-                new_state.objs[id_n] = new_object
+                new_object = Obj.from_dict(
+                    id_n, obj_dict, type_config
+                )
+                objs[id_n] = new_object
 
             # construct grippers
+            grippers = dict()
             for gr_name, gr_dict in source_dict["grippers"].items():
                 # get identifier or use gripper key (use str for consistency)
                 id_n = gr_dict.get("id_n") or str(gr_name)
                 new_gr = Gripper.from_dict(id_n, gr_dict)
-                new_state.grippers[id_n] = new_gr
+                grippers[id_n] = new_gr
 
                 # Not the nicest solution: Make sure any gripped object has
                 # its 'gripped' attribute set to True
                 if new_gr.gripped is not None:
-                    new_state.objs[new_gr.gripped].gripped = True
+                    objs[new_gr.gripped].gripped = True
+
+            # construct targets
+            targets = dict()
+            if "targets" in source_dict:
+                for obj_name, obj_dict in source_dict["targets"].items():
+                    # get identifier or use object key
+                    # (use str for consistency)
+                    id_n = obj_dict.get("id_n") or str(obj_name)
+
+                    new_object = Obj.from_dict(
+                        id_n, obj_dict, type_config
+                    )
+                    objs[id_n] = new_object
 
         except KeyError:
             raise KeyError(
@@ -192,7 +234,52 @@ class State:
                 "does not have the right format.\n"
                 "Please refer to the documentation."
             )
-        return new_state
+        return cls(objs, grippers, targets, config)
+
+    def remove_object(self, obj, object_is_target=False):
+        """
+        removes an object from the state dictionary and the grid
+        @param obj  the object to remove
+        @param object_is_target if True the object is a target
+        """
+        if object_is_target:
+            dictionary = self.targets
+            grid = self.target_grid
+        else:
+            dictionary = self.objs
+            grid = self.object_grid
+
+        del dictionary[obj.id_n]
+        grid.remove_obj(obj)
+
+    def add_object(self, obj, object_is_target=False):
+        """
+        adds an object to the state dictionary and the grid
+        @param obj  the object to add
+        @param object_is_target if True the object is a target
+        """
+        if object_is_target:
+            dictionary = self.targets
+            grid = self.target_grid
+        else:
+            dictionary = self.objs
+            grid = self.object_grid
+
+        dictionary[obj.id_n] = obj
+        grid.add_obj(obj)
+
+    def get_tile(self, x, y, obj_is_target=False):
+        """
+        returns the tile from a grid (object or target) at
+        coordinates x, y
+        """
+        if obj_is_target is True:
+            grid = self.target_grid
+        else:
+            grid = self.object_grid
+
+        return grid.get_single_tile({"x": x, "y": y})
+
 
     def to_dict(self):
         """

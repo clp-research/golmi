@@ -8,24 +8,21 @@ from model.obj import Obj
 
 
 class Mover:
-    def __init__(self, model):
-        self.model = model
-
-    def _gripper_can_move(self, gr_id, dx, dy):
+    def _gripper_can_move(self, gr_id, dx, dy, state):
         """
         check if a gripper can be moved on the grid
         if the movement type is not move this function
         will always return True as dx and dy will be zero
         """
-        gripper_x, gripper_y = self.model.get_gripper_coords(gr_id)
+        gripper_x, gripper_y = state.get_gripper_coords(gr_id)
         new_gr_pos = {
             "x": (gripper_x + dx),
             "y": (gripper_y + dy)
         }
 
-        return self.model.object_grid.gripper_on_grid(new_gr_pos)
+        return state.object_grid.gripper_on_grid(new_gr_pos)
 
-    def _get_new_coordinates(self, gr_obj, **kwargs):
+    def _get_new_coordinates(self, config, gr_obj, **kwargs):
         """
         based on the type of movement this function will
         return the new coordinates after the movement
@@ -42,7 +39,7 @@ class Mover:
 
         elif kwargs["type"] == "rotate":
             if kwargs.get("rotation_step") is None:
-                step_size = self.model.config.rotation_step
+                step_size = config.rotation_step
 
             direction = kwargs["direction"]
             # determine the turning angle
@@ -69,13 +66,14 @@ class Mover:
 
         return new_coordinates, new_matrix, d_angle
 
-    def _obj_on_target(self, obj):
+    def _obj_on_target(self, obj, state):
         objs_on_target = list()
         for position in obj.occupied():
             # TODO: implement a function on grid side to get
             # converted coordinates from converter
-            for new_position in self.model.object_grid.converter(position):
-                tile = self.model.target_grid[new_position]
+            converted = state.object_grid.converter(position)
+            for new_position in converted:
+                tile = state.target_grid[new_position]
                 if len(tile.objects) == 0:
                     # empty tile, return False
                     return False
@@ -85,53 +83,52 @@ class Mover:
         # every position on target grid had only 1 element
         if len(set(objs_on_target)) == 1:
             target_id = objs_on_target[0]
-            target_obj = self.model.state.targets[target_id]
+            target_obj = state.targets[target_id]
 
             # object and target must have same form and color
             if target_obj.type == obj.type:
                 if target_obj.color == obj.color:
                     return True
 
-    def _is_legal_move(self, new_coordinates, gr_obj_id):
+    def _is_legal_move(self, new_coordinates, gr_obj, state, config):
         """
         check if the movement is allowed
         """
         # tiles are free and within limits
-        obj_can_move = self.model.object_grid.is_legal_position(
-            new_coordinates, gr_obj_id
+        obj_can_move = state.object_grid.is_legal_position(
+            new_coordinates, gr_obj
         )
 
         # check if object is on a target
-        if self.model.config.lock_on_target is True:
-            obj = self.model.get_obj_by_id(gr_obj_id)
-            on_target = self._obj_on_target(obj)
+        if config.lock_on_target is True:
+            on_target = self._obj_on_target(gr_obj)
         else:
             on_target = False
 
         return obj_can_move and not on_target
 
-    def _move(self, gr_id, dx, dy):
+    def _move(self, gr_id, dx, dy, state):
         """
         move a gripper and the gripped object
         """
-        self.model.state.move_gr(gr_id, dx, dy)
-        self.model.state.move_obj(self.model.get_gripped_obj(gr_id), dx, dy)
+        state.move_gr(gr_id, dx, dy)
+        state.move_obj(state.get_gripped_obj(gr_id), dx, dy)
 
-    def _rotate(self, gr_obj_id, d_angle):
+    def _rotate(self, gr_obj_id, d_angle, state):
         """
         rotate an object
         """
         # update state
-        self.model.state.rotate_obj(gr_obj_id, d_angle)
+        state.rotate_obj(gr_obj_id, d_angle)
 
-    def _flip(self, gr_obj_id):
+    def _flip(self, gr_obj_id, state):
         """
         flip an object
         """
         # update state
-        self.model.state.flip_obj(gr_obj_id)
+        state.flip_obj(gr_obj_id)
 
-    def apply_movement(self, movement_type, gr_id, **kwargs):
+    def apply_movement(self, model, movement_type, gr_id, **kwargs):
         """
         this method applies a movement.
         Parameters:
@@ -148,26 +145,30 @@ class Mover:
 
             - flip:     does not require extra arguments
         """
+        # extract config and state from model
+        config = model.config
+        state = model.state
+
         # gripper only moves if we have a move type movement
         dx = 0
         dy = 0
 
         # calculate the distance if the movement is a move
         if movement_type == "move":
-            step_size = self.model.config.move_step
+            step_size = config.move_step
             # make dx and dy multiples of step_size
             dx = round(kwargs["x_steps"]) * step_size
             dy = round(kwargs["y_steps"]) * step_size
 
         # make sure gripper can move
-        gripper_can_move = self._gripper_can_move(gr_id, dx, dy)
+        gripper_can_move = self._gripper_can_move(gr_id, dx, dy, state)
 
         if gripper_can_move:
             # check if gripper has an object
-            gr_obj_id = self.model.get_gripped_obj(gr_id)
+            gr_obj_id = state.get_gripped_obj(gr_id)
             if gr_obj_id:
                 # obtain gripped object
-                gr_obj = self.model.get_obj_by_id(gr_obj_id)
+                gr_obj = state.get_obj_by_id(gr_obj_id)
 
                 # obtain direction and rotation step
                 # if nor present they will be initialized to None
@@ -176,6 +177,7 @@ class Mover:
 
                 # obtain coordinates after movement
                 movement_result = self._get_new_coordinates(
+                    config,
                     gr_obj,
                     type=movement_type,
                     dx=dx,
@@ -186,36 +188,38 @@ class Mover:
                 new_coordinates, new_matrix, d_angle = movement_result
 
                 # check if coordinates are legal
-                good_move = self._is_legal_move(new_coordinates, gr_obj_id)
+                good_move = self._is_legal_move(
+                    new_coordinates, gr_obj, state, config
+                )
 
                 # apply movement
                 if good_move:
                     # remove object from grid
-                    self.model.object_grid.remove_obj(gr_obj)
+                    state.object_grid.remove_obj(gr_obj)
 
                     # apply movement according to type
                     if movement_type == "move":
-                        self._move(gr_id, dx, dy)
+                        self._move(gr_id, dx, dy, state)
 
                     elif movement_type == "flip":
-                        self._flip(gr_obj_id)
+                        self._flip(gr_obj_id, state)
 
                     elif movement_type == "rotate":
-                        self._rotate(gr_obj_id, d_angle)
+                        self._rotate(gr_obj_id, d_angle, state)
 
                     # add element to grid
-                    self.model.object_grid.add_obj(gr_obj)
+                    state.object_grid.add_obj(gr_obj)
 
                     # print grid to terminal if verbose
-                    if self.model.config.verbose is True:
-                        print(self.model.object_grid)
+                    if config.verbose is True:
+                        print(state.object_grid)
 
             else:
                 # only move the gripper
-                self.model.state.move_gr(gr_id, dx, dy)
+                state.move_gr(gr_id, dx, dy)
 
             # send update to views
-            self.model._notify_views(
+            model._notify_views(
                 "update_grippers",
-                self.model.get_gripper_dict()
+                model.get_gripper_dict()
             )
