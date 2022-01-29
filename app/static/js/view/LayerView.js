@@ -87,7 +87,6 @@ $(document).ready(function () {
          * Draws a grid black on white as the background.
          */
         drawBg() {
-            // set updates
             let ctx = this.bgCanvas.getContext("2d");
             // important: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/clearRect
             // using beginPath() after clear() prevents odd behavior
@@ -145,6 +144,7 @@ $(document).ready(function () {
          * Draw the (static) objects.
          */
         drawObjs() {
+            let ctx = this.objCanvas.getContext("2d");
             ctx.beginPath();
             // draw each object
             for (const obj of Object.values(this.objs))	{
@@ -154,7 +154,6 @@ $(document).ready(function () {
                 let blockMatrix = obj.block_matrix;
 
                 // call drawing helper functions with additional infos
-                let ctx = this.objCanvas.getContext("2d");
                 let params = {
                     x: obj.x,
                     y: obj.y,
@@ -179,7 +178,6 @@ $(document).ready(function () {
          * The gripper is used to navigate on the canvas and move objects.
          */
         drawGr() {
-            // set up
             let ctx = this.grCanvas.getContext("2d");
             ctx.beginPath()
             for (const [grId, gripper] of Object.entries(this.grippers)) {

@@ -184,7 +184,8 @@ class Config:
         commentless_json = dict()
         for key, value in parsed_json.items():
             if not key.startswith("_"):
-                commentless_json[key] = value
-            elif isinstance(value, dict):
-                commentless_json[key] = Config.remove_json_comments(value)
+                if isinstance(value, dict):
+                    commentless_json[key] = Config.remove_json_comments(value)
+                else:
+                    commentless_json[key] = value
         return commentless_json
