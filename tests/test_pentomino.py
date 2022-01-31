@@ -98,15 +98,6 @@ class CreateDistractorsTestCase(unittest.TestCase):
         shape_count = sum([1 for distractor in distractors if distractor.shape == TARGET.shape])
         self.assertEqual(shape_count, 3)
 
-    def test_with_color_fails_when_ambiguous_color(self):
-        with self.assertRaises(Exception):
-            create_distractor_configs(TARGET,
-                                      unique_props={PropertyNames.COLOR},
-                                      num_distractors=4,
-                                      ambiguities={PropertyNames.REL_POSITION: 1,
-                                                   PropertyNames.COLOR: 1,
-                                                   PropertyNames.SHAPE: 2})
-
 
 if __name__ == "__main__":
     unittest.main()
