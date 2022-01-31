@@ -1,3 +1,4 @@
+import copy
 import logging
 from enum import Enum
 import random
@@ -378,17 +379,22 @@ class Board:
 def exclude_property_values(piece_config: PieceConfig, unique_props: Set[PropertyNames],
                             property_values: Dict[PropertyNames, List], varieties: Dict = None):
     """ Remove uniq prop atom from the given atoms. This is basically a set operation. """
+    # defensive copy (otherwise property_values may shrink on repeated calls)
+    reduced_values = copy.deepcopy(property_values)
     for prop_name in unique_props:
-        if len(property_values[prop_name]) < 2:
+        if prop_name not in reduced_values:
+            raise Exception(f"Cannot discriminate on a property that does not exist. "
+                            f"{prop_name} not in {reduced_values.keys()}")
+        if len(reduced_values[prop_name]) < 2:
             raise Exception("Cannot discriminate on a property with less than 2 possible values")
         piece_property_value = piece_config[prop_name]
-        if piece_property_value in property_values[prop_name]:
-            property_values[prop_name].remove(piece_property_value)
+        if piece_property_value in reduced_values[prop_name]:
+            reduced_values[prop_name].remove(piece_property_value)
         if varieties and prop_name in varieties:
             prop_variety = varieties[prop_name]
             if prop_variety > 0:
-                property_values[prop_name] = random.sample(property_values[prop_name], k=prop_variety)
-    return property_values
+                reduced_values[prop_name] = random.sample(reduced_values[prop_name], k=prop_variety)
+    return reduced_values
 
 
 def create_distractor_configs(piece_config: PieceConfig,
@@ -411,17 +417,19 @@ def create_distractor_configs(piece_config: PieceConfig,
     """
     if num_distractors < 1:
         raise Exception(f"There must be at least one distractor, but num_distractors is {num_distractors}")
+    # initialize all possible values
+    property_values = {
+        PropertyNames.SHAPE: list(Shapes),
+        PropertyNames.COLOR: list(Colors),
+        PropertyNames.REL_POSITION: list(RelPositions),
+        PropertyNames.ROTATION: list(Rotations)
+    }
     # initialize all looking the same
     distractor_configs = [piece_config.copy() for _ in range(num_distractors)]
     # When we have a single uniq prop, then all other pieces look the same except in that prop
     if len(unique_props) == 1:
         non_unique_props = set(PropertyNames)
-        atoms_reduced_unique = exclude_property_values(piece_config, unique_props, {
-            PropertyNames.SHAPE: list(Shapes),
-            PropertyNames.COLOR: list(Colors),
-            PropertyNames.REL_POSITION: list(RelPositions),
-            PropertyNames.ROTATION: list(Rotations)
-        }, varieties)
+        atoms_reduced_unique = exclude_property_values(piece_config, unique_props, property_values, varieties)
         for unique_prop in unique_props:
             non_unique_props.remove(unique_prop)
             for distractor_config in distractor_configs:
@@ -431,12 +439,8 @@ def create_distractor_configs(piece_config: PieceConfig,
             # We allow a more fine-grained control on how many distractors share exactly the same "non-unique"
             # properties as the target piece (at least one piece must be still identical in "non-unique" props)
             differ_piece_configs = random.sample(distractor_configs, k=num_distractors - 1)
-            atoms_reduced_non_unique = exclude_property_values(piece_config, non_unique_props, {
-                PropertyNames.SHAPE: list(Shapes),
-                PropertyNames.COLOR: list(Colors),
-                PropertyNames.REL_POSITION: list(RelPositions),
-                PropertyNames.ROTATION: list(Rotations)
-            }, varieties)
+            atoms_reduced_non_unique = exclude_property_values(piece_config, non_unique_props,
+                                                               property_values, varieties)
             for ambiguous_prop, ambiguous_count in ambiguities.items():
                 if ambiguous_prop in unique_props:
                     logging.warning(f"Ignore unique prop {ambiguous_prop} in ambiguities {ambiguities}.")
@@ -486,16 +490,23 @@ class SingleUPVDistractorSetGenerator:
     """ Single U(nique) P(roperty) V(alue) distractor set generator"""
 
     def __init__(self, target_piece: PieceConfig, unique_prop: PropertyNames,
-                 num_distractors: int, prop_values: Dict[PropertyNames, List]):
+                 num_distractors: int, prop_values: Dict[PropertyNames, List],
+                 verbose: bool = False):
         if num_distractors < 1:
             raise Exception(f"There must be at least one distractor, but num_distractors is {num_distractors}")
         self.num_distractors = num_distractors
         self.target_piece = target_piece
         self.unique_prop = unique_prop
         self.prop_values = prop_values
+        self.verbose = verbose
         self.distractor_configs = None
 
     def setup(self):
+        if self.verbose:
+            print("Setup generator")
+            print("target_piece", self.target_piece)
+            print("uniq_prop", self.unique_prop)
+            print("prop_values", self.prop_values)
         self.prop_values = exclude_property_values(self.target_piece, {self.unique_prop}, self.prop_values)
         generator = DistractorConfigGenerator(self.prop_values)
         self.distractor_configs = generator.generate_all_distractor_configs()
