@@ -1,7 +1,7 @@
 import unittest
 
 from model.pentomino import SingleUPVDistractorSetGenerator, PropertyNames, Colors, Shapes, PieceConfig, RelPositions, \
-    DistractorConfigGenerator
+    DistractorConfigGenerator, create_all_distractor_configs
 
 
 class SingleUPVDistractorSetGeneratorTestCase(unittest.TestCase):
@@ -16,6 +16,17 @@ class SingleUPVDistractorSetGeneratorTestCase(unittest.TestCase):
                                                PropertyNames.SHAPE: list(Shapes)})
         configs = generator.generate_all_distractor_configs()
         assert len(configs) == 96
+
+    def test_create_all_distractor_configs(self):
+        sets = create_all_distractor_configs(PieceConfig(Colors.BLUE, Shapes.T, RelPositions.CENTER),
+                                             unique_props={PropertyNames.COLOR},
+                                             num_distractors=2,
+                                             prop_values={
+                                                 PropertyNames.COLOR: list(Colors),
+                                                 PropertyNames.SHAPE: list(Shapes)
+                                             })
+        print("Sets: ", len(sets))
+        assert len(sets) == 588
 
     def test_generate_all_sets_with_num_distractors_is_2(self):
         # Compositional set on "Colors"

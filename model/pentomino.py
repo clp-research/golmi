@@ -263,7 +263,7 @@ class PieceConfig:
             return self.rel_position
         if prop_name == PropertyNames.ROTATION:
             return self.rotation
-        raise Exception(f"Cannot get {prop_name}.")
+        raise Exception(f"Cannot get {prop_name}")
 
     def __setitem__(self, prop_name: PropertyNames, value):
         if prop_name == PropertyNames.COLOR:
@@ -375,18 +375,20 @@ class Board:
         return board
 
 
-def reduce_atoms(piece_config: PieceConfig, unique_props: Set[PropertyNames],
-                 atoms: Dict[PropertyNames, List], varieties: Dict = None):
+def exclude_property_values(piece_config: PieceConfig, unique_props: Set[PropertyNames],
+                            property_values: Dict[PropertyNames, List], varieties: Dict = None):
     """ Remove uniq prop atom from the given atoms. This is basically a set operation. """
     for prop_name in unique_props:
-        if len(atoms[prop_name]) < 2:
+        if len(property_values[prop_name]) < 2:
             raise Exception("Cannot discriminate on a property with less than 2 possible values")
-        atoms[prop_name].remove(piece_config[prop_name])
+        piece_property_value = piece_config[prop_name]
+        if piece_property_value in property_values[prop_name]:
+            property_values[prop_name].remove(piece_property_value)
         if varieties and prop_name in varieties:
             prop_variety = varieties[prop_name]
             if prop_variety > 0:
-                atoms[prop_name] = random.sample(atoms[prop_name], k=prop_variety)
-    return atoms
+                property_values[prop_name] = random.sample(property_values[prop_name], k=prop_variety)
+    return property_values
 
 
 def create_distractor_configs(piece_config: PieceConfig,
@@ -414,7 +416,7 @@ def create_distractor_configs(piece_config: PieceConfig,
     # When we have a single uniq prop, then all other pieces look the same except in that prop
     if len(unique_props) == 1:
         non_unique_props = set(PropertyNames)
-        atoms_reduced_unique = reduce_atoms(piece_config, unique_props, {
+        atoms_reduced_unique = exclude_property_values(piece_config, unique_props, {
             PropertyNames.SHAPE: list(Shapes),
             PropertyNames.COLOR: list(Colors),
             PropertyNames.REL_POSITION: list(RelPositions),
@@ -429,7 +431,7 @@ def create_distractor_configs(piece_config: PieceConfig,
             # We allow a more fine-grained control on how many distractors share exactly the same "non-unique"
             # properties as the target piece (at least one piece must be still identical in "non-unique" props)
             differ_piece_configs = random.sample(distractor_configs, k=num_distractors - 1)
-            atoms_reduced_non_unique = reduce_atoms(piece_config, non_unique_props, {
+            atoms_reduced_non_unique = exclude_property_values(piece_config, non_unique_props, {
                 PropertyNames.SHAPE: list(Shapes),
                 PropertyNames.COLOR: list(Colors),
                 PropertyNames.REL_POSITION: list(RelPositions),
@@ -476,7 +478,7 @@ def create_all_distractor_configs(piece_config: PieceConfig,
     # When we have a single uniq prop, then all other pieces look the same except in that prop
     if len(unique_props) == 1:
         generator = SingleUPVDistractorSetGenerator(piece_config, list(unique_props)[0], num_distractors, prop_values)
-        return generator.generate_all_sets()
+        return generator.setup().generate_all_sets()
     return []
 
 
@@ -494,7 +496,7 @@ class SingleUPVDistractorSetGenerator:
         self.distractor_configs = None
 
     def setup(self):
-        self.prop_values = reduce_atoms(self.target_piece, {self.unique_prop}, self.prop_values)
+        self.prop_values = exclude_property_values(self.target_piece, {self.unique_prop}, self.prop_values)
         generator = DistractorConfigGenerator(self.prop_values)
         self.distractor_configs = generator.generate_all_distractor_configs()
         return self  # for fluent calls
