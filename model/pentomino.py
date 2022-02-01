@@ -117,9 +117,13 @@ class Colors(Enum):
     YELLOW = ("yellow", "#ffff00", [255, 255, 0])
     GREEN = ("green", "#008000", [0, 128, 0])
     BLUE = ("blue", "#0000ff", [0, 0, 255])
+    CYAN = ("cyan", "#00ffff", [0, 255, 255])
     PURPLE = ("purple", "#800080", [128, 0, 128])
     BROWN = ("brown", "#8b4513", [139, 69, 19])
     GREY = ("grey", "#808080", [128, 128, 128])
+    PINK = ("pink", "#ffc0cb", [255, 192, 203])
+    OLIVE = ("olive", "#808000", [128, 128, 0])
+    NAVY = ("navy", "#000080", [0, 0, 128])  # dark blue
 
     def __init__(self, value_name, value_hex, value_rgb):
         self.value_name = value_name
