@@ -1,5 +1,5 @@
 import json
-from os.path import exists
+from os.path import isfile
 
 from flask import Flask, request
 from flask_cors import CORS
@@ -75,7 +75,7 @@ def get_default_config():
     """
     if DEFAULT_CONFIG_FILE not in app.config:
         raise RuntimeError(f"{DEFAULT_CONFIG_FILE} not set")
-    elif not exists(app.config[DEFAULT_CONFIG_FILE]):
+    elif not isfile(app.config[DEFAULT_CONFIG_FILE]):
         raise RuntimeError(f"file {app.config[DEFAULT_CONFIG_FILE]} not found")
     with open(app.config[DEFAULT_CONFIG_FILE], mode="r") as default_file:
         default_config = default_file.read()
