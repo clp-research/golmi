@@ -81,17 +81,14 @@ class Model:
 
     # --- Set up and configuration --- #
 
-    def set_random_state(self, n_objs, n_grippers, area_block="all",
-                         area_target="all", create_targets=False,
-                         random_gr_position=False):
+    def set_random_state(self, n_objs, n_grippers, obj_area="all",
+                         target_area="all", random_gr_position=False):
         # we could possibly hold a generator instance as well
         generator = Generator(self.config)
 
         # generate state and grids
         new_state = generator.generate_random_state(
-             n_objs, n_grippers, area_block, area_target,
-             create_targets, random_gr_position
-        )
+             n_objs, n_grippers, obj_area, target_area, random_gr_position)
 
         self.set_state(new_state)
 
