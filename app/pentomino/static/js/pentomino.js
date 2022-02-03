@@ -10,7 +10,7 @@ $(document).ready(function () {
     const N_OBJECTS = 10;
     const N_GRIPPERS = 0; // no pre-generated gripper
 
-    const CONFIG = {
+    const CUSTOM_CONFIG = {
         "move_step": 0.5,
         "width": 25,
         "height": 25
@@ -46,7 +46,7 @@ $(document).ready(function () {
     });
 
     socket.on("joined_room", (data) => {
-        socket.emit("load_config", CONFIG);
+        socket.emit("load_config", CUSTOM_CONFIG);
         console.log(`Joined room ${data.room_id} as client ${data.client_id}`);
     })
 
@@ -60,7 +60,8 @@ $(document).ready(function () {
     var setup_complete = false;
     socket.on("update_config", (config) => {
         // only do setup once (reconnections can occur, we don't want to reset the state every time)
-        if (!setup_complete && custom_config_is_applied(CONFIG, config)) {
+        if (!setup_complete && custom_config_is_applied(CUSTOM_CONFIG,
+                                                        config)) {
             // ask model to load a random state
             socket.emit("random_init", {"n_objs": N_OBJECTS,
                                         "n_grippers": N_GRIPPERS,
