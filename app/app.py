@@ -139,10 +139,24 @@ def reset_state():
 # --- configuration --- #
 @socketio.on("load_config")
 def load_config(json):
+    """For each model belonging to the sending client, set a new config with the
+    given keys, all other keys left to default.
+    """
     new_config = get_default_config()
     new_config.update(json)
     for model in room_manager.get_models_of_client(request.sid):
         model.set_config(new_config)
+
+
+@socketio.on("update_config")
+def update_config(json):
+    """For each model belonging to the sending client, update the existing
+    config with the given keys, preserving previous settings.
+    """
+    for model in room_manager.get_models_of_client(request.sid):
+        updated_config = model.get_config()
+        updated_config.update(json)
+        model.set_config(updated_config)
 
 
 # --- pieces --- #

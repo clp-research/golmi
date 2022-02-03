@@ -125,30 +125,12 @@ class SocketTest(unittest.TestCase):
         self.socketio_client.emit("load_state", test_state)
         return test_state, self.socketio_client.get_received()
 
-    def load_config(self, filename):
-        """
-        @param filename config file, path is relative to the resource directory
-                        and without / in the beginning
-        @return tuple: (sent, received), where sent is the parsed json emitted
-                to the server and received is the server's response, i.e., the
-                (corrected) config
-        """
-        test_config = SocketTest.read_json(filename)
-        self.socketio_client.emit("load_config", test_config)
-        return test_config, self.socketio_client.get_received()
-
     def load_default_config_with_params(self, params):
         """
         Load a default Pentomino config, but modify the specified parameters.
         @param params   dict with settings that should be changed from default
-        @return tuple: (sent, received), where sent is the parsed json emitted
-                to the server and received is the server's response, i.e., the
-                (corrected) config
         """
-        default_config = SocketTest.read_json("config/pentomino_config.json")
-        default_config.update(params)
-        self.socketio_client.emit("load_config", default_config)
-        return default_config, self.socketio_client.get_received()
+        self.socketio_client.emit("load_config", params)
 
 
 class SocketEventTest(SocketTest):
@@ -202,22 +184,6 @@ class SocketEventTest(SocketTest):
         received = self.socketio_client.get_received()
         self.assertTrue(len(received[0]["args"][0]["grippers"]) == 0)
         self.assertTrue(len(received[0]["args"][0]["objs"]) == 0)
-
-    def test_load_config(self):
-        """
-        test sending a configuration
-        """
-        test_config, received = self.load_config("config/test_config.json")
-
-        # make sure just one event was received
-        self.assertEqual(len(received), 1)
-        self.assertEqual(received[0]["name"], "update_config")
-
-        # check the config was updated correctly. Here, the subset notion
-        # cannot be used because not all properties are sent back by the model.
-        for setting, value in test_config.items():
-            if setting in received[0]["args"][0]:
-                self.assertEqual(value, received[0]["args"][0][setting])
 
     def test_gripper_movement(self):
         """
