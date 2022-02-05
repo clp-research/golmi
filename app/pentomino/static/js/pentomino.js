@@ -38,7 +38,9 @@ $(document).ready(function () {
     const layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
 
     // --- logger --- //
-    const logView = new document.LogView(socket);
+    // second parameter disables full state logging, significantly reducing
+    // log sizes while still keeping track of all changes.
+    const logView = new document.LogView(socket, false);
 
     // --- socket communication --- //
     socket.on("connect", () => {
@@ -53,7 +55,7 @@ $(document).ready(function () {
     socket.on("disconnect", () => {
         console.log("Disconnected from model server");
         // demo of the logView: send the logged data to the server
-        logView.addData("test", true);
+        logView.addTopLevelData("test", true);
         logView.sendData("/pentomino/save_log");
     });
 
