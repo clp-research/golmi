@@ -1,9 +1,51 @@
+/** TODO:
+ * All _getXXUpdates() functions (e.g., _getObjUpdates()) have no way of
+ * recognizing deleted objects/targets/grippers: they check the received update
+ * and compare to the internally saved last state, then compile a reduced
+ * update out of any entities that differ between update and saved state.
+ * -> Detecting an entity was removed is easy, the _getXXUpdates() functions
+ * would simply have to check whether some of the entities in the saved state
+ * are missing in an update.
+ * -> But the log consists of EXISTING entities with their updated properties.
+ * How to log a no-longer-existing entity?
+ * One option would be to introduce a special type of log entry for this.
+ * Or every entry could have the 'event' key (the 'registeredLocalEvents'
+ * already have that) stating the type, like 'update' or 'deletion'.
+ * For example:
+ * [
+      2183, <- timestamp
+      {
+        "event": "update", <- type of update
+        "grippers": {
+          "fVHMwdLePCE2Vlq5AAAB": {
+            "x": 9.5,
+            "y": 10
+          }
+        }
+      }
+    ],
+    [
+      2701,
+      {
+        "event": "deletion",
+        "grippers": {
+          "fVHMwdLePCE2Vlq5AAAB": { <- could also be reduced to id of entity
+            "x": 9.5,
+            "y": 10
+          }
+        }
+      }
+    ]
+ */
+
+
 $(document).ready(function () {
     /**
-     * Logger class. Relies on events exchanged between a specific client and server.
-     * Starts logging as soon as the client receives the first state
+     * Logger class. Relies on events exchanged between a specific client and
+     * server. Starts logging as soon as the client receives the first state
      * @param {Socket io connection to the server} modelSocket
-     * @param {set true to save the full state at every change, false to only log the update}
+     * @param {set true to save the full state at every change, false to only
+     *         log the update}
      */
     this.LogView = class LogView {
         constructor(modelSocket, logFullState=true) {
@@ -313,7 +355,8 @@ $(document).ready(function () {
         }
 
         /**
-         * Currently has no way of detecting "deleted" objects.
+         * Currently has no way of detecting "deleted" objects, see TODO at
+         * the top of the file.
          * Gripped objects have the "gripped" property set to true, so the
          * LayerView knows not to draw them on the object layer
          * @return Object mapping obj ids to changed objs
@@ -342,7 +385,8 @@ $(document).ready(function () {
         }
 
         /**
-         * Currently has no way of detecting "deleted" targets.
+         * Currently has no way of detecting "deleted" targets, see TODO at
+         * the top of the file.
          * @return Object mapping target ids to changed targets
          */
         _getTargetUpdates(newTargets) {
@@ -369,6 +413,8 @@ $(document).ready(function () {
         }
 
         /**
+         * Currently has no way of detecting "deleted" grippers, see TODO at
+         * the top of the file.
          * @return object mapping gripper ids to changed grippers
          */
         _getGrUpdates(newGrs) {
