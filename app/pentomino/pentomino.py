@@ -3,7 +3,7 @@ from flask import render_template, Blueprint, request, abort
 from flask_cors import cross_origin
 import json
 import os
-from time import time_ns
+from datetime import datetime
 
 
 def apply_config_to(app):
@@ -36,7 +36,7 @@ def save_log():
     # (1) can not be manipulated by a client
     # (2) has a negligible chance of collision
     # a timestamp is used
-    filename = str(time_ns()) + ".json"
+    filename = datetime.now().strftime("%y%m%d_%H%M%S_%f") + ".json"
     # check if "data_collection" directory exists, create if necessary
     save_path = "app/pentomino/static/resources/data_collection"
     if not os.path.exists(save_path):
