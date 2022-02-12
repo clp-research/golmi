@@ -33,18 +33,26 @@ def on_mouseclick(event):
     model = room_manager.get_models_of_client(request.sid)[0]
     x, y = translate(event["offset_x"], event["offset_y"], event["block_size"])
 
-    # I should not need to know "state
+    if "mouse" in model.state.grippers:
+        model.remove_gr("mouse")
+        for obj in model.state.objs.values():
+            obj.gripped = False
+
+    model.add_gr("mouse", x, y)
+    model.grip("mouse")
+ 
+    # # I should not need to know "state
     # deselect all
-    for obj in model.state.objs.values():
-        obj.gripped = False
+    # for obj in model.state.objs.values():
+    #     obj.gripped = False
 
-    # select single piece if possible
-    odj_id = get_object_id_at_pos(model, x, y)
-    if odj_id is not None:
-        model.state.objs[odj_id].gripped = True
+    # # select single piece if possible
+    # odj_id = get_object_id_at_pos(model, x, y)
+    # if odj_id is not None:
+    #     model.state.objs[odj_id].gripped = True
 
-    # I should not need to "notify" via the model
-    model._notify_views("update_objs", model.get_obj_dict())
+    # # I should not need to "notify" via the model
+    #model._notify_views("update_objs", model.get_obj_dict())
 
 
 def translate(x, y, granularity):
