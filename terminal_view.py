@@ -1,45 +1,67 @@
-import argparse
-import multiprocessing
-import socketio as so
+import socketio
 import time
 
+from app.app import AUTH
 
-from app import register_experiments
-from app.app import app, socketio, AUTH
-
-
-def argparser():
-    parser = argparse.ArgumentParser(
-    description="Run GOLMI's model API."
-    )
-    parser.add_argument(
-        "--host", type=str, default="127.0.0.1",
-        help="Adress to run the API on. (Default: %(default)s)"
-    )
-    parser.add_argument(
-        "--port", type=str, default="5000",
-        help="Port to run the API on. (Default: %(default)s)"
-    )
-    return parser.parse_args()
+from model.grid import Grid
+from model.config import Config
+from model.obj import Obj
 
 
-def run_server(host, port):
-    register_experiments.register_app(app)
-    socketio.run(app, host=host, port=port)
+class PyClient:
+    def __init__(self, address, auth):
+        self.socket = socketio.Client()
+        self.address = address
+        self.auth = auth
+
+    def setup(self):
+        self.call_backs()
+        self.socket.connect(self.address, auth={"password": self.auth})
+
+    def call_backs(self):
+        @self.socket.on("joined_room")
+        def receive(data):
+            pass
+
+        @self.socket.on("update_config")
+        def update_config(data):
+            self.config = Config.from_dict(data)
+            self.object_grid = Grid.create_from_config(self.config)
+            self.target_grid = Grid.create_from_config(self.config)
+
+        @self.socket.on("update_state")
+        def update_state(data):
+            for idn, dict_obj in data["objs"].items():
+                o = Obj.from_dict(idn, dict_obj, self.config.type_config)
+                self.object_grid.add_obj(o)
+            for idn, dict_obj in data["targets"].items():
+                o = Obj.from_dict(idn, dict_obj, self.config.type_config)
+                self.target_grid.add_obj(o)
+
+    def plot(self):
+        print("OBJECTS\n")
+        print(self.object_grid)
+        print("-"*(2*len(self.object_grid.grid) + 1))
+        print("TARGETS\n")
+        print(self.target_grid)
+
+    def run(self):
+        self.setup()
+        self.socket.call("join", {"room_id": "test_room_id"})
+        self.socket.emit("random_init", {
+            "n_objs": 10,
+            "n_grippers": 1,
+            "random_gr_position": False,
+            "obj_area": "all",
+            "target_area": "bottom"
+        })
+
+    def emit(self, *args, **kwargs):
+        self.socket.emit(*args, **kwargs)
 
 
 if __name__ == "__main__":
-    args = argparser()
-
-    # run server on other subprocess
-    subproc = multiprocessing.Process(target=run_server, args=(args.host, args.port))
-    subproc.start()
-
-    sio = so.Client()
-    
+    client = PyClient("http://localhost:5000", AUTH)
+    client.run()
     time.sleep(1)
-
-    sio.connect("http://localhost:5000", auth={"password":AUTH})
-    
-
-    subproc.terminate()
+    client.plot()
