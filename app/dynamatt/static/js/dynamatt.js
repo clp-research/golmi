@@ -37,6 +37,18 @@ $(document).ready(function () {
         })
     }
 
+    function onMouseMove(event) {
+
+        socket.emit("dynamatt_mousemove", {
+            "target_id": event.target.id,
+            "offset_x": event.offsetX,
+            "offset_y": event.offsetY,
+            "x": event.x,
+            "y": event.y,
+            "block_size": layerView.blockSize
+        })
+    }
+    objLayer.onmousemove = onMouseMove
     objLayer.onclick = onMouseClick
 
     // --- logger --- //

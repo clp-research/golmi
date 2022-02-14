@@ -53,7 +53,12 @@ def on_mouseclick(event):
 
     # # I should not need to "notify" via the model
     #model._notify_views("update_objs", model.get_obj_dict())
-
+@socketio.on("dynamatt_mousemove")
+def on_mouseclick(event):
+    # looks like we need a "mouse"-gripper b.c. everything expects a gripper instance
+    model = room_manager.get_models_of_client(request.sid)[0]
+    x, y = translate(event["offset_x"], event["offset_y"], event["block_size"])
+    print(x, y)
 
 def translate(x, y, granularity):
     return x // granularity, y // granularity
