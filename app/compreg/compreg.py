@@ -91,7 +91,7 @@ def on_new_comp_scene(event):
     # actually lets double check with the IA
     # uff this really didnt work as expected! the IA is mentioning stuff really more often
     # instruction = create_surface_structure(target, unique_props)
-    instruction, _ = PentoIncrementalAlgorithm().generate(distractors, target)
+    instruction, _ = PentoIncrementalAlgorithm([PropertyNames.SHAPE, PropertyNames.COLOR, PropertyNames.REL_POSITION]).generate(distractors, target)
     board = Board.create_compositional_from_configs(board_width=model.config.width, board_height=model.config.height,
                                                     piece_config=target, distractors=distractors)
     # uff this is ugly
