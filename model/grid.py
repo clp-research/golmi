@@ -19,7 +19,7 @@ class Tile:
     def __repr__(self):
         if not self.objects:
             return " "
-        return "+"
+        return "-".join([i.id_n for i in self.objects])
 
     def __str__(self):
         return self.__repr__()

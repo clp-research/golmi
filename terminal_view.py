@@ -33,9 +33,14 @@ class PyClient:
         def update_state(data):
             for idn, dict_obj in data["objs"].items():
                 o = Obj.from_dict(idn, dict_obj, self.config.type_config)
+                # object constructor saves standard block matrix
+                # replace it with the one received from the model
+                o.block_matrix = dict_obj["block_matrix"]
                 self.object_grid.add_obj(o)
+
             for idn, dict_obj in data["targets"].items():
                 o = Obj.from_dict(idn, dict_obj, self.config.type_config)
+                o.block_matrix = dict_obj["block_matrix"]
                 self.target_grid.add_obj(o)
 
     def plot(self):
