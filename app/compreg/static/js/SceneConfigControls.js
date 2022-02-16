@@ -13,7 +13,11 @@ $(document).ready(function () {
                     {name: "blue", value: "BLUE"},
                     {name: "purple", value: "PURPLE"},
                     {name: "brown", value: "BROWN"},
-                    {name: "grey", value: "GREY"}
+                    {name: "grey", value: "GREY"},
+                    {name: "cyan", value: "CYAN"},
+                    {name: "pink", value: "PINK"},
+                    {name: "olive", value: "OLIVE"},
+                    {name: "navy", value: "NAVY"}
                 ],
                 onChange: function (value, text, $selectedItem) {
                     console.log("select_target_color: " + value)
@@ -97,8 +101,8 @@ $(document).ready(function () {
             })
             $("#select_variety_num_colors")
                 .slider({
-                    min: 1, max: 7, // max minus 1 b.c. target piece
-                    start: 7, step: 1,
+                    min: 1, max: 11, // max minus 1 b.c. target piece
+                    start: 11, step: 1,
                     onChange: function (value, text, $selectedItem) {
                         console.log("select_variety_num_colors: " + value)
                         scene_config.varieties.num_colors = value

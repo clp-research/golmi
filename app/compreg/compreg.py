@@ -2,7 +2,8 @@ from flask_cors import cross_origin
 from flask import render_template, Blueprint, request
 from app import DEFAULT_CONFIG_FILE
 from app.app import socketio, room_manager
-from model.pentomino import Board, PieceConfig, Colors, Shapes, RelPositions, PropertyNames, create_distractor_configs
+from model.pentomino import Board, PieceConfig, Colors, Shapes, RelPositions, PropertyNames, create_distractor_configs, \
+    PentoIncrementalAlgorithm
 from model.state import State
 import random
 
@@ -46,10 +47,10 @@ def create_surface_structure(target: PieceConfig, properties: set[PropertyNames]
 @socketio.on("compreg_new_scene")
 def on_new_comp_scene(event):
     scene_config = event["scene_config"]
-    unique_properties = scene_config["target_piece"]["unique_properties"]
-    property_name = PropertyNames.from_string(unique_properties[0])
-    if property_name is None:
-        print(f"Cannot compose scene for '{property_name}'")
+    params_unique_properties = scene_config["target_piece"]["unique_properties"]
+    property_names = [PropertyNames.from_string(p) for p in params_unique_properties[0].split(",")]
+    if not property_names:
+        print(f"Cannot compose scene for '{params_unique_properties}'")
 
     distractors_config = scene_config["distractors"]
     varieties_config = scene_config["varieties"]
@@ -74,7 +75,7 @@ def on_new_comp_scene(event):
         piece_rel_position = random.choice(list(RelPositions))
 
     target = PieceConfig(target_piece_color, target_piece_shape, piece_rel_position)
-    unique_props = {property_name}
+    unique_props = set(property_names)
     distractors = create_distractor_configs(piece_config=target, unique_props=unique_props,
                                             num_distractors=distractors_config["num_distractors"],
                                             varieties={
@@ -87,7 +88,10 @@ def on_new_comp_scene(event):
                                                 PropertyNames.SHAPE: ambiguity_config["num_shapes"],
                                                 PropertyNames.REL_POSITION: ambiguity_config["num_positions"],
                                             })
-    instruction = create_surface_structure(target, unique_props)
+    # actually lets double check with the IA
+    # uff this really didnt work as expected! the IA is mentioning stuff really more often
+    # instruction = create_surface_structure(target, unique_props)
+    instruction, _ = PentoIncrementalAlgorithm().generate(distractors, target)
     board = Board.create_compositional_from_configs(board_width=model.config.width, board_height=model.config.height,
                                                     piece_config=target, distractors=distractors)
     # uff this is ugly

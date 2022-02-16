@@ -103,6 +103,9 @@ class Shapes(Enum):
     def __repr__(self):
         return f"{self.value_name}"
 
+    def __str__(self):
+        return self.value_name
+
 
 class Rotations(Enum):
     DEGREE_0 = 0
@@ -130,6 +133,9 @@ class Colors(Enum):
         self.value_hex = value_hex
         self.value_rgb = value_rgb
 
+    def __str__(self):
+        return self.value_name
+
 
 class RelPositions(Enum):
     TOP_LEFT = "top left"
@@ -141,6 +147,9 @@ class RelPositions(Enum):
     BOTTOM_LEFT = "bottom left"
     CENTER_LEFT = "left"
     CENTER = "center"
+
+    def __str__(self):
+        return self.value
 
     def to_random_coords(self, board_width, board_height):
         # the relative positions are derived from their own "grid"-like board
@@ -430,7 +439,7 @@ def create_distractor_configs(piece_config: PieceConfig,
     }
     # initialize all looking the same
     distractor_configs = [piece_config.copy() for _ in range(num_distractors)]
-    # When we have a single uniq prop, then all other pieces look the same except in that prop
+    # When we have a single uniq prop, then all other pieces are disallowed to have that prop
     if len(unique_props) == 1:
         non_unique_props = set(PropertyNames)
         atoms_reduced_unique = exclude_property_values(piece_config, unique_props, property_values, varieties)
@@ -457,6 +466,57 @@ def create_distractor_configs(piece_config: PieceConfig,
                 differ_distractors = random.sample(differ_piece_configs, differ_count)
                 for differ_distractor in differ_distractors:
                     differ_distractor[ambiguous_prop] = random.choice(atoms_reduced_non_unique[ambiguous_prop])
+    # When we have a two uniq prop (which is a weird wording as we need two props to uniquely identify a piece),
+    # then all other pieces are disallowed to have that prop,
+    # but there is at least one piece that shares one uniq prop and one non-uniq prop, but not the other uniq prop
+    # (a) to rule out the non-uniq property to be mentioned
+    # (b) to force that two properties must be mentioned
+    # for example:
+    # - RED F CENTER with COLOR, SHAPE (RED, F)      requires BLUE F CENTER (shares u-SHAPE, n-POSIT)
+    # - RED F CENTER with COLOR, SHAPE (RED, F)      requires RED T CENTER  (shares u-COLOR, n-POSIT)
+    # - RED F CENTER with SHAPE, POSIT (F, CENTER)   requires RED F LEFT    (shares n-COLOR, u-SHAPE)
+    # - RED F CENTER with SHAPE, POSIT (F, CENTER)   requires RED T CENTER  (shares n-COLOR, u-POSIT)
+    # - RED F CENTER with COLOR, POSIT (RED, CENTER) requires BLUE F CENTER (shares n-SHAPE, u-POSIT)
+    # - RED F CENTER with COLOR, POSIT (RED, CENTER) requires RED F LEFT    (shares n-SHAPE, u-COLOR)
+    if len(unique_props) == 2:
+        unique_props = list(unique_props)
+        non_unique_props = list(PropertyNames)
+        for unique_prop in unique_props:
+            non_unique_props.remove(unique_prop)
+        # here, make sure all pieces look different first
+        atoms_reduced = exclude_property_values(piece_config, set(PropertyNames), property_values, varieties)
+        for prop in list(PropertyNames):
+            for distractor_config in distractor_configs:
+                # We choose from a variable number of atoms for the prop to differ ("variety")
+                distractor_config[prop] = random.choice(atoms_reduced[prop])
+        # then make sure that there are two pieces that share one of the uniq props and the non-uniq prop
+        ambiguous_piece_configs = random.sample(distractor_configs, k=2)
+        for idx, ambiguous_piece_config in enumerate(ambiguous_piece_configs):
+            non_unique_prop = non_unique_props[0]
+            ambiguous_piece_config[non_unique_prop] = piece_config[non_unique_prop]
+            shared_unique_prop = unique_props[idx]  # one share the first uniq prop, one the second uniq prop
+            ambiguous_piece_config[shared_unique_prop] = piece_config[shared_unique_prop]
+    # When we have a three uniq prop (which is a weird wording as we need three props to uniquely identify a piece),
+    # then all other pieces are disallowed to have that prop,
+    # but there is are three pieces that share two uniq props, but not the other uniq prop
+    # (a) there are no non-uniq probs to be ruled out
+    # (b) to force that three properties must be mentioned
+    if len(unique_props) == 3:
+        unique_props = list(unique_props)
+        # here, make sure all pieces look different first
+        atoms_reduced = exclude_property_values(piece_config, set(PropertyNames), property_values, varieties)
+        for prop in list(PropertyNames):
+            for distractor_config in distractor_configs:
+                # We choose from a variable number of atoms for the prop to differ ("variety")
+                distractor_config[prop] = random.choice(atoms_reduced[prop])
+        # then make sure that there is at least one piece that shares two of the uniq props
+        ambiguous_piece_configs = random.sample(distractor_configs, k=3)
+        for piece_idx, ambiguous_piece_config in enumerate(ambiguous_piece_configs):
+            for idx, uniq_prop in enumerate(unique_props):
+                if idx == (piece_idx % 3):
+                    pass  # not share this, but the other two
+                else:
+                    ambiguous_piece_config[uniq_prop] = piece_config[uniq_prop]
     return distractor_configs
 
 
@@ -583,3 +643,67 @@ class DistractorConfigGenerator:
             else:  # go further
                 remaining_names = prop_names[1:]
                 self._recursive_add(remaining_names, piece_config, results)
+
+
+class PentoIncrementalAlgorithm:
+
+    def __init__(self, property_names):
+        """
+        :param property_names: the order does matter! since first props rule more likely some distractors out in the
+        first iteration and later props less likely rule out remaining distractors (if there are any left)
+        e.g. the first prop might already rule out everything and the algorithm stops, though others would do the same
+        """
+        self.property_names = property_names
+        self.general_types = ["piece"]
+        self.start_tokens = ["Take", "Select", "Get"]
+
+    def generate(self, pieces: List[PieceConfig], selection: PieceConfig):
+        """
+            pieces: a list of pieces (incl. the selection)
+            selection: a selected pieces (within pieces)
+        """
+        distractors = set(pieces)
+        # property-value pairs are collected here
+        properties = {}
+        for property_name in self.property_names:
+            property_value = selection[property_name]
+            # check what objects would be eliminated using this prop-val pair
+            excluded_distractors = self._exclude(property_name, property_value, distractors)
+            if property_value and len(excluded_distractors) > 0:
+                # save the property
+                properties[property_name] = property_value
+                # update the contrast set
+                for o in excluded_distractors:
+                    distractors.remove(o)
+            # check if enough properties have been collected to rule all distractors
+            if not len(distractors):
+                return self._verbalize_properties(properties), properties
+        # no expression that rules out all distractors was found
+        # original algorithm declares "IA: failure", but with the task at hand
+        # this case is expected. User is supported by feedback.
+        return self._verbalize_properties(properties), properties
+
+    def _verbalize_properties(self, properties):
+        start_token = random.choice(self.start_tokens)
+        shape = properties[PropertyNames.SHAPE] if PropertyNames.SHAPE in properties else random.choice(
+            self.general_types)
+        color = properties[PropertyNames.COLOR] if PropertyNames.COLOR in properties else ""
+        pos = f"in the {properties[PropertyNames.REL_POSITION]}" if PropertyNames.REL_POSITION in properties else ""
+        ref_exp = f"{color} {shape} {pos}".strip()  # strip whitespaces if s.t. is empty
+        return f"{start_token} the {ref_exp}"
+
+    def _exclude(self, property_name: PropertyNames, selection_property_value, distractors: Set[PieceConfig]):
+        """
+         * Helper function for IA.
+         * Params:
+         * property_name - property name
+         * selection_property_value - value the target object has assigned to the given property
+         * distractors - contrast set of objects to rule out by the given properties
+         * Returns:
+         * array of contrast objects with a different value for prop
+        """
+        excluded_distractors = []
+        for distractor in distractors:
+            if distractor[property_name] != selection_property_value:
+                excluded_distractors.append(distractor)
+        return excluded_distractors
