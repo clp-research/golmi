@@ -1,6 +1,7 @@
 import argparse
 import copy
 from datetime import datetime
+import json
 from pathlib import Path
 import pickle
 import socketio
@@ -20,10 +21,6 @@ class PyClient:
         self.auth = auth
         self.room = room
         self.history = list()
-
-    def setup(self):
-        self.call_backs()
-        self.socket.connect(self.address, auth={"password": self.auth})
 
     def save(self):
         if len(self.history) == 0 or self.state != self.history[-1]:
@@ -76,22 +73,25 @@ class PyClient:
             o = Obj.from_dict(idn, dict_obj, self.config.type_config)
             o.block_matrix = dict_obj["block_matrix"]
             self.target_grid.add_obj(o)
-        print("OBJECTS\n")
+        # print("OBJECTS\n")
         print(self.object_grid)
         # print("-"*(2*len(self.object_grid.grid) + 1))
         # print("TARGETS\n")
         # print(self.target_grid)
 
     def run(self):
-        self.setup()
+        self.call_backs()
+        self.socket.connect(self.address, auth={"password": self.auth})
         self.socket.call("join", {"room_id": self.room})
-        # self.socket.emit("random_init", {
-        #     "n_objs": 10,
-        #     "n_grippers": 1,
-        #     "random_gr_position": False,
-        #     "obj_area": "all",
-        #     "target_area": "bottom"
-        # })
+
+    def random_init(self, random_config):
+        self.socket.emit("random_init", random_config)
+
+    def load_config(self, config):
+        self.socket.emit("load_config", config)
+
+    def update_config(self, config):
+        self.socket.emit("update_config", config)
 
     def disconnect(self):
         self.socket.emit("disconnect")
@@ -116,18 +116,40 @@ def main():
     client.run()
     time.sleep(1)
 
-    actions = {"plot": client.plot, "save": client.save_history}
+    actions = {
+        "plot": client.plot,
+        "save": client.save_history,
+    }
+    arg_actions = {
+        "load_config": client.load_config,
+        "update_config": client.update_config,
+        "random_init": client.random_init,
+    }
 
     options = ", ".join(actions.keys())
+    arg_options = ", ".join([f"{i} PATH" for i in arg_actions.keys()])
 
     while True:
-        command = input(f"Input: ({options})\n> ")
+        command = input(f"Options:\n\t{options}\n\t{arg_options}\n> ")
+
+        # close terminal view
         if command in {"q", "exit"}:
             client.disconnect()
             break
+
+        # input without argument
         elif command in actions:
             f = actions[command]
             f()
+
+        # input with argument
+        elif command in arg_actions:
+            command, path = command.split()
+            f = arg_actions[command]
+
+            with open(Path(path), "r", encoding="utf-8") as infile:
+                config = json.load(infile)
+            f(config)
 
 
 if __name__ == "__main__":
