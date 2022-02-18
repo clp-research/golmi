@@ -1,13 +1,13 @@
 import argparse
-import pickle
-import os
-from pathlib import Path
-import multiprocessing as mp
-import math
 import itertools
+import math
+import multiprocessing as mp
+import os
+import pickle
+from pathlib import Path
 
-import matplotlib.pyplot as plt
 from matplotlib import colors
+import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -271,9 +271,8 @@ def main():
     output_dir = args.outputdir
     os.makedirs(Path(output_dir), exist_ok=True)
 
-    mp_args = list()
-    for i, state in enumerate(history):
-        mp_args.append(tuple([state, Path(f"{output_dir}/{i}")]))
+    # generator containing tuples (state, output/path) for multiprocessing
+    mp_args = ((state, Path(f"{output_dir}/{i}")) for i, state in enumerate(history))
 
     with mp.Pool() as pool:
         for i, _ in enumerate(pool.imap(plotter.single, mp_args)):
