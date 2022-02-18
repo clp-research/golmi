@@ -230,14 +230,14 @@ class Plotter:
 
         # remove labels and ticks on edges
         ax.tick_params(
-            axis='both',  
-            which='both',      
-            bottom=False,     
-            top=False,        
+            axis="both",
+            which="both",
+            bottom=False,
+            top=False,
             left=False,
             right=False,
             labelbottom=False,
-            labelleft=False    
+            labelleft=False,
         )
 
         return fig
@@ -245,7 +245,7 @@ class Plotter:
     def single(self, argument):
         state, output_name = argument
         fig = self.plot_state(state)
-        plt.savefig(Path(output_name), dpi=80, bbox_inches='tight', pad_inches=0)
+        plt.savefig(Path(output_name), dpi=80, bbox_inches="tight", pad_inches=0)
         plt.close(fig)
 
 
