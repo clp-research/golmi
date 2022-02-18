@@ -12,7 +12,7 @@ import numpy as np
 def read_file(path):
     with open(path, "rb") as infile:
         data = pickle.load(infile)
-    
+
     history = data["history"]
     config = data["config"]
 
@@ -20,9 +20,18 @@ def read_file(path):
 
 
 def progress_bar(
-        iteration, total, prefix='', suffix='', decimals=1,
-        length=40, fill='#', miss=".", end="\r", stay=True,
-        fixed_len=True):
+    iteration,
+    total,
+    prefix="",
+    suffix="",
+    decimals=1,
+    length=40,
+    fill="#",
+    miss=".",
+    end="\r",
+    stay=True,
+    fixed_len=True,
+):
     """
     Call in a loop to create terminal progress bar
     Parameters:
@@ -55,7 +64,8 @@ def progress_bar(
             print()
         else:
             # clean line given lenght of lase print
-            print(" "*len(to_print), end=end)
+            print(" " * len(to_print), end=end)
+
 
 class Plotter:
     def __init__(self, history, config, plot_objects, plot_targets, plot_grippers):
@@ -67,7 +77,7 @@ class Plotter:
 
     def draw_obj(self, obj, data, fillvalue):
         lines = list()
-        
+
         for y, row in enumerate(obj["block_matrix"]):
             for x, tile in enumerate(row):
                 if tile == 1:
@@ -76,32 +86,49 @@ class Plotter:
                     data[grid_y][grid_x] = fillvalue
 
                     # upper bound
-                    if y==0 or obj["block_matrix"][y-1][x] == 0:
-                        this_line = ((grid_x - 0.5, grid_x + 0.5), (grid_y - 0.5, grid_y - 0.5))
-                        lines.append(this_line)
-                        
-                    # lower bond
-                    if y==len(obj["block_matrix"]) - 1 or obj["block_matrix"][y+1][x] == 0:
-                        this_line = ((grid_x - 0.5, grid_x + 0.5), (grid_y + 0.5, grid_y + 0.5))
+                    if y == 0 or obj["block_matrix"][y - 1][x] == 0:
+                        this_line = (
+                            (grid_x - 0.5, grid_x + 0.5),
+                            (grid_y - 0.5, grid_y - 0.5),
+                        )
                         lines.append(this_line)
 
-                    # right bond
-                    if x==len(obj["block_matrix"][0]) - 1 or obj["block_matrix"][y][x+1] == 0:
-                        this_line = ((grid_x + 0.5, grid_x + 0.5), (grid_y - 0.5, grid_y + 0.5))
+                    # lower bound
+                    if (
+                        y == len(obj["block_matrix"]) - 1
+                        or obj["block_matrix"][y + 1][x] == 0
+                    ):
+                        this_line = (
+                            (grid_x - 0.5, grid_x + 0.5),
+                            (grid_y + 0.5, grid_y + 0.5),
+                        )
                         lines.append(this_line)
 
-                    # left bond
-                    if x==0 or obj["block_matrix"][y][x-1] == 0:
-                        this_line = ((grid_x - 0.5, grid_x - 0.5), (grid_y - 0.5, grid_y + 0.5))
+                    # right bound
+                    if (
+                        x == len(obj["block_matrix"][0]) - 1
+                        or obj["block_matrix"][y][x + 1] == 0
+                    ):
+                        this_line = (
+                            (grid_x + 0.5, grid_x + 0.5),
+                            (grid_y - 0.5, grid_y + 0.5),
+                        )
                         lines.append(this_line)
-                        
+
+                    # left bound
+                    if x == 0 or obj["block_matrix"][y][x - 1] == 0:
+                        this_line = (
+                            (grid_x - 0.5, grid_x - 0.5),
+                            (grid_y - 0.5, grid_y + 0.5),
+                        )
+                        lines.append(this_line)
+
         return lines
-
 
     def plot_state(self, state):
         x_dim = self.config["width"]
         y_dim = self.config["height"]
-        
+
         fig, ax = plt.subplots(figsize=(20, 15))
 
         data = np.zeros((x_dim, y_dim))
@@ -115,25 +142,35 @@ class Plotter:
             for obj in state["targets"].values():
                 lines = self.draw_obj(obj, data, 0.5)
                 for x, y in lines:
-                    ax.plot(x, y, scaley=False, linestyle="-", linewidth=2, color="black")
+                    ax.plot(
+                        x, y, scaley=False, linestyle="-", linewidth=2, color="black"
+                    )
 
         # plot objects
         if self.plot_objects is True:
             for i, obj in enumerate(state["objs"].values()):
-                bounds.append(2+i)
+                bounds.append(2 + i)
                 cols.append(obj["color"])
                 lines = self.draw_obj(obj, data, i + 1.5)
                 for x, y in lines:
-                    ax.plot(x, y, scaley=False, linestyle="-", linewidth=2, color="black")
+                    ax.plot(
+                        x, y, scaley=False, linestyle="-", linewidth=2, color="black"
+                    )
 
         # plot gripper(s)
         if self.plot_grippers is True:
             for gripper in state["grippers"].values():
-                ax.plot(gripper["x"]-0.5, gripper["y"]-0.5, "x", markersize=30, color="black")
+                ax.plot(
+                    gripper["x"] - 0.5,
+                    gripper["y"] - 0.5,
+                    "x",
+                    markersize=30,
+                    color="black",
+                )
 
         # set background to -1 (white)
         data[data == 0] = -1
-        
+
         # create discrete colormap
         cmap = colors.ListedColormap(cols)
         norm = colors.BoundaryNorm(bounds, cmap.N)
@@ -142,16 +179,15 @@ class Plotter:
         ax.imshow(data, cmap=cmap, norm=norm)
 
         # draw gridlines
-        ax.grid(which='major', axis='both', linestyle='-', color='black', linewidth=0.5)
+        ax.grid(which="major", axis="both", linestyle="-", color="black", linewidth=0.5)
 
         # resize gridlines and remove labels
-        ax.set_xticks(np.arange(-.5, x_dim, 1));
-        ax.set_yticks(np.arange(-.5, y_dim, 1));
+        ax.set_xticks(np.arange(-0.5, x_dim, 1))
+        ax.set_yticks(np.arange(-0.5, y_dim, 1))
         ax.set_yticklabels([])
         ax.set_xticklabels([])
 
         return fig
-
 
     def single(self, argument):
         state, output_name = argument
@@ -176,7 +212,7 @@ def main():
         config,
         plot_objects=args.plot_objects,
         plot_targets=args.plot_targets,
-        plot_grippers=args.plot_grippers
+        plot_grippers=args.plot_grippers,
     )
 
     output_dir = args.outputdir
@@ -189,9 +225,10 @@ def main():
     with mp.Pool() as pool:
         for i, _ in enumerate(pool.imap(plotter.single, mp_args)):
             progress_bar(
-                i+1, len(history),
+                i + 1,
+                len(history),
                 prefix=f"Extracting: {i+1}/{len(history)}",
-                length=40
+                length=40,
             )
 
 
