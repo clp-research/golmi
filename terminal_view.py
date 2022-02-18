@@ -104,7 +104,11 @@ class PyClient:
         time_string = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
         filename = Path(f"{time_string}.pckl")
         with open(filename, "wb") as ofile:
-            pickle.dump(self.history, ofile)
+            to_save = {
+                "history": self.history,
+                "config": self.config.to_dict()
+            }
+            pickle.dump(to_save, ofile)
 
 
 def main():
