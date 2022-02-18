@@ -227,15 +227,25 @@ class Plotter:
         # resize gridlines and remove labels
         ax.set_xticks(np.arange(-0.5, x_dim, self.converter.multiplier))
         ax.set_yticks(np.arange(-0.5, y_dim, self.converter.multiplier))
-        ax.set_yticklabels([])
-        ax.set_xticklabels([])
+
+        # remove labels and ticks on edges
+        ax.tick_params(
+            axis='both',  
+            which='both',      
+            bottom=False,     
+            top=False,        
+            left=False,
+            right=False,
+            labelbottom=False,
+            labelleft=False    
+        )
 
         return fig
 
     def single(self, argument):
         state, output_name = argument
         fig = self.plot_state(state)
-        plt.savefig(Path(output_name), dpi=80)
+        plt.savefig(Path(output_name), dpi=80, bbox_inches='tight', pad_inches=0)
         plt.close(fig)
 
 
