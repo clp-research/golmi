@@ -34,8 +34,6 @@ class PyClient:
         @self.socket.on("update_config")
         def update_config(data):
             self.config = Config.from_dict(data)
-            self.object_grid = Grid.create_from_config(self.config)
-            self.target_grid = Grid.create_from_config(self.config)
 
         @self.socket.on("update_state")
         def update_state(data):
@@ -59,25 +57,25 @@ class PyClient:
             self.save()
 
     def plot(self):
-        self.object_grid.clear_grid()
-        self.target_grid.clear_grid()
+        object_grid = Grid.create_from_config(self.config)
+        target_grid = Grid.create_from_config(self.config)
 
         for idn, dict_obj in self.state["objs"].items():
             o = Obj.from_dict(idn, dict_obj, self.config.type_config)
             # object constructor saves standard block matrix
             # replace it with the one received from the model
             o.block_matrix = dict_obj["block_matrix"]
-            self.object_grid.add_obj(o)
+            object_grid.add_obj(o)
 
         for idn, dict_obj in self.state["targets"].items():
             o = Obj.from_dict(idn, dict_obj, self.config.type_config)
             o.block_matrix = dict_obj["block_matrix"]
-            self.target_grid.add_obj(o)
+            target_grid.add_obj(o)
         # print("OBJECTS\n")
-        print(self.object_grid)
+        print(object_grid)
         # print("-"*(2*len(self.object_grid.grid) + 1))
         # print("TARGETS\n")
-        # print(self.target_grid)
+        # print(target_grid)
 
     def run(self):
         self.call_backs()
@@ -104,10 +102,7 @@ class PyClient:
         time_string = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
         filename = Path(f"{time_string}.pckl")
         with open(filename, "wb") as ofile:
-            to_save = {
-                "history": self.history,
-                "config": self.config.to_dict()
-            }
+            to_save = {"history": self.history, "config": self.config.to_dict()}
             pickle.dump(to_save, ofile)
 
 
