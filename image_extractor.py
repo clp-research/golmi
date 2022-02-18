@@ -222,8 +222,8 @@ class Plotter:
         ax.grid(which="major", axis="both", linestyle="-", color="black", linewidth=0.5)
 
         # resize gridlines and remove labels
-        ax.set_xticks(np.arange(-0.5, x_dim, 2))
-        ax.set_yticks(np.arange(-0.5, y_dim, 2))
+        ax.set_xticks(np.arange(-0.5, x_dim, self.converter.multiplier))
+        ax.set_yticks(np.arange(-0.5, y_dim, self.converter.multiplier))
         ax.set_yticklabels([])
         ax.set_xticklabels([])
 
