@@ -179,8 +179,11 @@ class Plotter:
         if self.plot_targets is True:
             bounds.append(1)
             cols.append("cornsilk")
+            val = 0.1
             for obj in state["targets"].values():
-                self.draw_obj(obj, data, 0.5)
+                self.draw_obj(obj, data, val)
+                # value shoud be different, but never higher than 1
+                val += 0.00001
 
         # plot objects
         if self.plot_objects is True:
