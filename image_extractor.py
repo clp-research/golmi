@@ -3,6 +3,8 @@ import pickle
 import os
 from pathlib import Path
 import multiprocessing as mp
+import math
+import itertools
 
 import matplotlib.pyplot as plt
 from matplotlib import colors
@@ -67,6 +69,39 @@ def progress_bar(
             print(" " * len(to_print), end=end)
 
 
+class Converter:
+    """
+    class used to convert integer coordinates x, y
+    to float ones given the step size used by the model
+    """
+
+    def __init__(self, step):
+        self.factor = step
+        self.multiplier = max(1, math.floor(1 / step))
+
+    def __call__(self, coordinate):
+        if float(self.factor).is_integer():
+            yield coordinate
+        else:
+            x = coordinate["x"]
+            y = coordinate["y"]
+
+            possible_x = [x]
+            possible_y = [y]
+
+            while len(possible_y) < self.multiplier:
+                x += self.factor
+                y += self.factor
+                possible_x.append(x)
+                possible_y.append(y)
+
+            for new_x, new_y in itertools.product(possible_x, possible_y):
+                yield {
+                    "x": round(new_x, 5) * self.multiplier,
+                    "y": round(new_y, 5) * self.multiplier,
+                }
+
+
 class Plotter:
     def __init__(self, history, config, plot_objects, plot_targets, plot_grippers):
         self.history = history
@@ -74,60 +109,65 @@ class Plotter:
         self.plot_objects = plot_objects
         self.plot_targets = plot_targets
         self.plot_grippers = plot_grippers
+        self.converter = Converter(config["move_step"])
 
     def draw_obj(self, obj, data, fillvalue):
-        lines = list()
-
         for y, row in enumerate(obj["block_matrix"]):
             for x, tile in enumerate(row):
                 if tile == 1:
-                    grid_x = int(x + obj["x"])
-                    grid_y = int(y + obj["y"])
-                    data[grid_y][grid_x] = fillvalue
+                    # convert coordinates with converter!
+                    for new_c in self.converter({"x": x + obj["x"], "y": y + obj["y"]}):
 
+                        this_x = new_c["x"]
+                        this_y = new_c["y"]
+
+                        grid_x = int(this_x)
+                        grid_y = int(this_y)
+                        data[grid_y][grid_x] = fillvalue
+
+    def get_borders(self, grid):
+        lines = list()
+        for y, row in enumerate(grid):
+            for x, tile in enumerate(row):
+                if tile != 0:
                     # upper bound
-                    if y == 0 or obj["block_matrix"][y - 1][x] == 0:
+                    if y == 0 or grid[y - 1][x] != tile:
                         this_line = (
-                            (grid_x - 0.5, grid_x + 0.5),
-                            (grid_y - 0.5, grid_y - 0.5),
+                            (x - 0.5, x + 0.5),
+                            (y - 0.5, y - 0.5),
                         )
                         lines.append(this_line)
 
                     # lower bound
-                    if (
-                        y == len(obj["block_matrix"]) - 1
-                        or obj["block_matrix"][y + 1][x] == 0
-                    ):
+                    if y == len(grid) - 1 or grid[y + 1][x] != tile:
                         this_line = (
-                            (grid_x - 0.5, grid_x + 0.5),
-                            (grid_y + 0.5, grid_y + 0.5),
+                            (x - 0.5, x + 0.5),
+                            (y + 0.5, y + 0.5),
                         )
                         lines.append(this_line)
 
                     # right bound
-                    if (
-                        x == len(obj["block_matrix"][0]) - 1
-                        or obj["block_matrix"][y][x + 1] == 0
-                    ):
+                    if x == len(grid) - 1 or grid[y][x + 1] != tile:
                         this_line = (
-                            (grid_x + 0.5, grid_x + 0.5),
-                            (grid_y - 0.5, grid_y + 0.5),
+                            (x + 0.5, x + 0.5),
+                            (y - 0.5, y + 0.5),
                         )
                         lines.append(this_line)
 
                     # left bound
-                    if x == 0 or obj["block_matrix"][y][x - 1] == 0:
+                    if x == 0 or grid[y][x - 1] != tile:
                         this_line = (
-                            (grid_x - 0.5, grid_x - 0.5),
-                            (grid_y - 0.5, grid_y + 0.5),
+                            (x - 0.5, x - 0.5),
+                            (y - 0.5, y + 0.5),
                         )
                         lines.append(this_line)
 
         return lines
 
     def plot_state(self, state):
-        x_dim = self.config["width"]
-        y_dim = self.config["height"]
+        # import converter from grid, the same needs to be done here!!
+        x_dim = self.config["width"] * self.converter.multiplier
+        y_dim = self.config["height"] * self.converter.multiplier
 
         fig, ax = plt.subplots(figsize=(20, 15))
 
@@ -140,32 +180,32 @@ class Plotter:
             bounds.append(1)
             cols.append("cornsilk")
             for obj in state["targets"].values():
-                lines = self.draw_obj(obj, data, 0.5)
-                for x, y in lines:
-                    ax.plot(
-                        x, y, scaley=False, linestyle="-", linewidth=2, color="black"
-                    )
+                self.draw_obj(obj, data, 0.5)
 
         # plot objects
         if self.plot_objects is True:
             for i, obj in enumerate(state["objs"].values()):
                 bounds.append(2 + i)
                 cols.append(obj["color"])
-                lines = self.draw_obj(obj, data, i + 1.5)
-                for x, y in lines:
-                    ax.plot(
-                        x, y, scaley=False, linestyle="-", linewidth=2, color="black"
-                    )
+                self.draw_obj(obj, data, i + 1.5)
+
+        borders = self.get_borders(data)
+        for x, y in borders:
+            ax.plot(x, y, scaley=False, linestyle="-", linewidth=2, color="black")
 
         # plot gripper(s)
         if self.plot_grippers is True:
             for gripper in state["grippers"].values():
+                if gripper["gripped"] is None:
+                    gr_color = "black"
+                else:
+                    gr_color = "red"
                 ax.plot(
-                    gripper["x"] - 0.5,
-                    gripper["y"] - 0.5,
+                    gripper["x"] * self.converter.multiplier - 0.5,
+                    gripper["y"] * self.converter.multiplier - 0.5,
                     "x",
                     markersize=30,
-                    color="black",
+                    color=gr_color,
                 )
 
         # set background to -1 (white)
@@ -182,8 +222,8 @@ class Plotter:
         ax.grid(which="major", axis="both", linestyle="-", color="black", linewidth=0.5)
 
         # resize gridlines and remove labels
-        ax.set_xticks(np.arange(-0.5, x_dim, 1))
-        ax.set_yticks(np.arange(-0.5, y_dim, 1))
+        ax.set_xticks(np.arange(-0.5, x_dim, 2))
+        ax.set_yticks(np.arange(-0.5, y_dim, 2))
         ax.set_yticklabels([])
         ax.set_xticklabels([])
 
