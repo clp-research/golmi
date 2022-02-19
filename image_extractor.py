@@ -8,6 +8,7 @@ from pathlib import Path
 
 from matplotlib import colors
 import matplotlib.pyplot as plt
+from matplotlib import patheffects
 import numpy as np
 
 
@@ -125,18 +126,25 @@ class Plotter:
                         grid_y = int(this_y)
                         data[grid_y][grid_x] = fillvalue
 
-    def get_borders(self, grid):
+    def get_borders(self, grid, gripped):
         lines = list()
+        gr_lines = list()
         for y, row in enumerate(grid):
             for x, tile in enumerate(row):
                 if tile != 0:
+
+                    if tile in gripped:
+                        output_list = gr_lines
+                    else:
+                        output_list = lines
+
                     # upper bound
                     if y == 0 or grid[y - 1][x] != tile:
                         this_line = (
                             (x - 0.5, x + 0.5),
                             (y - 0.5, y - 0.5),
                         )
-                        lines.append(this_line)
+                        output_list.append(this_line)
 
                     # lower bound
                     if y == len(grid) - 1 or grid[y + 1][x] != tile:
@@ -144,7 +152,7 @@ class Plotter:
                             (x - 0.5, x + 0.5),
                             (y + 0.5, y + 0.5),
                         )
-                        lines.append(this_line)
+                        output_list.append(this_line)
 
                     # right bound
                     if x == len(grid) - 1 or grid[y][x + 1] != tile:
@@ -152,7 +160,7 @@ class Plotter:
                             (x + 0.5, x + 0.5),
                             (y - 0.5, y + 0.5),
                         )
-                        lines.append(this_line)
+                        output_list.append(this_line)
 
                     # left bound
                     if x == 0 or grid[y][x - 1] != tile:
@@ -160,9 +168,9 @@ class Plotter:
                             (x - 0.5, x - 0.5),
                             (y - 0.5, y + 0.5),
                         )
-                        lines.append(this_line)
+                        output_list.append(this_line)
 
-        return lines
+        return lines, gr_lines
 
     def plot_state(self, state):
         # import converter from grid, the same needs to be done here!!
@@ -174,6 +182,7 @@ class Plotter:
         data = np.zeros((x_dim, y_dim))
         cols = ["white"]
         bounds = [-10, 0]
+        gripped = set()
 
         # plot targets
         if self.plot_targets is True:
@@ -191,24 +200,37 @@ class Plotter:
                 bounds.append(2 + i)
                 cols.append(obj["color"])
                 self.draw_obj(obj, data, i + 1.5)
+                if obj["gripped"] is True:
+                    gripped.add(i + 1.5)
 
-        borders = self.get_borders(data)
+        borders, grip_borders = self.get_borders(data, gripped)
+
         for x, y in borders:
             ax.plot(x, y, scaley=False, linestyle="-", linewidth=2, color="black")
+        for x, y in grip_borders:
+            ax.plot(
+                x,
+                y,
+                scaley=False,
+                linestyle="-",
+                linewidth=2,
+                color="black",
+                path_effects=[patheffects.withStroke(linewidth=4)],
+            )
 
         # plot gripper(s)
         if self.plot_grippers is True:
             for gripper in state["grippers"].values():
                 if gripper["gripped"] is None:
-                    gr_color = "black"
+                    size = 30
                 else:
-                    gr_color = "red"
+                    size = 15
                 ax.plot(
                     gripper["x"] * self.converter.multiplier - 0.5,
                     gripper["y"] * self.converter.multiplier - 0.5,
                     "x",
-                    markersize=30,
-                    color=gr_color,
+                    markersize=size,
+                    color="black",
                 )
 
         # set background to -1 (white)
@@ -256,6 +278,9 @@ def main():
     parser.add_argument("--plot_targets", action="store_true", default=True)
     parser.add_argument("--plot_grippers", action="store_true", default=True)
     parser.add_argument("--outputdir", action="store", required=True)
+    parser.add_argument(
+        "--single", action="store_true", help="deactivate multithreading"
+    )
     args = parser.parse_args()
 
     history, config = read_file(Path(args.path))
@@ -274,14 +299,24 @@ def main():
     # generator containing tuples (state, output/path) for multiprocessing
     mp_args = ((state, Path(f"{output_dir}/{i}")) for i, state in enumerate(history))
 
-    with mp.Pool() as pool:
-        for i, _ in enumerate(pool.imap(plotter.single, mp_args)):
+    if args.single:
+        for i, image in enumerate(mp_args):
+            plotter.single(image)
             progress_bar(
                 i + 1,
                 len(history),
                 prefix=f"Extracting: {i+1}/{len(history)}",
                 length=40,
             )
+    else:
+        with mp.Pool() as pool:
+            for i, _ in enumerate(pool.imap(plotter.single, mp_args)):
+                progress_bar(
+                    i + 1,
+                    len(history),
+                    prefix=f"Extracting: {i+1}/{len(history)}",
+                    length=40,
+                )
 
 
 if __name__ == "__main__":
