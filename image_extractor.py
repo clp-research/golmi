@@ -9,6 +9,7 @@ from pathlib import Path
 from matplotlib import colors
 import matplotlib.pyplot as plt
 from matplotlib import patheffects
+from algo import find_long
 import numpy as np
 
 
@@ -113,12 +114,14 @@ class Plotter:
         self.converter = Converter(config["move_step"])
 
     def draw_obj(self, obj, data, fillvalue):
+        """
+        draw a single object on a grid with a unique fillvalue
+        """
         for y, row in enumerate(obj["block_matrix"]):
             for x, tile in enumerate(row):
                 if tile == 1:
                     # convert coordinates with converter!
                     for new_c in self.converter({"x": x + obj["x"], "y": y + obj["y"]}):
-
                         this_x = new_c["x"]
                         this_y = new_c["y"]
 
@@ -126,13 +129,50 @@ class Plotter:
                         grid_y = int(this_y)
                         data[grid_y][grid_x] = fillvalue
 
+    def find_long(self, coord):
+        """
+        reconstruct long borders to avoid seam lines
+        in objects black borders
+        """
+        longs = set()
+        for position in coord:
+            for other_position in coord:
+                if position != other_position:
+                    # obtain coordinates
+                    x_pos, y_pos = position
+                    x_oth, y_oth = other_position
+
+                    x_pos_b, x_pos_e = x_pos
+                    y_pos_b, y_pos_e = y_pos
+                    x_oth_b, x_oth_e = x_oth
+                    y_oth_b, y_oth_e = y_oth
+
+                    # horizontal line
+                    if y_pos == y_oth:
+                        total_x = set([x_pos_b, x_pos_e, x_oth_e, x_oth_b])
+                        if len(total_x) == 3:
+                            new = ((min(total_x), max(total_x)), y_pos)
+                            longs.add(new)
+
+                    # vertical line
+                    elif x_pos == x_oth:
+                        total_y = set([y_pos_b, y_pos_e, y_oth_e, y_oth_b])
+                        if len(total_y) == 3:
+                            new = (x_pos, (min(total_y), max(total_y)))
+                            longs.add(new)
+        return longs
+
     def get_borders(self, grid, gripped):
+        """
+        iterate over the the grid and detect borders
+        """
         lines = list()
         gr_lines = list()
         for y, row in enumerate(grid):
             for x, tile in enumerate(row):
                 if tile != 0:
-
+                    # if object is gripped, save id separately
+                    # to later plot thicker border lines
                     if tile in gripped:
                         output_list = gr_lines
                     else:
@@ -173,12 +213,16 @@ class Plotter:
         return lines, gr_lines
 
     def plot_state(self, state):
+        """
+        plot a single state with matplotlib
+        """
         # import converter from grid, the same needs to be done here!!
         x_dim = self.config["width"] * self.converter.multiplier
         y_dim = self.config["height"] * self.converter.multiplier
 
         fig, ax = plt.subplots(figsize=(20, 15))
 
+        # initialize variables to plot the grid
         data = np.zeros((x_dim, y_dim))
         cols = ["white"]
         bounds = [-10, 0]
@@ -203,10 +247,16 @@ class Plotter:
                 if obj["gripped"] is True:
                     gripped.add(i + 1.5)
 
+        # get borders and eliminate seams within them
         borders, grip_borders = self.get_borders(data, gripped)
+        borders = self.find_long(borders)
+        grip_borders = self.find_long(grip_borders)
 
+        # plot borders of all objects
         for x, y in borders:
             ax.plot(x, y, scaley=False, linestyle="-", linewidth=2, color="black")
+
+        # gripped objects have a thicker border
         for x, y in grip_borders:
             ax.plot(
                 x,
