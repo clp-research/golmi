@@ -142,19 +142,20 @@ class Plotter:
             # vertical line
             if len(set(x)) == 1:
                 if x[0] not in v_lines:
-                    v_lines[x[0]] = list()
-                v_lines[x[0]].append(y)
+                    v_lines[x[0]] = set()
+                v_lines[x[0]].add(y)
 
             # horizontal line
             elif len(set(y)) == 1:
                 if y[0] not in h_lines:
-                    h_lines[y[0]] = list()
+                    h_lines[y[0]] = set()
 
-                h_lines[y[0]].append(x)
+                h_lines[y[0]].add(x)
 
         # reconstruct longest lines from each entry
         # in horizontal dictionary
         for y, complete_line in h_lines.items():
+            complete_line = list(complete_line)
             complete_line.sort()
             begin, end = complete_line[0]
             i = 1
@@ -178,6 +179,7 @@ class Plotter:
         # reconstruct longest lines from each entry
         # in horizontal dictionary
         for x, complete_line in v_lines.items():
+            complete_line = list(complete_line)
             complete_line.sort()
             begin, end = complete_line[0]
             i = 1
