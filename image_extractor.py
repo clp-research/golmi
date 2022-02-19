@@ -9,7 +9,6 @@ from pathlib import Path
 from matplotlib import colors
 import matplotlib.pyplot as plt
 from matplotlib import patheffects
-from algo import find_long
 import numpy as np
 
 
@@ -134,33 +133,71 @@ class Plotter:
         reconstruct long borders to avoid seam lines
         in objects black borders
         """
-        longs = set()
-        for position in coord:
-            for other_position in coord:
-                if position != other_position:
-                    # obtain coordinates
-                    x_pos, y_pos = position
-                    x_oth, y_oth = other_position
+        h_lines = dict()
+        v_lines = dict()
+        results = list()
 
-                    x_pos_b, x_pos_e = x_pos
-                    y_pos_b, y_pos_e = y_pos
-                    x_oth_b, x_oth_e = x_oth
-                    y_oth_b, y_oth_e = y_oth
+        # save lines in dictionaries
+        for x, y in coord:
+            # vertical line
+            if len(set(x)) == 1:
+                if x[0] not in v_lines:
+                    v_lines[x[0]] = list()
+                v_lines[x[0]].append(y)
 
-                    # horizontal line
-                    if y_pos == y_oth:
-                        total_x = set([x_pos_b, x_pos_e, x_oth_e, x_oth_b])
-                        if len(total_x) == 3:
-                            new = ((min(total_x), max(total_x)), y_pos)
-                            longs.add(new)
+            # horizontal line
+            elif len(set(y)) == 1:
+                if y[0] not in h_lines:
+                    h_lines[y[0]] = list()
 
-                    # vertical line
-                    elif x_pos == x_oth:
-                        total_y = set([y_pos_b, y_pos_e, y_oth_e, y_oth_b])
-                        if len(total_y) == 3:
-                            new = (x_pos, (min(total_y), max(total_y)))
-                            longs.add(new)
-        return longs
+                h_lines[y[0]].append(x)
+
+        # reconstruct longest lines from each entry
+        # in horizontal dictionary
+        for y, complete_line in h_lines.items():
+            complete_line.sort()
+            begin, end = complete_line[0]
+            i = 1
+
+            while i != len(complete_line):
+                this_b, this_e = complete_line[i]
+
+                if end == this_b:
+                    # lines continues, increase i
+                    end = this_e
+                    i += 1
+                    if i == len(complete_line):
+                        results.append(((begin, end), (y, y)))
+
+                else:
+                    # end of line
+                    results.append(((begin, end), (y, y)))
+                    begin, end = complete_line[i]
+                    i += 1
+
+        # reconstruct longest lines from each entry
+        # in horizontal dictionary
+        for x, complete_line in v_lines.items():
+            complete_line.sort()
+            begin, end = complete_line[0]
+            i = 1
+
+            while i < len(complete_line):
+                this_b, this_e = complete_line[i]
+
+                if end == this_b:
+                    # lines continues, increase i
+                    end = this_e
+                    i += 1
+                    if i == len(complete_line):
+                        results.append(((x, x), (begin, end)))
+                else:
+                    # end of line
+                    results.append(((x, x), (begin, end)))
+                    begin, end = complete_line[i]
+                    i += 1
+
+        return results
 
     def get_borders(self, grid, gripped):
         """
