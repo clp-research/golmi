@@ -160,21 +160,24 @@ class Plotter:
             begin, end = complete_line[0]
             i = 1
 
-            while i != len(complete_line):
+            # iterate over the list and reconstruct the longest lines
+            while i < len(complete_line):
                 this_b, this_e = complete_line[i]
 
                 if end == this_b:
-                    # lines continues, increase i
+                    # lines continues, update end
                     end = this_e
-                    i += 1
-                    if i == len(complete_line):
+
+                    # last element, save
+                    if i == len(complete_line) - 1:
                         results.append(((begin, end), (y, y)))
 
                 else:
                     # end of line
                     results.append(((begin, end), (y, y)))
                     begin, end = complete_line[i]
-                    i += 1
+
+                i += 1
 
         # reconstruct longest lines from each entry
         # in horizontal dictionary
@@ -184,20 +187,23 @@ class Plotter:
             begin, end = complete_line[0]
             i = 1
 
+            # iterate over the list and reconstruct the longest lines
             while i < len(complete_line):
                 this_b, this_e = complete_line[i]
 
                 if end == this_b:
-                    # lines continues, increase i
+                    # lines continues
                     end = this_e
-                    i += 1
-                    if i == len(complete_line):
+
+                    # last element, save
+                    if i == len(complete_line) - 1:
                         results.append(((x, x), (begin, end)))
                 else:
                     # end of line
                     results.append(((x, x), (begin, end)))
                     begin, end = complete_line[i]
-                    i += 1
+
+                i += 1
 
         return results
 
