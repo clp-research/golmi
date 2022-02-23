@@ -5,6 +5,7 @@ import multiprocessing as mp
 import os
 import pickle
 from pathlib import Path
+from tkinter import X
 
 from matplotlib import colors
 import matplotlib.pyplot as plt
@@ -104,12 +105,25 @@ class Converter:
 
 
 class Plotter:
-    def __init__(self, history, config, plot_objects, plot_targets, plot_grippers):
+    def __init__(
+        self,
+        history,
+        config,
+        single_objects,
+        plot_objects=False,
+        plot_targets=False,
+        plot_grippers=False,
+        plot_grid=False,
+        plot_borders=False,
+    ):
         self.history = history
         self.config = config
+        self.single_objects = single_objects
         self.plot_objects = plot_objects
         self.plot_targets = plot_targets
         self.plot_grippers = plot_grippers
+        self.plot_grid = plot_grid
+        self.plot_borders = plot_borders
         self.converter = Converter(config["move_step"])
 
     def draw_obj(self, obj, data, fillvalue):
@@ -240,7 +254,7 @@ class Plotter:
                         output_list.append(this_line)
 
                     # right bound
-                    if x == len(grid) - 1 or grid[y][x + 1] != tile:
+                    if x == len(grid[0]) - 1 or grid[y][x + 1] != tile:
                         this_line = (
                             (x + 0.5, x + 0.5),
                             (y - 0.5, y + 0.5),
@@ -257,61 +271,69 @@ class Plotter:
 
         return lines, gr_lines
 
-    def plot_state(self, state):
-        """
-        plot a single state with matplotlib
-        """
+    def get_matrix(self, state):
         # import converter from grid, the same needs to be done here!!
         x_dim = self.config["width"] * self.converter.multiplier
         y_dim = self.config["height"] * self.converter.multiplier
 
-        fig, ax = plt.subplots(figsize=(20, 15))
-
         # initialize variables to plot the grid
         data = np.zeros((x_dim, y_dim))
         cols = ["white"]
-        bounds = [-10, 0]
+        bounds = [-10, 0.5]
         gripped = set()
+        val = 1
 
         # plot targets
         if self.plot_targets is True:
-            bounds.append(1)
-            cols.append("cornsilk")
-            val = 0.1
-            for obj in state["targets"].values():
+            for i, obj in enumerate(state["targets"].values()):
+                val += i
+                bounds.append(val + 0.5)
+                cols.append("cornsilk")
                 self.draw_obj(obj, data, val)
-                # value shoud be different, but never higher than 1
-                val += 0.00001
 
         # plot objects
         if self.plot_objects is True:
+            val += 1
             for i, obj in enumerate(state["objs"].values()):
-                bounds.append(2 + i)
+                val += i
+                bounds.append(val + 0.5)
                 cols.append(obj["color"])
-                self.draw_obj(obj, data, i + 1.5)
+                self.draw_obj(obj, data, val)
                 if obj["gripped"] is True:
-                    gripped.add(i + 1.5)
+                    gripped.add(val)
 
-        # get borders and eliminate seams within them
-        borders, grip_borders = self.get_borders(data, gripped)
-        borders = self.find_long(borders)
-        grip_borders = self.find_long(grip_borders)
+        return data, cols, bounds, gripped
 
-        # plot borders of all objects
-        for x, y in borders:
-            ax.plot(x, y, scaley=False, linestyle="-", linewidth=2, color="black")
+    def create_image(self, state, output_name, data, cols, bounds, gripped):
+        """
+        plot a single state with matplotlib
+        """
+        x_dim = len(data[0])
+        y_dim = len(data)
 
-        # gripped objects have a thicker border
-        for x, y in grip_borders:
-            ax.plot(
-                x,
-                y,
-                scaley=False,
-                linestyle="-",
-                linewidth=2,
-                color="black",
-                path_effects=[patheffects.withStroke(linewidth=4)],
-            )
+        fig, ax = plt.subplots(figsize=(20, 15))
+
+        if self.plot_borders is True:
+            # get borders and eliminate seams within them
+            borders, grip_borders = self.get_borders(data, gripped)
+            borders = self.find_long(borders)
+            grip_borders = self.find_long(grip_borders)
+
+            # plot borders of all objects
+            for x, y in borders:
+                ax.plot(x, y, scaley=False, linestyle="-", linewidth=2, color="black")
+
+            # gripped objects have a thicker border
+            for x, y in grip_borders:
+                ax.plot(
+                    x,
+                    y,
+                    scaley=False,
+                    linestyle="-",
+                    linewidth=2,
+                    color="black",
+                    path_effects=[patheffects.withStroke(linewidth=4)],
+                )
 
         # plot gripper(s)
         if self.plot_grippers is True:
@@ -328,9 +350,6 @@ class Plotter:
                     color="black",
                 )
 
-        # set background to -1 (white)
-        data[data == 0] = -1
-
         # create discrete colormap
         cmap = colors.ListedColormap(cols)
         norm = colors.BoundaryNorm(bounds, cmap.N)
@@ -338,12 +357,15 @@ class Plotter:
         # plot image
         ax.imshow(data, cmap=cmap, norm=norm)
 
-        # draw gridlines
-        ax.grid(which="major", axis="both", linestyle="-", color="black", linewidth=0.5)
+        if self.plot_grid is True:
+            # draw gridlines
+            ax.grid(
+                which="major", axis="both", linestyle="-", color="black", linewidth=0.5
+            )
 
-        # resize gridlines and remove labels
-        ax.set_xticks(np.arange(-0.5, x_dim, self.converter.multiplier))
-        ax.set_yticks(np.arange(-0.5, y_dim, self.converter.multiplier))
+            # resize gridlines and remove labels
+            ax.set_xticks(np.arange(-0.5, x_dim, self.converter.multiplier))
+            ax.set_yticks(np.arange(-0.5, y_dim, self.converter.multiplier))
 
         # remove labels and ticks on edges
         ax.tick_params(
@@ -357,37 +379,97 @@ class Plotter:
             labelleft=False,
         )
 
-        return fig
-
-    def single(self, argument):
-        state, output_name = argument
-        fig = self.plot_state(state)
         plt.savefig(Path(output_name), dpi=80, bbox_inches="tight", pad_inches=0)
         plt.close(fig)
 
+        return data
+
+    def single(self, argument):
+        state, output_name = argument
+        data, cols, bounds, gripped = self.get_matrix(state)
+
+        if self.single_objects is True:
+            for idn, obj in state["objs"].items():
+                this_x = int(max(0, obj["x"] * self.converter.multiplier))
+                this_y = int(max(0, obj["y"] * self.converter.multiplier))
+
+                x_limit = int(
+                    min(
+                        obj["x"] * self.converter.multiplier
+                        + self.converter.multiplier * len(obj["block_matrix"]),
+                        len(data[0]),
+                    )
+                )
+                y_limit = int(
+                    min(
+                        obj["y"] * self.converter.multiplier
+                        + self.converter.multiplier * len(obj["block_matrix"]),
+                        len(data),
+                    )
+                )
+
+                # move 5x5 window is object is against borders
+                if x_limit - this_x < 10:
+                    diff = x_limit - this_x
+                    to_add = self.converter.multiplier * len(obj["block_matrix"]) - diff
+
+                    if this_x == 0:
+                        x_limit += to_add
+                    else:
+                        this_x -= to_add
+
+                if y_limit - this_y < 10:
+                    diff = y_limit - this_y
+                    to_add = self.converter.multiplier * len(obj["block_matrix"]) - diff
+
+                    if this_y == 0:
+                        y_limit += to_add
+                    else:
+                        this_y -= to_add
+
+                img_bb = data[this_y:y_limit, this_x:x_limit]
+                self.create_image(
+                    state, f"{output_name}_{idn}", img_bb, cols, bounds, gripped
+                )
+
+        self.create_image(state, output_name, data, cols, bounds, gripped)
+
 
 def main():
+    plottable = {"objects", "targets", "grippers", "grid", "borders"}
     parser = argparse.ArgumentParser()
     parser.add_argument("path", action="store", help="path to the pickle file")
-    parser.add_argument("--plot_objects", action="store_true", default=True)
-    parser.add_argument("--plot_targets", action="store_true", default=True)
-    parser.add_argument("--plot_grippers", action="store_true", default=True)
+    parser.add_argument(
+        "--plot",
+        nargs="+",
+        action="store",
+        help="Elements to plot: " + ", ".join(plottable),
+        required=True,
+    )
     parser.add_argument("--outputdir", action="store", required=True)
     parser.add_argument(
         "--single", action="store_true", help="deactivate multithreading"
     )
+    parser.add_argument("--single_objects", action="store_true")
     args = parser.parse_args()
 
+    # extract elements to plot
+    pl_args = dict()
+    for element in args.plot:
+        if element in plottable:
+            key = f"plot_{element}"
+            pl_args[key] = True
+        else:
+            raise ValueError(
+                f"unknown plottable: {element}\navailable plottables: "
+                f'{", ".join(plottable)}'
+            )
+
+    # read file and create plotter
     history, config = read_file(Path(args.path))
+    plotter = Plotter(history, config, args.single_objects, **pl_args)
 
-    plotter = Plotter(
-        history,
-        config,
-        plot_objects=args.plot_objects,
-        plot_targets=args.plot_targets,
-        plot_grippers=args.plot_grippers,
-    )
-
+    # prepare output dirrectory
     output_dir = args.outputdir
     os.makedirs(Path(output_dir), exist_ok=True)
 
@@ -403,6 +485,7 @@ def main():
                 prefix=f"Extracting: {i+1}/{len(history)}",
                 length=40,
             )
+
     else:
         with mp.Pool() as pool:
             for i, _ in enumerate(pool.imap(plotter.single, mp_args)):

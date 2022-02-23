@@ -107,10 +107,41 @@ class PyClient:
 
 
 def main():
+    # get arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("room_id", action="store", help="room to join")
+    subparsers = parser.add_subparsers(dest="subparser")
+    
+    # monitor option
+    monitor = subparsers.add_parser(
+        "monitor",
+        help="monitor room"
+    )
+
+    # random init
+    random_init = subparsers.add_parser(
+        "random-init",
+        help="load configuration from file"
+    )
+    random_init.add_argument("path", action="store")
+
+    # update config
+    update_config = subparsers.add_parser(
+        "update-config",
+        help="load configuration from file"
+    )
+    update_config.add_argument("path", action="store")
+
+    # load_config
+    load_config = subparsers.add_parser(
+        "load-config",
+        help="load configuration from file"
+    )
+    load_config.add_argument("path", action="store")
+
     args = parser.parse_args()
 
+    # start client
     client = PyClient("http://localhost:5000", AUTH, args.room_id)
     client.run()
     time.sleep(1)
@@ -119,36 +150,39 @@ def main():
         "plot": client.plot,
         "save": client.save_history,
     }
-    arg_actions = {
-        "load_config": client.load_config,
-        "update_config": client.update_config,
-        "random_init": client.random_init,
-    }
 
     options = ", ".join(actions.keys())
-    arg_options = ", ".join([f"{i} PATH" for i in arg_actions.keys()])
 
-    while True:
-        command = input(f"Options:\n\t{options}\n\t{arg_options}\n> ")
+    arg_actions = {
+        "load-config": client.load_config,
+        "update-config": client.update_config,
+        "random-init": client.random_init,
+    }
 
-        # close terminal view
-        if command in {"q", "exit"}:
-            client.disconnect()
-            break
+    if args.subparser == "monitor":
+        while True:
+            command = input(f"Options: {options}, exit\n> ")
 
-        # input without argument
-        elif command in actions:
-            f = actions[command]
-            f()
+            # close terminal view
+            if command in {"q", "exit"}:
+                client.disconnect()
+                break
 
-        # input with argument
-        elif command in arg_actions:
-            command, path = command.split()
-            f = arg_actions[command]
+            # input without argument
+            elif command in actions:
+                f = actions[command]
+                f()
 
-            with open(Path(path), "r", encoding="utf-8") as infile:
-                config = json.load(infile)
-            f(config)
+    elif args.subparser in arg_actions.keys():
+        with open(Path(args.path), "r", encoding="utf-8") as infile:
+            config = json.load(infile)
+
+        print(args.subparser)
+        function = arg_actions[args.subparser]
+        time.sleep(1)
+        function(config)
+        time.sleep(1)
+        client.disconnect()
 
 
 if __name__ == "__main__":
