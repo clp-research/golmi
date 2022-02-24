@@ -11,7 +11,7 @@ Syntax:
             "states": [list of states(dict) to plot]
         }
 
-        --plot: a list of things to plot. available: {"objects", "targets", "grippers", "grid", "borders"}
+        --plot: a list of things to plot. available: objects, targets, grippers, grid, borders
         --single-objects: each object and its 5x5 square will be saved individually
 
     in the output folder the script will create following output:
