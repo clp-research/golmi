@@ -1,3 +1,26 @@
+"""
+script to create state-images from a file containing a list of states and a configuration file.
+
+Syntax:
+    python image_extractor.py file.pckl --outputdir images-output --plot objects borders --single-objects
+
+    Args:
+        - file.pckl: a pickled dictionary: 
+        {
+            "config": config_dict_format,
+            "states": [list of states(dict) to plot]
+        }
+
+        --plot: a list of things to plot. available: {"objects", "targets", "grippers", "grid", "borders"}
+        --single-objects: each object and its 5x5 square will be saved individually
+
+    in the output folder the script will create following output:
+        i.png --> entire state where i is the index of the state within the list
+        i_idn.png --> a 5x5 image of the idn object from the i-th state 
+                      (id numbers of objects are unique for each state)
+"""
+
+
 import argparse
 import itertools
 import math
@@ -5,7 +28,6 @@ import multiprocessing as mp
 import os
 import pickle
 from pathlib import Path
-from tkinter import X
 
 from matplotlib import colors
 import matplotlib.pyplot as plt
@@ -17,10 +39,10 @@ def read_file(path):
     with open(path, "rb") as infile:
         data = pickle.load(infile)
 
-    history = data["history"]
+    states = data["states"]
     config = data["config"]
 
-    return history, config
+    return states, config
 
 
 def progress_bar(
@@ -107,7 +129,7 @@ class Converter:
 class Plotter:
     def __init__(
         self,
-        history,
+        states,
         config,
         single_objects,
         plot_objects=False,
@@ -116,7 +138,7 @@ class Plotter:
         plot_grid=False,
         plot_borders=False,
     ):
-        self.history = history
+        self.states = states
         self.config = config
         self.single_objects = single_objects
         self.plot_objects = plot_objects
@@ -324,7 +346,7 @@ class Plotter:
             borders, grip_borders = self.get_borders(data, gripped)
             l_borders = self.find_long(borders)
             l_grip_borders = self.find_long(grip_borders)
-   
+
             # plot borders of all objects
             for x, y in l_borders:
                 ax.plot(x, y, scaley=False, linestyle="-", linewidth=2, color="black")
@@ -472,23 +494,23 @@ def main():
             )
 
     # read file and create plotter
-    history, config = read_file(Path(args.path))
-    plotter = Plotter(history, config, args.single_objects, **pl_args)
+    states, config = read_file(Path(args.path))
+    plotter = Plotter(states, config, args.single_objects, **pl_args)
 
     # prepare output dirrectory
     output_dir = args.outputdir
     os.makedirs(Path(output_dir), exist_ok=True)
 
     # generator containing tuples (state, output/path) for multiprocessing
-    mp_args = ((state, Path(f"{output_dir}/{i}")) for i, state in enumerate(history))
+    mp_args = ((state, Path(f"{output_dir}/{i}")) for i, state in enumerate(states))
 
     if args.single:
         for i, image in enumerate(mp_args):
             plotter.single(image)
             progress_bar(
                 i + 1,
-                len(history),
-                prefix=f"Extracting: {i+1}/{len(history)}",
+                len(states),
+                prefix=f"Extracting: {i+1}/{len(states)}",
                 length=40,
             )
 
@@ -497,8 +519,8 @@ def main():
             for i, _ in enumerate(pool.imap(plotter.single, mp_args)):
                 progress_bar(
                     i + 1,
-                    len(history),
-                    prefix=f"Extracting: {i+1}/{len(history)}",
+                    len(states),
+                    prefix=f"Extracting: {i+1}/{len(states)}",
                     length=40,
                 )
 
