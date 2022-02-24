@@ -174,24 +174,27 @@ class Plotter:
             begin, end = complete_line[0]
             i = 1
 
-            # iterate over the list and reconstruct the longest lines
-            while i < len(complete_line):
-                this_b, this_e = complete_line[i]
+            if len(complete_line) == 1:
+                results.append((complete_line[0], (y, y)))
+            else:
+                # iterate over the list and reconstruct the longest lines
+                while i < len(complete_line):
+                    this_b, this_e = complete_line[i]
 
-                if end == this_b:
-                    # lines continues, update end
-                    end = this_e
+                    if end == this_b:
+                        # lines continues, update end
+                        end = this_e
 
-                    # last element, save
-                    if i == len(complete_line) - 1:
+                        # last element, save
+                        if i == len(complete_line) - 1:
+                            results.append(((begin, end), (y, y)))
+
+                    else:
+                        # end of line
                         results.append(((begin, end), (y, y)))
+                        begin, end = complete_line[i]
 
-                else:
-                    # end of line
-                    results.append(((begin, end), (y, y)))
-                    begin, end = complete_line[i]
-
-                i += 1
+                    i += 1
 
         # reconstruct longest lines from each entry
         # in horizontal dictionary
@@ -201,23 +204,26 @@ class Plotter:
             begin, end = complete_line[0]
             i = 1
 
-            # iterate over the list and reconstruct the longest lines
-            while i < len(complete_line):
-                this_b, this_e = complete_line[i]
+            if len(complete_line) == 1:
+                results.append(((x, x), complete_line[0]))
+            else:
+                # iterate over the list and reconstruct the longest lines
+                while i < len(complete_line):
+                    this_b, this_e = complete_line[i]
 
-                if end == this_b:
-                    # lines continues
-                    end = this_e
+                    if end == this_b:
+                        # lines continues
+                        end = this_e
 
-                    # last element, save
-                    if i == len(complete_line) - 1:
+                        # last element, save
+                        if i == len(complete_line) - 1:
+                            results.append(((x, x), (begin, end)))
+                    else:
+                        # end of line
                         results.append(((x, x), (begin, end)))
-                else:
-                    # end of line
-                    results.append(((x, x), (begin, end)))
-                    begin, end = complete_line[i]
+                        begin, end = complete_line[i]
 
-                i += 1
+                    i += 1
 
         return results
 
@@ -316,15 +322,15 @@ class Plotter:
         if self.plot_borders is True:
             # get borders and eliminate seams within them
             borders, grip_borders = self.get_borders(data, gripped)
-            borders = self.find_long(borders)
-            grip_borders = self.find_long(grip_borders)
-
+            l_borders = self.find_long(borders)
+            l_grip_borders = self.find_long(grip_borders)
+   
             # plot borders of all objects
-            for x, y in borders:
+            for x, y in l_borders:
                 ax.plot(x, y, scaley=False, linestyle="-", linewidth=2, color="black")
 
             # gripped objects have a thicker border
-            for x, y in grip_borders:
+            for x, y in l_grip_borders:
                 ax.plot(
                     x,
                     y,
@@ -450,7 +456,7 @@ def main():
     parser.add_argument(
         "--single", action="store_true", help="deactivate multithreading"
     )
-    parser.add_argument("--single_objects", action="store_true")
+    parser.add_argument("--single-objects", action="store_true")
     args = parser.parse_args()
 
     # extract elements to plot
