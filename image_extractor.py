@@ -34,7 +34,6 @@ import multiprocessing as mp
 import os
 import pickle
 from pathlib import Path
-from turtle import width
 
 from matplotlib import colors
 import matplotlib.pyplot as plt
@@ -446,13 +445,13 @@ class Plotter:
 
         x_limit = int(
             min(
-                (obj["x"] * x_factor + x_factor * len(obj["block_matrix"])) + 1,
+                (obj["x"] * x_factor + x_factor * len(obj["block_matrix"])),
                 np_state.shape[1],
             )
         )
         y_limit = int(
             min(
-                (obj["y"] * y_factor + y_factor * len(obj["block_matrix"])) + 1,
+                (obj["y"] * y_factor + y_factor * len(obj["block_matrix"])),
                 np_state.shape[0],
             )
         )
