@@ -132,6 +132,7 @@ class Plotter:
         states,
         config,
         single_objects,
+        to_numpy,
         plot_objects=False,
         plot_targets=False,
         plot_grippers=False,
@@ -140,6 +141,7 @@ class Plotter:
     ):
         self.states = states
         self.config = config
+        self.to_numpy = to_numpy
         self.single_objects = single_objects
         self.plot_objects = plot_objects
         self.plot_targets = plot_targets
@@ -150,7 +152,7 @@ class Plotter:
 
     def draw_obj(self, obj, data, fillvalue):
         """
-        draw a single object on a grid with a unique fillvalue
+        draw a single object on a 2D grid with a unique fillvalue
         """
         for y, row in enumerate(obj["block_matrix"]):
             for x, tile in enumerate(row):
@@ -251,7 +253,7 @@ class Plotter:
 
     def get_borders(self, grid, gripped):
         """
-        iterate over the the grid and detect borders
+        iterate over the the 2D array (from get_matrix) and detect borders
         """
         lines = list()
         gr_lines = list()
@@ -300,6 +302,12 @@ class Plotter:
         return lines, gr_lines
 
     def get_matrix(self, state):
+        """
+        given a state, a 2D numpy array is created where each object and target
+        is identified by a unique number which is then used to assign
+        it its colour. this is then used to generate a heatmap which represents
+        the plotted state.
+        """
         # import converter from grid, the same needs to be done here!!
         x_dim = self.config["width"] * self.converter.multiplier
         y_dim = self.config["height"] * self.converter.multiplier
@@ -334,12 +342,12 @@ class Plotter:
 
     def create_image(self, state, output_name, data, cols, bounds, gripped):
         """
-        plot a single state with matplotlib
+        convert a state to an RGB numpy array
         """
         x_dim = len(data[0])
         y_dim = len(data)
 
-        fig, ax = plt.subplots(figsize=(20, 15))
+        fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
 
         if self.plot_borders is True:
             # get borders and eliminate seams within them
@@ -407,60 +415,95 @@ class Plotter:
             labelleft=False,
         )
 
-        plt.savefig(Path(output_name), dpi=80, bbox_inches="tight", pad_inches=0)
+        # if self.to_numpy is True:
+        fig.tight_layout(pad=0)
+        ax.figure.canvas.draw()
+        # Get the RGBA buffer from the figure
+        w, h = fig.canvas.get_width_height()
+        buf = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8).reshape(h, w, 3)
         plt.close(fig)
+        return buf
 
-        return data
+    def get_single_object(self, np_state, obj):
+        """
+        given the RGB np.array of the state and the object dictionary,
+        slice the state to create a small image of size len(block_matrix)
+        """
+        x_factor = np_state.shape[1] / self.config["width"]
+        y_factor = np_state.shape[0] / self.config["height"]
+
+        this_x = int(max(0, obj["x"] * x_factor))
+        this_y = int(max(0, obj["y"] * y_factor))
+
+        x_limit = int(
+            min(
+                (obj["x"] * x_factor + x_factor * len(obj["block_matrix"])) + 1,
+                np_state.shape[1],
+            )
+        )
+        y_limit = int(
+            min(
+                (obj["y"] * y_factor + y_factor * len(obj["block_matrix"])) + 1,
+                np_state.shape[0],
+            )
+        )
+
+        # move window if object is against borders
+        if x_limit - this_x < len(obj["block_matrix"]) * x_factor:
+            diff = x_limit - this_x
+            to_add = x_factor * len(obj["block_matrix"]) - diff
+
+            if this_x == 0:
+                x_limit += to_add
+            else:
+                this_x -= to_add
+
+        if y_limit - this_y < len(obj["block_matrix"]) * y_factor:
+            diff = y_limit - this_y
+            to_add = y_factor * len(obj["block_matrix"]) - diff
+
+            if this_y == 0:
+                y_limit += to_add
+            else:
+                this_y -= to_add
+
+        return np_state[int(this_y) : int(y_limit), int(this_x) : int(x_limit)]
 
     def single(self, argument):
+        """
+        single threaded function to generate an image or numpy array from a state
+        """
         state, output_name = argument
         data, cols, bounds, gripped = self.get_matrix(state)
+        output = dict()
 
+        # obtain an RGB array of the entire state
+        np_state = self.create_image(state, output_name, data, cols, bounds, gripped)
+        output["state"] = np_state
+
+        # slice single objects from the RGB array
         if self.single_objects is True:
             for idn, obj in state["objs"].items():
-                this_x = int(max(0, obj["x"] * self.converter.multiplier))
-                this_y = int(max(0, obj["y"] * self.converter.multiplier))
+                this_obj = self.get_single_object(np_state, obj)
+                output[f"object_{idn}"] = this_obj
 
-                x_limit = int(
-                    min(
-                        obj["x"] * self.converter.multiplier
-                        + self.converter.multiplier * len(obj["block_matrix"]),
-                        len(data[0]),
-                    )
+        # save output as pickled dictionary
+        if self.to_numpy is True:
+            with open(f"{output_name}.pckl", "wb") as ofile:
+                pickle.dump(output, ofile)
+        else:
+            # plot and save images (takes longer)
+            for n, image in output.items():
+                fig, ax = plt.subplots(figsize=(15, 15), dpi=100)
+                ax.imshow(image)
+                plt.axis("off")
+                plt.savefig(
+                    Path(f"{output_name}_{n}"),
+                    dpi=80,
+                    bbox_inches="tight",
+                    pad_inches=0,
                 )
-                y_limit = int(
-                    min(
-                        obj["y"] * self.converter.multiplier
-                        + self.converter.multiplier * len(obj["block_matrix"]),
-                        len(data),
-                    )
-                )
-
-                # move 5x5 window is object is against borders
-                if x_limit - this_x < 10:
-                    diff = x_limit - this_x
-                    to_add = self.converter.multiplier * len(obj["block_matrix"]) - diff
-
-                    if this_x == 0:
-                        x_limit += to_add
-                    else:
-                        this_x -= to_add
-
-                if y_limit - this_y < 10:
-                    diff = y_limit - this_y
-                    to_add = self.converter.multiplier * len(obj["block_matrix"]) - diff
-
-                    if this_y == 0:
-                        y_limit += to_add
-                    else:
-                        this_y -= to_add
-
-                img_bb = data[this_y:y_limit, this_x:x_limit]
-                self.create_image(
-                    state, f"{output_name}_{idn}", img_bb, cols, bounds, gripped
-                )
-
-        self.create_image(state, output_name, data, cols, bounds, gripped)
+                plt.close()
 
 
 def main():
@@ -479,6 +522,11 @@ def main():
         "--single", action="store_true", help="deactivate multithreading"
     )
     parser.add_argument("--single-objects", action="store_true")
+    parser.add_argument(
+        "--to-numpy",
+        action="store_true",
+        help="save a RGB numpy vector instead of an image",
+    )
     args = parser.parse_args()
 
     # extract elements to plot
@@ -495,7 +543,7 @@ def main():
 
     # read file and create plotter
     states, config = read_file(Path(args.path))
-    plotter = Plotter(states, config, args.single_objects, **pl_args)
+    plotter = Plotter(states, config, args.single_objects, args.to_numpy, **pl_args)
 
     # prepare output dirrectory
     output_dir = args.outputdir
