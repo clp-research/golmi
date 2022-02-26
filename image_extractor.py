@@ -34,6 +34,7 @@ import multiprocessing as mp
 import os
 import pickle
 from pathlib import Path
+from turtle import width
 
 from matplotlib import colors
 import matplotlib.pyplot as plt
@@ -139,6 +140,7 @@ class Plotter:
         config,
         single_objects,
         to_numpy,
+        np_dims,
         plot_objects=False,
         plot_targets=False,
         plot_grippers=False,
@@ -148,6 +150,7 @@ class Plotter:
         self.states = states
         self.config = config
         self.to_numpy = to_numpy
+        self.np_dims = np_dims
         self.single_objects = single_objects
         self.plot_objects = plot_objects
         self.plot_targets = plot_targets
@@ -353,7 +356,7 @@ class Plotter:
         x_dim = len(data[0])
         y_dim = len(data)
 
-        fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
+        fig, ax = plt.subplots(figsize=self.np_dims, dpi=1)
 
         if self.plot_borders is True:
             # get borders and eliminate seams within them
@@ -533,7 +536,16 @@ def main():
         action="store_true",
         help="save a RGB numpy vector instead of an image",
     )
+    parser.add_argument(
+        "--np-dim",
+        action="store",
+        help="pixel dimention of the state array (default: %(default)s)",
+        default="600x600",
+    )
     args = parser.parse_args()
+
+    w, h = args.np_dim.split("x")
+    np_dims = (int(w), int(h))
 
     # extract elements to plot
     pl_args = dict()
@@ -549,7 +561,7 @@ def main():
 
     # read file and create plotter
     states, config = read_file(Path(args.path))
-    plotter = Plotter(states, config, args.single_objects, args.to_numpy, **pl_args)
+    plotter = Plotter(states, config, args.single_objects, args.to_numpy, np_dims, **pl_args)
 
     # prepare output dirrectory
     output_dir = args.outputdir
