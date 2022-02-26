@@ -13,6 +13,12 @@ Syntax:
 
         --plot: a list of things to plot. available: objects, targets, grippers, grid, borders
         --single-objects: each object and its 5x5 square will be saved individually
+        --to-numpy: instead of saving images, a dictionary containing numpy RGB arrays will be saved
+            {
+                "state": np.array(RGB-state),
+                "object_idn": np.array(RGB-object box),
+                ...
+            }
 
     in the output folder the script will create following output:
         i.png --> entire state where i is the index of the state within the list
