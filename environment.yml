@@ -26,3 +26,7 @@ dependencies:
   - greenlet
   - ipython
   - numpy
+  - matplotlib
+  - pip
+  - pip:
+    - python-socketio[client]
