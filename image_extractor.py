@@ -149,7 +149,7 @@ class Plotter:
         self.states = states
         self.config = config
         self.to_numpy = to_numpy
-        self.np_dims = np_dims
+        self.np_dims = tuple((i/100 for i in np_dims))
         self.single_objects = single_objects
         self.plot_objects = plot_objects
         self.plot_targets = plot_targets
@@ -355,7 +355,7 @@ class Plotter:
         x_dim = len(data[0])
         y_dim = len(data)
 
-        fig, ax = plt.subplots(figsize=self.np_dims, dpi=1)
+        fig, ax = plt.subplots(figsize=self.np_dims, dpi=100)
 
         if self.plot_borders is True:
             # get borders and eliminate seams within them
