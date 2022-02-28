@@ -1,103 +1,56 @@
 import unittest
-from model.pentomino import PieceConfig, RelPositions, Colors, Shapes, \
-    PropertyNames, create_distractor_configs, Board
 
-TARGET = PieceConfig(Colors.BLUE, Shapes.T, RelPositions.CENTER)
-
-
-class CompositionalBoardTestCase(unittest.TestCase):
-
-    def test_manual_compositional_board(self):
-        width, height = 40, 40
-        board = Board.create_compositional(width, height, TARGET,
-                                           unique_props={PropertyNames.COLOR},
-                                           num_distractors=4,
-                                           ambiguities={PropertyNames.REL_POSITION: 1})
-        for piece in board.pieces:
-            print(piece.piece_config)
-        print(board.grid)
+from model.pentomino import SingleUPVDistractorSetGenerator, PropertyNames, Colors, Shapes, PieceConfig, RelPositions, \
+    DistractorConfigGenerator, create_all_distractor_configs
 
 
-class RelPositionsTestCase(unittest.TestCase):
+class SingleUPVDistractorSetGeneratorTestCase(unittest.TestCase):
 
-    def test_symmetric(self):
-        width, height = 500, 500
-        for rel_position in list(RelPositions):
-            x, y = rel_position.to_random_coords(width, height)
-            self.assertEqual(RelPositions.from_coords(x, y, width, height), rel_position, f"x: {x}, y: {y}")
+    def test_generate_all_distractor_configs(self):
+        num_shapes = len(list(Shapes))
+        num_colors = len(list(Colors))
+        assert num_colors == 12
+        assert num_shapes == 12
 
+        generator = DistractorConfigGenerator({PropertyNames.COLOR: list(Colors),
+                                               PropertyNames.SHAPE: list(Shapes)})
+        configs = generator.generate_all_distractor_configs()
+        assert len(configs) == 144
 
-class CreateDistractorsTestCase(unittest.TestCase):
+    def test_create_all_distractor_configs(self):
+        sets = create_all_distractor_configs(PieceConfig(Colors.BLUE, Shapes.T, RelPositions.CENTER),
+                                             unique_props={PropertyNames.COLOR},
+                                             num_distractors=2,
+                                             prop_values={
+                                                 PropertyNames.COLOR: list(Colors),
+                                                 PropertyNames.SHAPE: list(Shapes)
+                                             })
+        print("Sets: ", len(sets))
+        assert len(sets) == 1452
 
-    def test_with_num_distractors_returns_num_distractor_configs(self):
-        distractors = create_distractor_configs(TARGET,
-                                                unique_props={PropertyNames.REL_POSITION},
-                                                num_distractors=4)
-        self.assertEqual(len(distractors), 4)
+    def test_generate_all_sets_with_num_distractors_is_2(self):
+        # Compositional set on "Colors"
+        # All other distractors do NOT share the color, but at least one distractor shares the shape
+        num_shapes = len(list(Shapes))
+        num_colors = len(list(Colors))
+        assert num_colors == 12
+        assert num_shapes == 12
 
-    def test_with_pos_returns_unique_pos_but_same_others(self):
-        distractors = create_distractor_configs(TARGET,
-                                                unique_props={PropertyNames.REL_POSITION},
-                                                num_distractors=4)
-        for distractor in distractors:
-            self.assertEqual(distractor.color, TARGET.color)
-            self.assertEqual(distractor.shape, TARGET.shape)
-            self.assertNotEqual(distractor.rel_position, TARGET.rel_position)
+        num_distractors = 2
+        target_piece = PieceConfig(color=Colors.BLUE, shape=Shapes.T, rel_position=RelPositions.CENTER)
 
-    def test_with_shape_returns_unique_shape_but_same_others(self):
-        distractors = create_distractor_configs(TARGET,
-                                                unique_props={PropertyNames.SHAPE},
-                                                num_distractors=4)
-        for distractor in distractors:
-            self.assertEqual(distractor.color, TARGET.color)
-            self.assertNotEqual(distractor.shape, TARGET.shape)
-            self.assertEqual(distractor.rel_position, TARGET.rel_position)
+        generator = SingleUPVDistractorSetGenerator(target_piece,
+                                                    unique_prop=PropertyNames.COLOR,
+                                                    num_distractors=num_distractors,
+                                                    prop_values={PropertyNames.COLOR: list(Colors),
+                                                                 PropertyNames.SHAPE: list(Shapes)})
+        sets = generator.setup().generate_all_sets()
 
-    def test_with_color_returns_unique_color_but_same_others(self):
-        distractors = create_distractor_configs(TARGET,
-                                                unique_props={PropertyNames.COLOR},
-                                                num_distractors=4)
-        for distractor in distractors:
-            self.assertNotEqual(distractor.color, TARGET.color)
-            self.assertEqual(distractor.shape, TARGET.shape)
-            self.assertEqual(distractor.rel_position, TARGET.rel_position)
-
-    def test_with_color_with_single_ambiguity_returns_single_ambiguity(self):
-        distractors = create_distractor_configs(TARGET,
-                                                unique_props={PropertyNames.COLOR},
-                                                num_distractors=4,
-                                                ambiguities={PropertyNames.REL_POSITION: 1})
-        count = sum([1 for distractor in distractors if distractor.rel_position == TARGET.rel_position])
-        self.assertEqual(count, 1)
-
-    def test_with_color_with_given_variety_and_ambiguity_returns_single_ambiguity(self):
-        distractors = create_distractor_configs(TARGET,
-                                                unique_props={PropertyNames.COLOR},
-                                                num_distractors=4,
-                                                varieties={
-                                                    PropertyNames.COLOR: 0,
-                                                    PropertyNames.SHAPE: 0,
-                                                    PropertyNames.REL_POSITION: 0
-                                                },
-                                                ambiguities={
-                                                    PropertyNames.COLOR: 0,
-                                                    PropertyNames.SHAPE: 0,
-                                                    PropertyNames.REL_POSITION: 1
-                                                })
-        count = sum([1 for distractor in distractors if distractor.rel_position == TARGET.rel_position])
-        self.assertEqual(count, 1)
-
-    def test_with_color_with_multi_ambiguities_returns_accordingly(self):
-        distractors = create_distractor_configs(TARGET,
-                                                unique_props={PropertyNames.COLOR},
-                                                num_distractors=4,
-                                                ambiguities={PropertyNames.REL_POSITION: 2,
-                                                             PropertyNames.SHAPE: 3})
-        pos_count = sum([1 for distractor in distractors if distractor.rel_position == TARGET.rel_position])
-        self.assertEqual(pos_count, 2)
-        shape_count = sum([1 for distractor in distractors if distractor.shape == TARGET.shape])
-        self.assertEqual(shape_count, 3)
+        num_other_looks = num_shapes * (num_colors - 1)  # unshare the color, but allow all shapes
+        num_share_looks = num_colors - 1  # unshare the color, but shares the same shape as the target piece
+        expected_count = num_share_looks * num_other_looks ** (num_distractors - 1)
+        assert len(sets) == expected_count, f"Expected {expected_count}, but is {len(sets)}"
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()
