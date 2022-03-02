@@ -140,6 +140,7 @@ class Plotter:
         single_objects,
         to_numpy,
         np_dims,
+        small_bb,
         plot_objects=False,
         plot_targets=False,
         plot_grippers=False,
@@ -149,7 +150,8 @@ class Plotter:
         self.states = states
         self.config = config
         self.to_numpy = to_numpy
-        self.np_dims = tuple((i/100 for i in np_dims))
+        self.np_dims = tuple((i / 100 for i in np_dims))
+        self.small_bb = small_bb
         self.single_objects = single_objects
         self.plot_objects = plot_objects
         self.plot_targets = plot_targets
@@ -348,7 +350,7 @@ class Plotter:
 
         return data, cols, bounds, gripped
 
-    def create_image(self, state, output_name, data, cols, bounds, gripped):
+    def get_image_array(self, state, data, cols, bounds, gripped):
         """
         convert a state to an RGB numpy array
         """
@@ -383,9 +385,9 @@ class Plotter:
         if self.plot_grippers is True:
             for gripper in state["grippers"].values():
                 if gripper["gripped"] is None:
-                    size = 30
+                    size = 19
                 else:
-                    size = 15
+                    size = 14
                 ax.plot(
                     gripper["x"] * self.converter.multiplier - 0.5,
                     gripper["y"] * self.converter.multiplier - 0.5,
@@ -440,40 +442,69 @@ class Plotter:
         x_factor = np_state.shape[1] / self.config["width"]
         y_factor = np_state.shape[0] / self.config["height"]
 
-        this_x = int(max(0, obj["x"] * x_factor))
-        this_y = int(max(0, obj["y"] * y_factor))
+        if self.small_bb is True:
+            min_y = len(obj["block_matrix"])
+            min_x = len(obj["block_matrix"][0])
+            max_y = 0
+            max_x = 0
 
-        x_limit = int(
-            min(
-                (obj["x"] * x_factor + x_factor * len(obj["block_matrix"])),
-                np_state.shape[1],
+            for y, row in enumerate(obj["block_matrix"]):
+                for x, tile in enumerate(row):
+                    if tile == 1:
+                        # update upper-left corner
+                        if y < min_y:
+                            min_y = y
+                        if x < min_x:
+                            min_x = x
+
+                        # update upper-right corner
+                        if y > max_y:
+                            max_y = y
+                        if x > max_x:
+                            max_x = x
+
+            this_x = (obj["x"] + min_x) * x_factor
+            this_y = (obj["y"] + min_y) * y_factor
+
+            x_limit = (obj["x"] + max_x + 1) * x_factor
+            y_limit = (obj["y"] + max_y + 1) * y_factor
+
+            #breakpoint()
+
+        else:
+            this_x = int(max(0, obj["x"] * x_factor))
+            this_y = int(max(0, obj["y"] * y_factor))
+            x_limit = int(
+                min(
+                    (obj["x"] * x_factor + x_factor * len(obj["block_matrix"])),
+                    np_state.shape[1],
+                )
             )
-        )
-        y_limit = int(
-            min(
-                (obj["y"] * y_factor + y_factor * len(obj["block_matrix"])),
-                np_state.shape[0],
+            y_limit = int(
+                min(
+                    (obj["y"] * y_factor + y_factor * len(obj["block_matrix"])),
+                    np_state.shape[0],
+                )
             )
-        )
 
-        # move window if object is against borders
-        if x_limit - this_x < len(obj["block_matrix"]) * x_factor:
-            diff = x_limit - this_x
-            to_add = x_factor * len(obj["block_matrix"]) - diff
+            # move window if object is against borders
+            if x_limit - this_x < len(obj["block_matrix"]) * x_factor:
+                diff = x_limit - this_x
+                to_add = x_factor * len(obj["block_matrix"]) - diff
 
-            if this_x == 0:
-                x_limit += to_add
-            else:
-                this_x -= to_add
+                if this_x == 0:
+                    x_limit += to_add
+                else:
+                    this_x -= to_add
 
-        if y_limit - this_y < len(obj["block_matrix"]) * y_factor:
-            diff = y_limit - this_y
-            to_add = y_factor * len(obj["block_matrix"]) - diff
+            if y_limit - this_y < len(obj["block_matrix"]) * y_factor:
+                diff = y_limit - this_y
+                to_add = y_factor * len(obj["block_matrix"]) - diff
 
-            if this_y == 0:
-                y_limit += to_add
-            else:
-                this_y -= to_add
+                if this_y == 0:
+                    y_limit += to_add
+                else:
+                    this_y -= to_add
 
         return np_state[int(this_y) : int(y_limit), int(this_x) : int(x_limit)]
 
@@ -486,7 +517,7 @@ class Plotter:
         output = dict()
 
         # obtain an RGB array of the entire state
-        np_state = self.create_image(state, output_name, data, cols, bounds, gripped)
+        np_state = self.get_image_array(state, data, cols, bounds, gripped)
         output["state"] = np_state
 
         # slice single objects from the RGB array
@@ -495,10 +526,9 @@ class Plotter:
                 this_obj = self.get_single_object(np_state, obj)
                 output[f"object_{idn}"] = this_obj
 
-        # save output as pickled dictionary
+        # save output in .npz file
         if self.to_numpy is True:
-            with open(f"{output_name}.pckl", "wb") as ofile:
-                pickle.dump(output, ofile)
+            np.savez(output_name, **output)
         else:
             # plot and save images (takes longer)
             for n, image in output.items():
@@ -541,6 +571,11 @@ def main():
         help="pixel dimention of the state array (default: %(default)s)",
         default="600x600",
     )
+    parser.add_argument(
+        "--small-bb",
+        action="store_true",
+        help="single objects are saved with the smallest possible bounding box",
+    )
     args = parser.parse_args()
 
     w, h = args.np_dim.split("x")
@@ -560,7 +595,15 @@ def main():
 
     # read file and create plotter
     states, config = read_file(Path(args.path))
-    plotter = Plotter(states, config, args.single_objects, args.to_numpy, np_dims, **pl_args)
+    plotter = Plotter(
+        states,
+        config,
+        args.single_objects,
+        args.to_numpy,
+        np_dims,
+        args.small_bb,
+        **pl_args,
+    )
 
     # prepare output dirrectory
     output_dir = args.outputdir
