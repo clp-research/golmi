@@ -1,5 +1,4 @@
 import copy
-import logging
 from enum import Enum, IntEnum
 import random
 from typing import List, Set, Dict, Tuple
@@ -541,11 +540,12 @@ class Piece:
     @classmethod
     def from_config(cls, piece_id, piece_config, board_width, board_height):
         x, y = piece_config.rel_position.to_random_coords(board_width, board_height)
+        shape_matrix = ShapesMatrix[piece_config.shape.value]
         piece_obj = Obj(piece_id,
-                        obj_type=piece_config.shape.value_name,
+                        obj_type=piece_config.shape.value,
                         x=x, y=y,
-                        block_matrix=piece_config.shape.value_matrix,
-                        color=piece_config.color.value_name)
+                        block_matrix=shape_matrix.value,
+                        color=piece_config.color.value_hex)  # this is used by the UI to draw
         if piece_config.rotation:
             piece_obj.rotate(piece_config.rotation.value)
         return cls(piece_id, piece_config, piece_obj)
@@ -598,20 +598,20 @@ class Board:
                              num_distractors: int = 1,
                              varieties: Dict[PropertyNames, int] = None,
                              ambiguities: Dict[PropertyNames, int] = None):
-        distractors = create_distractor_configs(piece_config, unique_props, num_distractors, varieties, ambiguities)
+        distractors = create_distractor_configs_csp(piece_config, unique_props, num_distractors, varieties, ambiguities)
         return cls.create_compositional_from_configs(board_width, board_height, piece_config, distractors)
 
     @classmethod
     def create_compositional_from_configs(cls, board_width, board_height,
-                                          piece_config: PieceConfig, distractors: List[PieceConfig]):
+                                          piece_config: PieceConfig, distractor_set: PieceConfigSet):
         board = Board(board_width, board_height)
         # TODO this is just a quick and dirty hack
         possible_rotations = list(Rotations)
         piece_config[PropertyNames.ROTATION] = random.choice(possible_rotations)
-        for d in distractors:
+        for d in distractor_set:
             d[PropertyNames.ROTATION] = random.choice(possible_rotations)
         board.add_piece_from_config(piece_config)
-        board.add_pieces_from_configs(distractors)
+        board.add_pieces_from_configs(distractor_set.pieces)
         return board
 
 
@@ -636,22 +636,63 @@ def exclude_property_values(piece_config: PieceConfig, unique_props: Set[Propert
     return reduced_values
 
 
-def create_distractor_configs(piece_config: PieceConfig,
-                              unique_props: Set[PropertyNames],
-                              num_distractors: int = 1,
-                              varieties: Dict[PropertyNames, int] = None,
-                              ambiguities: Dict[PropertyNames, int] = None):
+def diff_prop(prop: PropertyNames, distractor_configs: List[PieceConfig], property_values):
+    for distractor_config in distractor_configs:
+        distractor_config[prop] = random.choice(property_values[prop])
+
+
+def any_prop(prop: PropertyNames, distractor_configs: List[PieceConfig], property_values):
+    for distractor_config in distractor_configs:
+        distractor_config[prop] = random.choice(property_values[prop])
+
+
+def some_prop2(prop1: PropertyNames, prop2: PropertyNames, distractor_configs: List[PieceConfig], property_values):
     """
-    :param piece_config:
-    :param unique_props:
-    :param num_distractors:
+        At least one, but never all distractors share the same prop value.
+
+        Note: The distractors initially share all prop values with the target piece.
+        Thus, we simply choose some to differ. The property values must already exclude
+        the target piece prop value, so that we cannot "rechoose" the inital value.
+
+        Furthermore, we do not want to potentially "not-select" a piece.
+    """
+    select_size = random.randint(1, len(distractor_configs) - 1)
+    for distractor_config in distractor_configs[:select_size]:
+        distractor_config[prop1] = random.choice(property_values[prop1])
+    for distractor_config in distractor_configs[select_size:]:
+        distractor_config[prop2] = random.choice(property_values[prop2])
+
+
+def create_distractor_configs_csp(piece_config: PieceConfig,
+                                  unique_props: Set[PropertyNames],
+                                  num_distractors: int = 1,
+                                  varieties: Dict[PropertyNames, int] = None) \
+        -> PieceConfigSet:
+    """
+    Note: The preference order is fix [PropertyNames.COLOR, PropertyNames.SHAPE, PropertyNames.REL_POSITION]
+
+    So, if we want to generate distractors for
+
+        color:    any other distractor, but different colors
+                    Diff(color), Any(shape), Any(pos)
+        shape:    all having the same color (no exclusions), but different shapes; random positions
+                    All(color), Diff(shape), Any(pos)
+        position: all having the same color and shape (no exclusions), but different positions
+                    All(color), All(shape), Diff(pos)
+
+        color,shape:    at least one (and never all) distractor shares the color or the shape
+                    Some(color), Some(shape), Any(pos)
+        color,position: at least one (and never all) distractor shares the color or the position; all same shapes
+                    Some(color), All(shape), Some(pos)
+        shape,position: at least one (and never all) distractor shares the shape or the position; all same color
+                    All(color), Some(shape), Some(pos)
+
+        color,shape,position:
+                    Some(color), Some(shape), Some(pos)
+
     :param varieties: this is basically an "amount-based" white list for property values. Zero, means that all available
             values are possible to choose from. Otherwise, the possible property values are reduced to the given number.
             Defaults to use all available property values.
-    :param ambiguities: We allow a more fine-grained control on how many distractors share exactly the same "non-unique"
-            properties as the target piece (at least one piece must be still identical in "non-unique" props).
-            When not given (default), then all distractors share the same values with the target piece
-            (maximal ambiguity) except for the unique properties.
     :return:
     """
     if num_distractors < 1:
@@ -663,87 +704,83 @@ def create_distractor_configs(piece_config: PieceConfig,
         PropertyNames.REL_POSITION: list(RelPositions),
         PropertyNames.ROTATION: list(Rotations)
     }
-    # initialize all looking the same
+    # initialize all looking the same (IA fails)
     distractor_configs = [piece_config.copy() for _ in range(num_distractors)]
+
     # When we have a single uniq prop, then all other pieces are disallowed to have that prop
     if len(unique_props) == 1:
-        non_unique_props = set(PropertyNames)
+        unique_prop = list(unique_props)[0]
         atoms_reduced_unique = exclude_property_values(piece_config, unique_props, property_values, varieties)
-        for unique_prop in unique_props:
-            non_unique_props.remove(unique_prop)
-            for distractor_config in distractor_configs:
-                # We choose from a variable number of atoms for the prop to differ ("variety")
-                distractor_config[unique_prop] = random.choice(atoms_reduced_unique[unique_prop])
-        if ambiguities and num_distractors > 1:
-            # We allow a more fine-grained control on how many distractors share exactly the same "non-unique"
-            # properties as the target piece (at least one piece must be still identical in "non-unique" props)
-            differ_piece_configs = random.sample(distractor_configs, k=num_distractors - 1)
-            atoms_reduced_non_unique = exclude_property_values(piece_config, non_unique_props,
-                                                               property_values, varieties)
-            for ambiguous_prop, ambiguous_count in ambiguities.items():
-                if ambiguous_prop in unique_props:
-                    logging.warning(f"Ignore unique prop {ambiguous_prop} in ambiguities {ambiguities}.")
-                    continue
-                if ambiguous_count <= 0 or ambiguous_count >= num_distractors:
-                    continue  # all should look the same in "non-unique" props
-                differ_count = len(differ_piece_configs)
-                if ambiguous_count > 1:
-                    differ_count = differ_count - ambiguous_count + 1  # one piece is always ambiguous
-                differ_distractors = random.sample(differ_piece_configs, differ_count)
-                for differ_distractor in differ_distractors:
-                    differ_distractor[ambiguous_prop] = random.choice(atoms_reduced_non_unique[ambiguous_prop])
-    # When we have a two uniq prop (which is a weird wording as we need two props to uniquely identify a piece),
-    # then all other pieces are disallowed to have that prop,
-    # but there is at least one piece that shares one uniq prop and one non-uniq prop, but not the other uniq prop
-    # (a) to rule out the non-uniq property to be mentioned
-    # (b) to force that two properties must be mentioned
-    # for example:
-    # - RED F CENTER with COLOR, SHAPE (RED, F)      requires BLUE F CENTER (shares u-SHAPE, n-POSIT)
-    # - RED F CENTER with COLOR, SHAPE (RED, F)      requires RED T CENTER  (shares u-COLOR, n-POSIT)
-    # - RED F CENTER with SHAPE, POSIT (F, CENTER)   requires RED F LEFT    (shares n-COLOR, u-SHAPE)
-    # - RED F CENTER with SHAPE, POSIT (F, CENTER)   requires RED T CENTER  (shares n-COLOR, u-POSIT)
-    # - RED F CENTER with COLOR, POSIT (RED, CENTER) requires BLUE F CENTER (shares n-SHAPE, u-POSIT)
-    # - RED F CENTER with COLOR, POSIT (RED, CENTER) requires RED F LEFT    (shares n-SHAPE, u-COLOR)
+        """
+        color:    any other distractor, but different colors
+                    Diff(color), Any(shape), Any(pos)
+        """
+        if unique_prop == PropertyNames.COLOR:
+            diff_prop(unique_prop, distractor_configs, atoms_reduced_unique)
+            any_prop(PropertyNames.SHAPE, distractor_configs, atoms_reduced_unique)
+            any_prop(PropertyNames.REL_POSITION, distractor_configs, atoms_reduced_unique)
+        """
+        shape:    all having the same color (no exclusions), but different shapes; random positions
+                    All(color), Diff(shape), Any(pos)
+        """
+        if unique_prop == PropertyNames.SHAPE:
+            # all_prop(color) initially all are the same anyway
+            diff_prop(unique_prop, distractor_configs, atoms_reduced_unique)
+            any_prop(PropertyNames.REL_POSITION, distractor_configs, atoms_reduced_unique)
+        """
+        position: all having the same color and shape (no exclusions), but different positions
+                    All(color), All(shape), Diff(pos)
+        """
+        if unique_prop == PropertyNames.REL_POSITION:
+            # all_prop(color) initially all are the same anyway
+            # all_prop(shape) initially all are the same anyway
+            diff_prop(unique_prop, distractor_configs, atoms_reduced_unique)
+
     if len(unique_props) == 2:
-        unique_props = list(unique_props)
-        non_unique_props = list(PropertyNames)
-        for unique_prop in unique_props:
-            non_unique_props.remove(unique_prop)
-        # here, make sure all pieces look different first
-        atoms_reduced = exclude_property_values(piece_config, set(PropertyNames), property_values, varieties)
-        for prop in list(PropertyNames):
-            for distractor_config in distractor_configs:
-                # We choose from a variable number of atoms for the prop to differ ("variety")
-                distractor_config[prop] = random.choice(atoms_reduced[prop])
-        # then make sure that there are two pieces that share one of the uniq props and the non-uniq prop
-        ambiguous_piece_configs = random.sample(distractor_configs, k=2)
-        for idx, ambiguous_piece_config in enumerate(ambiguous_piece_configs):
-            non_unique_prop = non_unique_props[0]
-            ambiguous_piece_config[non_unique_prop] = piece_config[non_unique_prop]
-            shared_unique_prop = unique_props[idx]  # one share the first uniq prop, one the second uniq prop
-            ambiguous_piece_config[shared_unique_prop] = piece_config[shared_unique_prop]
-    # When we have a three uniq prop (which is a weird wording as we need three props to uniquely identify a piece),
-    # then all other pieces are disallowed to have that prop,
-    # but there is are three pieces that share two uniq props, but not the other uniq prop
-    # (a) there are no non-uniq probs to be ruled out
-    # (b) to force that three properties must be mentioned
+        atoms_reduced_unique = exclude_property_values(piece_config, unique_props, property_values, varieties)
+        """
+        color,shape:    at least one (and never all) distractor shares the color or the shape
+                    Some(color), Some(shape), Any(pos)
+        """
+        if PropertyNames.COLOR in unique_props and PropertyNames.SHAPE in unique_props:
+            some_prop2(PropertyNames.COLOR, PropertyNames.SHAPE, distractor_configs, atoms_reduced_unique)
+            any_prop(PropertyNames.REL_POSITION, distractor_configs, atoms_reduced_unique)
+        """
+        color,position: at least one (and never all) distractor shares the color or the position; all same shapes
+                    Some(color), All(shape), Some(pos)
+        """
+        if PropertyNames.COLOR in unique_props and PropertyNames.REL_POSITION in unique_props:
+            some_prop2(PropertyNames.COLOR, PropertyNames.REL_POSITION, distractor_configs, atoms_reduced_unique)
+            # all_prop(shape) initially all are the same anyway
+        """
+        shape,position: at least one (and never all) distractor shares the shape or the position; all same color
+                    All(color), Some(shape), Some(pos)
+        """
+        if PropertyNames.SHAPE in unique_props and PropertyNames.REL_POSITION in unique_props:
+            # all_prop(color) initially all are the same anyway
+            some_prop2(PropertyNames.SHAPE, PropertyNames.REL_POSITION, distractor_configs, atoms_reduced_unique)
+
     if len(unique_props) == 3:
-        unique_props = list(unique_props)
-        # here, make sure all pieces look different first
-        atoms_reduced = exclude_property_values(piece_config, set(PropertyNames), property_values, varieties)
-        for prop in list(PropertyNames):
-            for distractor_config in distractor_configs:
-                # We choose from a variable number of atoms for the prop to differ ("variety")
-                distractor_config[prop] = random.choice(atoms_reduced[prop])
-        # then make sure that there is at least one piece that shares two of the uniq props
-        ambiguous_piece_configs = random.sample(distractor_configs, k=3)
-        for piece_idx, ambiguous_piece_config in enumerate(ambiguous_piece_configs):
-            for idx, uniq_prop in enumerate(unique_props):
-                if idx == (piece_idx % 3):
-                    pass  # not share this, but the other two
-                else:
-                    ambiguous_piece_config[uniq_prop] = piece_config[uniq_prop]
-    return distractor_configs
+        atoms_reduced_unique = exclude_property_values(piece_config, unique_props, property_values, varieties)
+        """
+        color,shape,position:
+                    1 x Share(color), 1 Share(shape), Diff(pos)
+                    1 x Share(color), 1 Diff(shape), Diff(pos), 
+                 others Any(color), Any(shape), Any(pos)
+        """
+        # one dist must share color and shape, otherwise IA stops already
+        share_color_shape = distractor_configs[0]
+        diff_prop(PropertyNames.REL_POSITION, [share_color_shape], atoms_reduced_unique)
+        # one dist must share color, but not shape, so that shape must be mentioned
+        share_color_not_shape = distractor_configs[1]
+        diff_prop(PropertyNames.SHAPE, [share_color_not_shape], atoms_reduced_unique)
+        diff_prop(PropertyNames.REL_POSITION, [share_color_not_shape], atoms_reduced_unique)
+        # other distractors can look like anything (but not identical to the target)
+        other_dist = distractor_configs[2:]
+        any_prop(PropertyNames.COLOR, other_dist, atoms_reduced_unique)
+        any_prop(PropertyNames.SHAPE, other_dist, atoms_reduced_unique)
+        any_prop(PropertyNames.REL_POSITION, other_dist, atoms_reduced_unique)
+    return PieceConfigSet(distractor_configs)
 
 
 def create_all_distractor_configs(piece_config: PieceConfig,
