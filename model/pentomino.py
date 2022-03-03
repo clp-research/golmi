@@ -1,117 +1,168 @@
 import copy
 import logging
-from enum import Enum
+from enum import Enum, IntEnum
 import random
-from typing import List, Set, Dict
+from typing import List, Set, Dict, Tuple
 
-from model.grid import Grid
-from model.obj import Obj
+from collections import defaultdict
+
+from .grid import Grid
+from .obj import Obj
 
 import numpy as np
 
 
-class Shapes(Enum):
-    F = ("F", [
+class ShapesMatrix(Enum):
+    F = [
         [0, 0, 0, 0, 0],
         [0, 1, 1, 0, 0],
         [0, 0, 1, 1, 0],
         [0, 0, 1, 0, 0],
         [0, 0, 0, 0, 0]
-    ])
-    I = ("I", [
+    ]
+    I = [
         [0, 0, 1, 0, 0],
         [0, 0, 1, 0, 0],
         [0, 0, 1, 0, 0],
         [0, 0, 1, 0, 0],
         [0, 0, 1, 0, 0]
-    ])
-    L = ("L", [
+    ]
+    L = [
         [0, 0, 1, 0, 0],
         [0, 0, 1, 0, 0],
         [0, 0, 1, 0, 0],
         [0, 1, 1, 0, 0],
         [0, 0, 0, 0, 0]
-    ])
-    N = ("N", [
+    ]
+    N = [
         [0, 0, 0, 0, 0],
         [0, 0, 0, 1, 0],
         [0, 0, 1, 1, 0],
         [0, 0, 1, 0, 0],
         [0, 0, 1, 0, 0]
-    ])
-    P = ("P", [
+    ]
+    P = [
         [0, 0, 0, 0, 0],
         [0, 0, 1, 0, 0],
         [0, 1, 1, 0, 0],
         [0, 1, 1, 0, 0],
         [0, 0, 0, 0, 0]
-    ])
-    T = ("T", [
+    ]
+    T = [
         [0, 0, 0, 0, 0],
         [0, 0, 0, 1, 0],
         [0, 1, 1, 1, 0],
         [0, 0, 0, 1, 0],
         [0, 0, 0, 0, 0]
-    ])
-    U = ("U", [
+    ]
+    U = [
         [0, 0, 0, 0, 0],
         [0, 1, 1, 0, 0],
         [0, 1, 0, 0, 0],
         [0, 1, 1, 0, 0],
         [0, 0, 0, 0, 0]
-    ])
-    V = ("V", [
+    ]
+    V = [
         [0, 0, 0, 0, 0],
         [0, 1, 1, 1, 0],
         [0, 1, 0, 0, 0],
         [0, 1, 0, 0, 0],
         [0, 0, 0, 0, 0]
-    ])
-    W = ("W", [
+    ]
+    W = [
         [0, 0, 0, 0, 0],
         [0, 1, 0, 0, 0],
         [0, 1, 1, 0, 0],
         [0, 0, 1, 1, 0],
         [0, 0, 0, 0, 0]
-    ])
-    X = ("X", [
+    ]
+    X = [
         [0, 0, 0, 0, 0],
         [0, 0, 1, 0, 0],
         [0, 1, 1, 1, 0],
         [0, 0, 1, 0, 0],
         [0, 0, 0, 0, 0]
-    ])
-    Y = ("Y", [
+    ]
+    Y = [
         [0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0],
         [1, 1, 1, 1, 0],
         [0, 0, 1, 0, 0],
         [0, 0, 0, 0, 0]
-    ])
-    Z = ("Z", [
+    ]
+    Z = [
         [0, 0, 0, 0, 0],
         [0, 0, 0, 1, 0],
         [0, 1, 1, 1, 0],
         [0, 1, 0, 0, 0],
         [0, 0, 0, 0, 0]
-    ])
+    ]
 
-    def __init__(self, value_name, value_matrix):
-        self.value_name = value_name
-        self.value_matrix = value_matrix
+
+class Shapes(Enum):
+    F = "F"
+    I = "I"
+    L = "L"
+    N = "N"
+    P = "P"
+    T = "T"
+    U = "U"
+    V = "V"
+    W = "W"
+    X = "X"
+    Y = "Y"
+    Z = "Z"
 
     def __repr__(self):
-        return f"{self.value_name}"
+        return f"{self.value}"
+
+    def __key(self):
+        return self.value
+
+    def __hash__(self):
+        return hash(self.__key())
 
     def __str__(self):
-        return self.value_name
+        return self.value
+
+    def __lt__(self, other):
+        return self.value.__lt__(other.value)
+
+    def to_json(self):
+        return self.value
+
+    @classmethod
+    def from_json(cls, value):
+        return cls[value]
 
 
-class Rotations(Enum):
+class Rotations(IntEnum):
     DEGREE_0 = 0
     DEGREE_90 = 90
     DEGREE_180 = 180
     DEGREE_270 = 270
+
+    def __repr__(self):
+        return f"{self.value}"
+
+    def __key(self):
+        return self.value
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __str__(self):
+        return self.value
+
+    def __lt__(self, other):
+        return self.value.__lt__(other.value)
+
+    def to_json(self):
+        return self.value
+
+    @classmethod
+    def from_json(cls, value):
+        return cls[value]
 
 
 class Colors(Enum):
@@ -125,31 +176,69 @@ class Colors(Enum):
     BROWN = ("brown", "#8b4513", [139, 69, 19])
     GREY = ("grey", "#808080", [128, 128, 128])
     PINK = ("pink", "#ffc0cb", [255, 192, 203])
-    OLIVE = ("olive", "#808000", [128, 128, 0])
-    NAVY = ("navy", "#000080", [0, 0, 128])  # dark blue
+    OLIVE_GREEN = ("olive green", "#808000", [128, 128, 0])  # dark yellowish-green
+    NAVY_BLUE = ("navy blue", "#000080", [0, 0, 128])  # dark blue
 
     def __init__(self, value_name, value_hex, value_rgb):
         self.value_name = value_name
         self.value_hex = value_hex
         self.value_rgb = value_rgb
 
+    def __repr__(self):
+        return f"{self.value_name}"
+
+    def __key(self):
+        return self.value_name
+
+    def __hash__(self):
+        return hash(self.__key())
+
     def __str__(self):
         return self.value_name
+
+    def __lt__(self, other):
+        return self.value_name.__lt__(other.value_name)
+
+    def to_json(self):
+        return self.value_name
+
+    @classmethod
+    def from_json(cls, value_name):
+        return cls[value_name.upper().replace(" ", "_")]
 
 
 class RelPositions(Enum):
     TOP_LEFT = "top left"
-    TOP_CENTER = "top"
+    TOP_CENTER = "top center"
     TOP_RIGHT = "top right"
     CENTER_RIGHT = "right"
     BOTTOM_RIGHT = "bottom right"
-    BOTTOM_CENTER = "bottom"
+    BOTTOM_CENTER = "bottom center"
     BOTTOM_LEFT = "bottom left"
     CENTER_LEFT = "left"
     CENTER = "center"
 
+    def __repr__(self):
+        return f"{self.value}"
+
+    def __key(self):
+        return self.value
+
+    def __hash__(self):
+        return hash(self.__key())
+
     def __str__(self):
         return self.value
+
+    def __lt__(self, other):
+        return self.value.__lt__(other.value)
+
+    def to_json(self):
+        return self.value
+
+    @classmethod
+    def from_json(cls, value):
+        return cls[value.upper().replace(" ", "_")]
 
     def to_random_coords(self, board_width, board_height):
         # the relative positions are derived from their own "grid"-like board
@@ -251,6 +340,28 @@ class PropertyNames(Enum):
     REL_POSITION = "rel_position"
     ROTATION = "rotation"
 
+    def __repr__(self):
+        return f"{self.value}"
+
+    def __key(self):
+        return self.value
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __str__(self):
+        return self.value
+
+    def __lt__(self, other):
+        return self.value.__lt__(other.value)
+
+    def to_json(self):
+        return self.value
+
+    @classmethod
+    def from_json(cls, value):
+        return PropertyNames[value.upper()]
+
     @classmethod
     def from_string(cls, name):
         for pn in list(cls):
@@ -295,14 +406,129 @@ class PieceConfig:
         raise Exception(f"Cannot set {prop_name}.")
 
     def __repr__(self):
-        return f"PieceConfig({self.shape}, {self.color}, {self.rel_position})"
+        return f"({self.shape}, {self.color}, {self.rel_position})"
+
+    def __str__(self):
+        return f"({self.shape}, {self.color}, {self.rel_position})"
+
+    def __key(self):
+        return self.shape, self.color, self.rel_position
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __lt__(self, other):
+        return self.__key() < other.__key()
+
+    def __eq__(self, other):
+        if isinstance(other, PieceConfig):
+            return self.__key() == other.__key()
+        return NotImplemented
 
     def copy(self):
         return PieceConfig(self.color, self.shape, self.rel_position)
 
+    def to_json(self):
+        return self.color.to_json(), self.shape.to_json(), self.rel_position.to_json(), self.rotation.to_json()
+
+    @classmethod
+    def from_json(cls, t: Tuple):
+        return cls(Colors.from_json(t[0]), Shapes.from_json(t[1]), RelPositions.from_json(t[2]),
+                   Rotations.from_json(t[3]))
+
     @classmethod
     def from_random(cls, colors, shapes, rel_positions):
         return cls(random.choice(colors), random.choice(shapes), random.choice(rel_positions))
+
+    @staticmethod
+    def create_all(num_colors: int = None, num_shapes: int = None, num_positions: int = None) -> List:
+        property_values = {
+            PropertyNames.COLOR: list(Colors)[:num_colors] if num_colors else list(Colors),
+            PropertyNames.SHAPE: list(Shapes)[:num_shapes] if num_shapes else list(Shapes),
+            PropertyNames.REL_POSITION: list(RelPositions)[:num_positions] if num_positions else list(RelPositions)
+        }
+        return DistractorConfigGenerator(property_values).generate_all_distractor_configs()
+
+    @staticmethod
+    def group_by_pos(pieces: List):
+        pieces_by_pos = defaultdict(list)
+        for piece in pieces:
+            pieces_by_pos[piece.rel_position].append(piece)
+        # print("pieces_by_pos", [len(pieces_by_pos[p]) for p in pieces_by_pos])
+        return pieces_by_pos
+
+
+class PieceConfigSet:
+
+    def __init__(self, pieces: List[PieceConfig]):
+        self.pieces = sorted(pieces)  # allow duplicates, but ignore order
+
+    def __repr__(self):
+        return f"PCS[{self.pieces}]"
+
+    def __str__(self):
+        return f"({self.pieces})"
+
+    def __iter__(self):
+        return self.pieces.__iter__()
+
+    def __len__(self):
+        return len(self.pieces)
+
+    def __key(self):
+        return tuple(self.pieces)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        if isinstance(other, PieceConfigSet):
+            return self.__key() == other.__key()
+        return NotImplemented
+
+    def to_json(self):
+        return [p.to_json() for p in self.pieces]
+
+    @classmethod
+    def from_json(cls, pieces: List):
+        return cls([PieceConfig.from_json(p) for p in pieces])
+
+
+class PieceConfigSetSampler:
+
+    def sample_set(self, set_size):
+        raise NotImplementedError()
+
+
+class RestrictivePieceConfigSetSampler(PieceConfigSetSampler):
+
+    def __init__(self, pieces: List[PieceConfig], pieces_per_pos: int = 2):
+        self.pieces_per_pos = pieces_per_pos
+        self.pieces_by_pos: Dict[RelPositions, List[PieceConfig]] = PieceConfig.group_by_pos(pieces)
+
+    def sample_set(self, n_pieces: int):
+        # hierarchical sampling:
+        # 1. sample position (so we can block certain positions if drawn already twice)
+        # 2. sample piece on position
+        # Note: if you dont need this, simply use random.sample(n,k)
+        allowed_positions = list(RelPositions)
+        num_pos = len(allowed_positions)
+        num_possible = self.pieces_per_pos * num_pos
+        if num_possible < n_pieces:
+            raise Exception(f"with pieces_per_pos={self.pieces_per_pos} and num_pos={num_pos} "
+                            f"there can be maximal n_pieces={num_possible} in the set")
+        pos_counts = dict([(pos, 0) for pos in allowed_positions])
+        piece_set = []
+        for _ in range(n_pieces):
+            pos = random.choice(allowed_positions)
+            piece = random.choice(self.pieces_by_pos[pos])
+            piece_set.append(piece)
+            pos_counts[piece.rel_position] += 1
+            for pos, counts in pos_counts.items():
+                if counts >= 2:
+                    if pos in allowed_positions:
+                        allowed_positions.remove(pos)
+        return PieceConfigSet(piece_set)
 
 
 class Piece:
@@ -647,25 +873,30 @@ class DistractorConfigGenerator:
 
 class PentoIncrementalAlgorithm:
 
-    def __init__(self, property_names):
+    def __init__(self, preference_order: List[PropertyNames], start_tokens: List = None):
         """
         :param property_names: the order does matter! since first props rule more likely some distractors out in the
         first iteration and later props less likely rule out remaining distractors (if there are any left)
         e.g. the first prop might already rule out everything and the algorithm stops, though others would do the same
         """
-        self.property_names = property_names
+        self.preference_order = preference_order
         self.general_types = ["piece"]
         self.start_tokens = ["Take", "Select", "Get"]
+        if start_tokens:
+            self.start_tokens = start_tokens
 
-    def generate(self, pieces: List[PieceConfig], selection: PieceConfig):
+    def generate(self, piece_set: PieceConfigSet, selection: PieceConfig, is_selection_in_pieces=False,
+                 return_expression=True):
         """
             pieces: a list of pieces (incl. the selection)
             selection: a selected pieces (within pieces)
         """
-        distractors = set(pieces)
+        distractors = set(piece_set.pieces)
+        if is_selection_in_pieces:
+            distractors.remove(selection)
         # property-value pairs are collected here
         properties = {}
-        for property_name in self.property_names:
+        for property_name in self.preference_order:
             property_value = selection[property_name]
             # check what objects would be eliminated using this prop-val pair
             excluded_distractors = self._exclude(property_name, property_value, distractors)
@@ -675,22 +906,29 @@ class PentoIncrementalAlgorithm:
                 # update the contrast set
                 for o in excluded_distractors:
                     distractors.remove(o)
-            # check if enough properties have been collected to rule all distractors
+            # check if enough properties have been collected to rule out all distractors
             if not len(distractors):
-                return self._verbalize_properties(properties), properties
-        # no expression that rules out all distractors was found
-        # original algorithm declares "IA: failure", but with the task at hand
-        # this case is expected. User is supported by feedback.
-        return self._verbalize_properties(properties), properties
+                if return_expression:
+                    return self._verbalize_properties(properties), properties, True
+                return properties, True
+        # there might be a case where no properties have been found at all (all pieces are the same)
+        # in that case we might want to mention all properties (instead of saying nothing)
+        if len(properties) == 0:
+            properties = dict([(pn, selection[pn]) for pn in list(PropertyNames)])
+        if return_expression:
+            return self._verbalize_properties(properties, False), properties, False
+        return properties, False
 
-    def _verbalize_properties(self, properties):
+    def _verbalize_properties(self, properties, is_discriminating=True):
         start_token = random.choice(self.start_tokens)
         shape = properties[PropertyNames.SHAPE] if PropertyNames.SHAPE in properties else random.choice(
             self.general_types)
         color = properties[PropertyNames.COLOR] if PropertyNames.COLOR in properties else ""
         pos = f"in the {properties[PropertyNames.REL_POSITION]}" if PropertyNames.REL_POSITION in properties else ""
         ref_exp = f"{color} {shape} {pos}".strip()  # strip whitespaces if s.t. is empty
-        return f"{start_token} the {ref_exp}"
+        if is_discriminating:
+            return f"{start_token} the {ref_exp}"
+        return f"{start_token} one of the {ref_exp}"
 
     def _exclude(self, property_name: PropertyNames, selection_property_value, distractors: Set[PieceConfig]):
         """
