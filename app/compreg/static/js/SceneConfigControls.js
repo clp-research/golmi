@@ -16,8 +16,8 @@ $(document).ready(function () {
                     {name: "grey", value: "GREY"},
                     {name: "cyan", value: "CYAN"},
                     {name: "pink", value: "PINK"},
-                    {name: "olive", value: "OLIVE"},
-                    {name: "navy", value: "NAVY"}
+                    {name: "olive green", value: "OLIVE_GREEN"},
+                    {name: "navy blue", value: "NAVY_BLUE"}
                 ],
                 onChange: function (value, text, $selectedItem) {
                     console.log("select_target_color: " + value)
@@ -48,11 +48,11 @@ $(document).ready(function () {
                 values: [
                     {name: "random", value: "RANDOM"},
                     {value: "TOP_LEFT", name: "top left"},
-                    {value: "TOP_CENTER", name: "top"},
+                    {value: "TOP_CENTER", name: "top center"},
                     {value: "TOP_RIGHT", name: "top right"},
                     {value: "CENTER_RIGHT", name: "right"},
                     {value: "BOTTOM_RIGHT", name: "bottom right"},
-                    {value: "BOTTOM_CENTER", name: "bottom"},
+                    {value: "BOTTOM_CENTER", name: "bottom center"},
                     {value: "BOTTOM_LEFT", name: "bottom left"},
                     {value: "CENTER_LEFT", name: "left"},
                     {value: "CENTER", name: "center"}
@@ -134,35 +134,6 @@ $(document).ready(function () {
                     interpretLabel: function (value) {
                         return value === 0 ? "all" : value + 1;
                     }*/
-                })
-
-            // Varieties Configuration
-            $("#select_ambiguous_num_colors")
-                .slider({
-                    min: 1, max: 4,
-                    start: 1, step: 1,
-                    onChange: function (value, text, $selectedItem) {
-                        console.log("select_ambiguous_num_colors: " + value)
-                        scene_config.ambiguity.num_colors = value
-                    }
-                })
-            $("#select_ambiguous_num_shapes")
-                .slider({
-                    min: 1, max: 4,
-                    start: 1, step: 1,
-                    onChange: function (value, text, $selectedItem) {
-                        console.log("select_ambiguous_num_shapes: " + value)
-                        scene_config.ambiguity.num_shapes = value
-                    }
-                })
-            $("#select_ambiguous_num_positions")
-                .slider({
-                    min: 1, max: 4,
-                    start: 1, step: 1,
-                    onChange: function (value, text, $selectedItem) {
-                        console.log("select_ambiguous_num_positions: " + value)
-                        scene_config.ambiguity.num_positions = value
-                    }
                 })
         }
     };

@@ -39,11 +39,6 @@ $(document).ready(function () {
             num_colors: 0, // all
             num_shapes: 0, // all
             num_positions: 0 // all
-        },
-        ambiguity: {
-            num_colors: 1, // looks initially more interesting
-            num_shapes: 1, // looks initially more interesting
-            num_positions: 1 // often only two pieces "fit" into a single area
         }
     }
     const sceneControls = new document.SceneConfigControls(sceneConfig)

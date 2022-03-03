@@ -2,7 +2,8 @@ from flask_cors import cross_origin
 from flask import render_template, Blueprint, request
 from app import DEFAULT_CONFIG_FILE
 from app.app import socketio, room_manager
-from model.pentomino import Board, PieceConfig, Colors, Shapes, RelPositions, PropertyNames, create_distractor_configs, \
+from model.pentomino import Board, PieceConfig, Colors, Shapes, RelPositions, PropertyNames, \
+    create_distractor_configs_csp, \
     PentoIncrementalAlgorithm
 from model.state import State
 import random
@@ -54,7 +55,6 @@ def on_new_comp_scene(event):
 
     distractors_config = scene_config["distractors"]
     varieties_config = scene_config["varieties"]
-    ambiguity_config = scene_config["ambiguity"]
 
     model = room_manager.get_models_of_client(request.sid)[0]
     target_piece_color_selected = scene_config["target_piece"]["color"]
@@ -76,24 +76,19 @@ def on_new_comp_scene(event):
 
     target = PieceConfig(target_piece_color, target_piece_shape, piece_rel_position)
     unique_props = set(property_names)
-    distractors = create_distractor_configs(piece_config=target, unique_props=unique_props,
-                                            num_distractors=distractors_config["num_distractors"],
-                                            varieties={
-                                                PropertyNames.COLOR: varieties_config["num_colors"],
-                                                PropertyNames.SHAPE: varieties_config["num_shapes"],
-                                                PropertyNames.REL_POSITION: varieties_config["num_positions"],
-                                            },
-                                            ambiguities={
-                                                PropertyNames.COLOR: ambiguity_config["num_colors"],
-                                                PropertyNames.SHAPE: ambiguity_config["num_shapes"],
-                                                PropertyNames.REL_POSITION: ambiguity_config["num_positions"],
-                                            })
-    # actually lets double check with the IA
-    # uff this really didnt work as expected! the IA is mentioning stuff really more often
-    # instruction = create_surface_structure(target, unique_props)
-    instruction, _ = PentoIncrementalAlgorithm([PropertyNames.SHAPE, PropertyNames.COLOR, PropertyNames.REL_POSITION]).generate(distractors, target)
+    # The preference order is FIX as in KF BA work
+    pia = PentoIncrementalAlgorithm([PropertyNames.COLOR, PropertyNames.SHAPE, PropertyNames.REL_POSITION])
+    distractors = create_distractor_configs_csp(piece_config=target, unique_props=unique_props,
+                                                num_distractors=distractors_config["num_distractors"],
+                                                varieties={
+                                                    PropertyNames.COLOR: varieties_config["num_colors"],
+                                                    PropertyNames.SHAPE: varieties_config["num_shapes"],
+                                                    PropertyNames.REL_POSITION: varieties_config["num_positions"],
+                                                })
+    instruction, _, _ = pia.generate(distractors, target)
     board = Board.create_compositional_from_configs(board_width=model.config.width, board_height=model.config.height,
-                                                    piece_config=target, distractors=distractors)
+                                                    piece_config=target, distractor_set=distractors)
+
     # uff this is ugly
     state = State()
     state.objs = dict([(piece.piece_id, piece.piece_obj) for piece in board.pieces])
