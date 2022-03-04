@@ -455,9 +455,12 @@ class Plotter:
         }
 
         index_2_rgb = {k: np.array(colors[v]) for k, v in cols.items()}
+        state_array = np.copy(data).astype(object)
         rgb_shape = tuple(np.append(data.shape, 3))
         state_array = np.empty(rgb_shape)
-        np.vectorize(index_2_rgb.get)(state_array)
+
+        for key, rgb in index_2_rgb.items():
+            state_array[data == key] = rgb
 
         # state_array = np.zeros(data.shape).tolist()
         # # substitute each color index with RGB values
