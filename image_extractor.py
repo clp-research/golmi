@@ -28,6 +28,7 @@ Syntax:
 
 
 import argparse
+from colorsys import rgb_to_hls
 import itertools
 import math
 import multiprocessing as mp
@@ -141,6 +142,7 @@ class Plotter:
         to_numpy,
         np_dims,
         small_bb,
+        matplotlib,
         plot_objects=False,
         plot_targets=False,
         plot_grippers=False,
@@ -152,6 +154,7 @@ class Plotter:
         self.to_numpy = to_numpy
         self.np_dims = tuple((i / 100 for i in np_dims))
         self.small_bb = small_bb
+        self.matplotlib = matplotlib
         self.single_objects = single_objects
         self.plot_objects = plot_objects
         self.plot_targets = plot_targets
@@ -324,8 +327,9 @@ class Plotter:
 
         # initialize variables to plot the grid
         data = np.zeros((x_dim, y_dim))
-        cols = ["white"]
+        cols = ["#FFFFFF"]
         bounds = [-10, 0.5]
+        col_dict = {0: "#FFFFFF"}
         gripped = set()
         val = 1
 
@@ -334,7 +338,8 @@ class Plotter:
             for i, obj in enumerate(state["targets"].values()):
                 val += i
                 bounds.append(val + 0.5)
-                cols.append("cornsilk")
+                cols.append("#fff8dc")
+                col_dict[val] = "#fff8dc"
                 self.draw_obj(obj, data, val)
 
         # plot objects
@@ -344,13 +349,14 @@ class Plotter:
                 val += i
                 bounds.append(val + 0.5)
                 cols.append(obj["color"])
+                col_dict[val] = obj["color"]
                 self.draw_obj(obj, data, val)
                 if obj["gripped"] is True:
                     gripped.add(val)
 
-        return data, cols, bounds, gripped
+        return data, cols, col_dict, bounds, gripped
 
-    def get_image_array(self, state, data, cols, bounds, gripped):
+    def get_image_array_matplotlib(self, state, data, cols, bounds, gripped):
         """
         convert a state to an RGB numpy array
         """
@@ -434,6 +440,37 @@ class Plotter:
         plt.close(fig)
         return buf
 
+    def get_image_array(self, state, data, cols, bounds, gripped):
+        colors = {
+            "#FFFFFF": [255, 255, 255],  # white
+            "#8b4513": [139, 69, 19],    # brown
+            "#808080": [128, 128, 128],  # grey
+            "#ffa500": [255, 165, 0],    # orange
+            "#800080": [128, 0, 128],    # purple
+            "#0000ff": [0, 0, 255],      # blue
+            "#ffff00": [255, 255, 0],    # yellow
+            "#ff0000": [255, 0, 0],      # red
+            "#fff8dc": [255, 248, 220],  # cornsilk
+            "#008000": [0, 128, 0],      # green
+        }
+
+        index_2_rgb = {k: np.array(colors[v]) for k, v in cols.items()}
+        rgb_shape = tuple(np.append(data.shape, 3))
+        state_array = np.empty(rgb_shape)
+        np.vectorize(index_2_rgb.get)(state_array)
+
+        # state_array = np.zeros(data.shape).tolist()
+        # # substitute each color index with RGB values
+        # for y, row in enumerate(data):
+        #     for x, tile in enumerate(row):
+        #         this_col = cols[tile]
+        #         rgb = colors[this_col]
+        #         state_array[y][x] = rgb
+
+        kron_dim = np.array(self.np_dims) * 100 / data.shape
+        kron_dim = tuple(np.append(kron_dim, 1).astype(int))
+        return np.kron(np.array(state_array), np.ones(kron_dim)).astype(int)
+
     def get_single_object(self, np_state, obj):
         """
         given the RGB np.array of the state and the object dictionary,
@@ -468,8 +505,6 @@ class Plotter:
 
             x_limit = (obj["x"] + max_x + 1) * x_factor
             y_limit = (obj["y"] + max_y + 1) * y_factor
-
-            #breakpoint()
 
         else:
             this_x = int(max(0, obj["x"] * x_factor))
@@ -513,11 +548,17 @@ class Plotter:
         single threaded function to generate an image or numpy array from a state
         """
         state, output_name = argument
-        data, cols, bounds, gripped = self.get_matrix(state)
+        data, cols, col_dict, bounds, gripped = self.get_matrix(state)
         output = dict()
 
         # obtain an RGB array of the entire state
-        np_state = self.get_image_array(state, data, cols, bounds, gripped)
+        if self.matplotlib is True:
+            np_state = self.get_image_array_matplotlib(
+                state, data, cols, bounds, gripped
+            )
+        else:
+            np_state = self.get_image_array(state, data, col_dict, bounds, gripped)
+
         output["state"] = np_state
 
         # slice single objects from the RGB array
@@ -576,6 +617,11 @@ def main():
         action="store_true",
         help="single objects are saved with the smallest possible bounding box",
     )
+    parser.add_argument(
+        "--matplotlib",
+        action="store_true",
+        help="use matplotlib to render the RGB array of the image",
+    )
     args = parser.parse_args()
 
     w, h = args.np_dim.split("x")
@@ -602,6 +648,7 @@ def main():
         args.to_numpy,
         np_dims,
         args.small_bb,
+        args.matplotlib,
         **pl_args,
     )
 
