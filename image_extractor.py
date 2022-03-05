@@ -28,7 +28,6 @@ Syntax:
 
 
 import argparse
-from colorsys import rgb_to_hls
 import itertools
 import math
 import multiprocessing as mp
@@ -454,25 +453,22 @@ class Plotter:
             "#008000": [0, 128, 0],      # green
         }
 
+        # obtain an index to rgb conversion dictionary and create an
+        # empty array with 3 dimensions as empty canvas
         index_2_rgb = {k: np.array(colors[v]) for k, v in cols.items()}
         state_array = np.copy(data).astype(object)
         rgb_shape = tuple(np.append(data.shape, 3))
         state_array = np.empty(rgb_shape)
 
+        # "plot" objects
         for key, rgb in index_2_rgb.items():
             state_array[data == key] = rgb
 
-        # state_array = np.zeros(data.shape).tolist()
-        # # substitute each color index with RGB values
-        # for y, row in enumerate(data):
-        #     for x, tile in enumerate(row):
-        #         this_col = cols[tile]
-        #         rgb = colors[this_col]
-        #         state_array[y][x] = rgb
-
+        # use kronecker product with np.ones arrays to scale up
+        # image to desired output dimensions
         kron_dim = np.array(self.np_dims) * 100 / data.shape
         kron_dim = tuple(np.append(kron_dim, 1).astype(int))
-        return np.kron(np.array(state_array), np.ones(kron_dim)).astype(int)
+        return np.kron(state_array, np.ones(kron_dim)).astype(int)
 
     def get_single_object(self, np_state, obj):
         """
