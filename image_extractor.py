@@ -263,7 +263,7 @@ class Plotter:
 
         return results
 
-    def get_borders(self, grid, gripped):
+    def get_borders(self, grid, gripped, to_add=0.5):
         """
         iterate over the the 2D array (from get_matrix) and detect borders
         """
@@ -282,32 +282,32 @@ class Plotter:
                     # upper bound
                     if y == 0 or grid[y - 1][x] != tile:
                         this_line = (
-                            (x - 0.5, x + 0.5),
-                            (y - 0.5, y - 0.5),
+                            (x - to_add, x + to_add),
+                            (y - to_add, y - to_add),
                         )
                         output_list.append(this_line)
 
                     # lower bound
                     if y == len(grid) - 1 or grid[y + 1][x] != tile:
                         this_line = (
-                            (x - 0.5, x + 0.5),
-                            (y + 0.5, y + 0.5),
+                            (x - to_add, x + to_add),
+                            (y + to_add, y + to_add),
                         )
                         output_list.append(this_line)
 
                     # right bound
                     if x == len(grid[0]) - 1 or grid[y][x + 1] != tile:
                         this_line = (
-                            (x + 0.5, x + 0.5),
-                            (y - 0.5, y + 0.5),
+                            (x + to_add, x + to_add),
+                            (y - to_add, y + to_add),
                         )
                         output_list.append(this_line)
 
                     # left bound
                     if x == 0 or grid[y][x - 1] != tile:
                         this_line = (
-                            (x - 0.5, x - 0.5),
-                            (y - 0.5, y + 0.5),
+                            (x - to_add, x - to_add),
+                            (y - to_add, y + to_add),
                         )
                         output_list.append(this_line)
 
@@ -450,8 +450,35 @@ class Plotter:
             "#ffff00": [255, 255, 0],    # yellow
             "#ff0000": [255, 0, 0],      # red
             "#fff8dc": [255, 248, 220],  # cornsilk
-            "#008000": [0, 128, 0],      # green
+            "#008000": [0, 128, 0]       # green
         }
+
+        def plot_border(thick=True):
+            """
+            
+            """
+            x, y = border
+            if len(set(x)) == 1:
+                # vertical line
+                line_x = max(0, (x[0] + 0.5) * kron_dim[0])
+                line_x = min(scaled_rgb.shape[1] - 1, line_x)
+                y_start, y_end = y
+                y_start = max(0, (y_start + 0.5) * kron_dim[0])
+                y_end = max(0, (y_end + 0.6) * kron_dim[0])
+                scaled_rgb[int(y_start):int(y_end), int(line_x)] = black
+                if thick is True:
+                    scaled_rgb[int(y_start):int(y_end), int(line_x) -1] = black
+
+            else:
+                # horizontal line
+                line_y = max(0, (y[0] + 0.5) * kron_dim[0])
+                line_y = min(scaled_rgb.shape[0] - 1, line_y)
+                x_start, x_end = x
+                x_start = max(0, (x_start + 0.5) * kron_dim[0])
+                x_end = max(0, (x_end + 0.6) * kron_dim[0])
+                scaled_rgb[int(line_y), int(x_start):int(x_end)] = black
+                if thick is True:
+                    scaled_rgb[int(line_y) -1 , int(x_start) -1:int(x_end)] = black
 
         # obtain an index to rgb conversion dictionary and create an
         # empty array with 3 dimensions as empty canvas
@@ -468,7 +495,21 @@ class Plotter:
         # image to desired output dimensions
         kron_dim = np.array(self.np_dims) * 100 / data.shape
         kron_dim = tuple(np.append(kron_dim, 1).astype(int))
-        return np.kron(state_array, np.ones(kron_dim)).astype(int)
+        scaled_rgb = np.kron(state_array, np.ones(kron_dim)).astype(int)
+
+        borders, grip_borders = self.get_borders(data, gripped, to_add=0.5)
+        l_borders = self.find_long(borders)
+        l_grip_borders = self.find_long(grip_borders)
+
+        if self.plot_borders is True:
+            black = np.array([0, 0, 0])
+            for border in l_borders:
+                plot_border(thick=False)
+
+            for border in l_grip_borders:
+                plot_border(thick=True)
+
+        return scaled_rgb
 
     def get_single_object(self, np_state, obj):
         """
@@ -592,7 +633,8 @@ def main():
         "--plot",
         nargs="+",
         action="store",
-        help="Elements to plot: " + ", ".join(plottable),
+        choices=plottable,
+        help="Elements to plot",
         required=True,
     )
     parser.add_argument("--outputdir", action="store", required=True)
