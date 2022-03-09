@@ -509,45 +509,6 @@ class Plotter:
             for border in l_grip_borders:
                 plot_border(thick=True)
 
-        if self.highlight is True:
-            highlight_color = np.array([255, 51, 255])
-            for obj in state["objs"].values():
-                if obj["gripped"] is True:
-                    # conversion from golmi configuration to data grid (adjusted for move step)
-                    x_factor = data.shape[1] / self.config["width"]
-                    y_factor = data.shape[0] / self.config["height"]
-
-                    # upper-left corner
-                    obj_x = int(max(0, obj["x"] * kron_dim[0] * x_factor))
-                    obj_y = int(max(0, obj["y"] * kron_dim[0] * y_factor))
-
-                    # lower-right corner
-                    limit_x = int(
-                        min(
-                            scaled_rgb.shape[1] - 1,
-                            (obj["x"] + len(obj["block_matrix"][0]))
-                            * kron_dim[0]
-                            * x_factor,
-                        )
-                    )
-                    limit_y = int(
-                        min(
-                            scaled_rgb.shape[0] - 1,
-                            (obj["y"] + len(obj["block_matrix"]))
-                            * kron_dim[0]
-                            * y_factor,
-                        )
-                    )
-
-                    # upper border
-                    scaled_rgb[obj_y, obj_x:limit_x] = highlight_color
-                    # lower border
-                    scaled_rgb[limit_y, obj_x:limit_x] = highlight_color
-                    # left border
-                    scaled_rgb[obj_y:limit_y, obj_x] = highlight_color
-                    # right border
-                    scaled_rgb[obj_y:limit_y, limit_x] = highlight_color
-
         return scaled_rgb
 
     def get_single_object(self, np_state, obj):
@@ -620,11 +581,50 @@ class Plotter:
                 else:
                     this_y -= to_add
 
-        return np_state[int(this_y) : int(y_limit), int(this_x) : int(x_limit)]
+        # return a copy to allow highlighting without affecting sliced images
+        return np.copy(np_state[int(this_y) : int(y_limit), int(this_x) : int(x_limit)])
 
-    def single(self, argument):
+    def highlight_gripped(self, obj, highlight_color, rgb_array):
         """
-        single threaded function to generate an image or numpy array from a state
+        given an state represented as a RGB-array, this function will
+        highlight gripped elements
+        """
+        # conversion from golmi configuration to data grid (adjusted for move step)
+        x_factor = (rgb_array.shape[1] / self.config["width"])
+        y_factor = (rgb_array.shape[0] / self.config["height"])
+
+        # upper-left corner
+        obj_x = int(max(0, obj["x"] * x_factor))
+        obj_y = int(max(0, obj["y"] * y_factor))
+
+        # lower-right corner
+        limit_x = int(
+            min(
+                rgb_array.shape[1] - 1,
+                (obj["x"] + len(obj["block_matrix"][0]))
+                * x_factor
+            )
+        )
+        limit_y = int(
+            min(
+                rgb_array.shape[0] - 1,
+                (obj["y"] + len(obj["block_matrix"]))
+                * y_factor
+            )
+        )
+
+        # upper border
+        rgb_array[obj_y, obj_x:limit_x] = highlight_color
+        # lower border
+        rgb_array[limit_y, obj_x:limit_x] = highlight_color
+        # left border
+        rgb_array[obj_y:limit_y, obj_x] = highlight_color
+        # right border
+        rgb_array[obj_y:limit_y, limit_x] = highlight_color
+
+    def run(self, argument):
+        """
+        main function to generate an image or numpy array from a state
         """
         state, output_name = argument
         data, cols, col_dict, bounds, gripped = self.get_matrix(state)
@@ -638,13 +638,19 @@ class Plotter:
         else:
             np_state = self.get_image_array(state, data, col_dict, bounds, gripped)
 
-        output["state"] = np_state
-
         # slice single objects from the RGB array
         if self.single_objects is True:
             for idn, obj in state["objs"].items():
                 this_obj = self.get_single_object(np_state, obj)
                 output[f"object_{idn}"] = this_obj
+
+        if self.highlight is True:
+            highlight_color = np.array([255, 51, 255])
+            for obj in state["objs"].values():
+                if obj["gripped"] is True:
+                    self.highlight_gripped(obj, highlight_color, np_state)
+
+        output["state"] = np_state
 
         # save output in .npz file
         if self.to_numpy is True:
@@ -745,7 +751,7 @@ def main():
 
     if args.single:
         for i, image in enumerate(mp_args):
-            plotter.single(image)
+            plotter.run(image)
             progress_bar(
                 i + 1,
                 len(states),
@@ -755,7 +761,7 @@ def main():
 
     else:
         with mp.Pool() as pool:
-            for i, _ in enumerate(pool.imap(plotter.single, mp_args)):
+            for i, _ in enumerate(pool.imap(plotter.run, mp_args)):
                 progress_bar(
                     i + 1,
                     len(states),
