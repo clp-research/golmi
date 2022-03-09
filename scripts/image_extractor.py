@@ -142,6 +142,7 @@ class Plotter:
         np_dims,
         small_bb,
         matplotlib,
+        highlight,
         plot_objects=False,
         plot_targets=False,
         plot_grippers=False,
@@ -154,6 +155,7 @@ class Plotter:
         self.np_dims = tuple((i / 100 for i in np_dims))
         self.small_bb = small_bb
         self.matplotlib = matplotlib
+        self.highlight = highlight
         self.single_objects = single_objects
         self.plot_objects = plot_objects
         self.plot_targets = plot_targets
@@ -442,21 +444,19 @@ class Plotter:
     def get_image_array(self, state, data, cols, bounds, gripped):
         colors = {
             "#FFFFFF": [255, 255, 255],  # white
-            "#8b4513": [139, 69, 19],    # brown
+            "#8b4513": [139, 69, 19],  # brown
             "#808080": [128, 128, 128],  # grey
-            "#ffa500": [255, 165, 0],    # orange
-            "#800080": [128, 0, 128],    # purple
-            "#0000ff": [0, 0, 255],      # blue
-            "#ffff00": [255, 255, 0],    # yellow
-            "#ff0000": [255, 0, 0],      # red
+            "#ffa500": [255, 165, 0],  # orange
+            "#800080": [128, 0, 128],  # purple
+            "#0000ff": [0, 0, 255],  # blue
+            "#ffff00": [255, 255, 0],  # yellow
+            "#ff0000": [255, 0, 0],  # red
             "#fff8dc": [255, 248, 220],  # cornsilk
-            "#008000": [0, 128, 0]       # green
+            "#008000": [0, 128, 0],  # green
         }
 
         def plot_border(thick=True):
-            """
-            
-            """
+            """ """
             x, y = border
             if len(set(x)) == 1:
                 # vertical line
@@ -465,9 +465,9 @@ class Plotter:
                 y_start, y_end = y
                 y_start = max(0, (y_start + 0.5) * kron_dim[0])
                 y_end = max(0, (y_end + 0.6) * kron_dim[0])
-                scaled_rgb[int(y_start):int(y_end), int(line_x)] = black
+                scaled_rgb[int(y_start) : int(y_end), int(line_x)] = black
                 if thick is True:
-                    scaled_rgb[int(y_start):int(y_end), int(line_x) -1] = black
+                    scaled_rgb[int(y_start) : int(y_end), int(line_x) - 1] = black
 
             else:
                 # horizontal line
@@ -476,9 +476,9 @@ class Plotter:
                 x_start, x_end = x
                 x_start = max(0, (x_start + 0.5) * kron_dim[0])
                 x_end = max(0, (x_end + 0.6) * kron_dim[0])
-                scaled_rgb[int(line_y), int(x_start):int(x_end)] = black
+                scaled_rgb[int(line_y), int(x_start) : int(x_end)] = black
                 if thick is True:
-                    scaled_rgb[int(line_y) -1 , int(x_start) -1:int(x_end)] = black
+                    scaled_rgb[int(line_y) - 1, int(x_start) - 1 : int(x_end)] = black
 
         # obtain an index to rgb conversion dictionary and create an
         # empty array with 3 dimensions as empty canvas
@@ -508,6 +508,45 @@ class Plotter:
 
             for border in l_grip_borders:
                 plot_border(thick=True)
+
+        if self.highlight is True:
+            highlight_color = np.array([255, 51, 255])
+            for obj in state["objs"].values():
+                if obj["gripped"] is True:
+                    # conversion from golmi configuration to data grid (adjusted for move step)
+                    x_factor = data.shape[1] / self.config["width"]
+                    y_factor = data.shape[0] / self.config["height"]
+
+                    # upper-left corner
+                    obj_x = int(max(0, obj["x"] * kron_dim[0] * x_factor))
+                    obj_y = int(max(0, obj["y"] * kron_dim[0] * y_factor))
+
+                    # lower-right corner
+                    limit_x = int(
+                        min(
+                            scaled_rgb.shape[1] - 1,
+                            (obj["x"] + len(obj["block_matrix"][0]))
+                            * kron_dim[0]
+                            * x_factor,
+                        )
+                    )
+                    limit_y = int(
+                        min(
+                            scaled_rgb.shape[0] - 1,
+                            (obj["y"] + len(obj["block_matrix"]))
+                            * kron_dim[0]
+                            * y_factor,
+                        )
+                    )
+
+                    # upper border
+                    scaled_rgb[obj_y, obj_x:limit_x] = highlight_color
+                    # lower border
+                    scaled_rgb[limit_y, obj_x:limit_x] = highlight_color
+                    # left border
+                    scaled_rgb[obj_y:limit_y, obj_x] = highlight_color
+                    # right border
+                    scaled_rgb[obj_y:limit_y, limit_x] = highlight_color
 
         return scaled_rgb
 
@@ -663,6 +702,9 @@ def main():
         action="store_true",
         help="use matplotlib to render the RGB array of the image",
     )
+    parser.add_argument(
+        "--highlight", action="store_true", help="highlight gripped object"
+    )
     args = parser.parse_args()
 
     w, h = args.np_dim.split("x")
@@ -690,6 +732,7 @@ def main():
         np_dims,
         args.small_bb,
         args.matplotlib,
+        args.highlight,
         **pl_args,
     )
 
