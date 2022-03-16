@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+    
+<h1>DescrIMAGE</h1>
+
+<h2>Instructions:</h2>
+<p>Please describe the highlighted piece on the board with one sentence</p>
+
+
+<body>
+    <img src="{{ url_for(folder, filename=state_image) }}" width="500" height="500"/>
+</body>
+
+
+<form method="POST">
+    <input name="text" autofocus="autofocus" autocomplete="off"> 
+    <input type="submit" value="description">
+</form>
+</html>
