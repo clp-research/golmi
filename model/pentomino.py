@@ -1,4 +1,5 @@
 import copy
+from contextlib import suppress
 from enum import Enum, IntEnum
 import random
 from typing import List, Set, Dict, Tuple
@@ -161,7 +162,7 @@ class Rotations(IntEnum):
 
     @classmethod
     def from_json(cls, value):
-        return cls[value]
+        return cls[f"DEGREE_{value}"]
 
 
 class Colors(Enum):
@@ -210,11 +211,11 @@ class RelPositions(Enum):
     TOP_LEFT = "top left"
     TOP_CENTER = "top center"
     TOP_RIGHT = "top right"
-    CENTER_RIGHT = "right"
+    RIGHT = "right"
     BOTTOM_RIGHT = "bottom right"
     BOTTOM_CENTER = "bottom center"
     BOTTOM_LEFT = "bottom left"
-    CENTER_LEFT = "left"
+    LEFT = "left"
     CENTER = "center"
 
     def __repr__(self):
@@ -280,7 +281,7 @@ class RelPositions(Enum):
         if self == RelPositions.TOP_RIGHT:
             x_min, x_max = x_right
             y_min, y_max = y_top
-        if self == RelPositions.CENTER_RIGHT:
+        if self == RelPositions.RIGHT:
             x_min, x_max = x_right
             y_min, y_max = y_center
         if self == RelPositions.BOTTOM_RIGHT:
@@ -292,7 +293,7 @@ class RelPositions(Enum):
         if self == RelPositions.BOTTOM_LEFT:
             x_min, x_max = x_left
             y_min, y_max = y_bottom
-        if self == RelPositions.CENTER_LEFT:
+        if self == RelPositions.LEFT:
             x_min, x_max = x_left
             y_min, y_max = y_center
         if self == RelPositions.CENTER:
@@ -321,13 +322,13 @@ class RelPositions(Enum):
                 return RelPositions.TOP_LEFT
             if pos == RelPositions.BOTTOM_CENTER:
                 return RelPositions.BOTTOM_LEFT
-            return RelPositions.CENTER_LEFT
+            return RelPositions.LEFT
         elif x >= 2 * width_step:
             if pos == RelPositions.TOP_CENTER:
                 return RelPositions.TOP_RIGHT
             if pos == RelPositions.BOTTOM_CENTER:
                 return RelPositions.BOTTOM_RIGHT
-            return RelPositions.CENTER_RIGHT
+            return RelPositions.RIGHT
         if pos:
             return pos
         return RelPositions.CENTER
@@ -450,11 +451,27 @@ class PieceConfig:
 
     @staticmethod
     def group_by_pos(pieces: List):
-        pieces_by_pos = defaultdict(list)
+        groups = defaultdict(list)
         for piece in pieces:
-            pieces_by_pos[piece.rel_position].append(piece)
-        # print("pieces_by_pos", [len(pieces_by_pos[p]) for p in pieces_by_pos])
-        return pieces_by_pos
+            groups[piece.rel_position].append(piece)
+        # print("group_by_pos", [len(groups[p]) for p in groups])
+        return groups
+
+    @staticmethod
+    def group_by_color(pieces: List):
+        groups = defaultdict(list)
+        for piece in pieces:
+            groups[piece.color].append(piece)
+        # print("group_by_color", [len(groups[p]) for p in groups])
+        return groups
+
+    @staticmethod
+    def group_by_shape(pieces: List):
+        groups = defaultdict(list)
+        for piece in pieces:
+            groups[piece.shape].append(piece)
+        # print("group_by_shape", [len(groups[p]) for p in groups])
+        return groups
 
 
 class PieceConfigSet:
@@ -463,7 +480,7 @@ class PieceConfigSet:
         self.pieces = sorted(pieces)  # allow duplicates, but ignore order
 
     def __repr__(self):
-        return f"PCS[{self.pieces}]"
+        return f"PCS{self.pieces}"
 
     def __str__(self):
         return f"({self.pieces})"
@@ -493,34 +510,68 @@ class PieceConfigSet:
         return cls([PieceConfig.from_json(p) for p in pieces])
 
 
-class PieceConfigSetSampler:
+class RestrictivePieceConfigSetSampler:
 
-    def sample_set(self, set_size):
-        raise NotImplementedError()
+    def __init__(self, pieces: List[PieceConfig]):
+        """
 
-
-class RestrictivePieceConfigSetSampler(PieceConfigSetSampler):
-
-    def __init__(self, pieces: List[PieceConfig], pieces_per_pos: int = 2):
-        self.pieces_per_pos = pieces_per_pos
+        :param pieces: without the target_piece
+        """
+        self.pieces_by_color: Dict[Colors, List[PieceConfig]] = PieceConfig.group_by_color(pieces)
+        self.pieces_by_shape: Dict[Shapes, List[PieceConfig]] = PieceConfig.group_by_shape(pieces)
         self.pieces_by_pos: Dict[RelPositions, List[PieceConfig]] = PieceConfig.group_by_pos(pieces)
+        self.meta = {
+            PropertyNames.COLOR: self.pieces_by_color,
+            PropertyNames.SHAPE: self.pieces_by_shape,
+            PropertyNames.REL_POSITION: self.pieces_by_pos,
+        }
 
-    def sample_set(self, n_pieces: int):
+    def sample_special(self, target_piece: PieceConfig, n_pieces: int, pieces_per_pos: int = 2):
+        """
+        color,shape,position:
+                    1 x Share(color), 1 Share(shape), Diff(pos)
+                    1 x Share(color), 1 Diff(shape), Diff(pos),
+                 others Any(color), Any(shape), Any(pos)
+        """
         # hierarchical sampling:
         # 1. sample position (so we can block certain positions if drawn already twice)
         # 2. sample piece on position
         # Note: if you dont need this, simply use random.sample(n,k)
         allowed_positions = list(RelPositions)
         num_pos = len(allowed_positions)
-        num_possible = self.pieces_per_pos * num_pos
+        num_possible = pieces_per_pos * num_pos
         if num_possible < n_pieces:
-            raise Exception(f"with pieces_per_pos={self.pieces_per_pos} and num_pos={num_pos} "
+            raise Exception(f"with pieces_per_pos={pieces_per_pos} and num_pos={num_pos} "
                             f"there can be maximal n_pieces={num_possible} in the set")
         pos_counts = dict([(pos, 0) for pos in allowed_positions])
+
         piece_set = []
-        for _ in range(n_pieces):
+
+        # one dist must share color and shape, otherwise IA stops already
+        possible_pieces = self.pieces_by_color[target_piece.color]
+        possible_pieces = [p for p in possible_pieces if p.shape == target_piece.shape]
+        possible_pieces = [p for p in possible_pieces if p.rel_position != target_piece.rel_position]
+        piece = random.choice(possible_pieces)
+        pos_counts[piece.rel_position] += 1
+        piece_set.append(piece)
+
+        # one dist must share color, but not shape, so that shape must be mentioned
+        possible_pieces = self.pieces_by_color[target_piece.color]
+        possible_pieces = [p for p in possible_pieces if p.shape != target_piece.shape]
+        possible_pieces = [p for p in possible_pieces if p.rel_position != target_piece.rel_position]
+        piece = random.choice(possible_pieces)
+        pos_counts[piece.rel_position] += 1
+        piece_set.append(piece)
+
+        if n_pieces <= 2:  # we are already finished
+            return PieceConfigSet(piece_set)
+
+        # other distractors can look like anything (but not identical to the target)
+        # Note: target piece is not in pieces already
+        for _ in range(n_pieces - 2):
             pos = random.choice(allowed_positions)
-            piece = random.choice(self.pieces_by_pos[pos])
+            possible_pieces = self.pieces_by_pos[pos]
+            piece = random.choice(possible_pieces)
             piece_set.append(piece)
             pos_counts[piece.rel_position] += 1
             for pos, counts in pos_counts.items():
@@ -528,6 +579,258 @@ class RestrictivePieceConfigSetSampler(PieceConfigSetSampler):
                     if pos in allowed_positions:
                         allowed_positions.remove(pos)
         return PieceConfigSet(piece_set)
+
+    def sample_some_with_prop1_and_position(self, target_piece: PieceConfig, prop1: PropertyNames,
+                                            n_pieces: int, pieces_per_pos: int = 2):
+        # hierarchical sampling:
+        # 1. sample position (so we can block certain positions if drawn already twice)
+        # 2. sample piece on position
+        # Note: if you dont need this, simply use random.sample(n,k)
+        allowed_positions = list(RelPositions)
+        num_pos = len(allowed_positions)
+        num_possible = pieces_per_pos * num_pos
+        if num_possible < n_pieces:
+            raise Exception(f"with pieces_per_pos={pieces_per_pos} and num_pos={num_pos} "
+                            f"there can be maximal n_pieces={num_possible} in the set")
+        pos_counts = dict([(pos, 0) for pos in allowed_positions])
+        piece_set = []
+
+        # exactly on with the same position, but different prop
+        possible_pieces = self.pieces_by_pos[target_piece.rel_position]
+        possible_pieces = [p for p in possible_pieces if p[prop1] != target_piece[prop1]]
+        piece_set.append(random.choice(possible_pieces))
+        # remove position afterwards (we only want exactly one additional here)
+        with suppress(ValueError, AttributeError):  # its fine when its not there
+            allowed_positions.remove(target_piece.rel_position)
+
+        for _ in range(n_pieces - 1):
+            pos = random.choice(allowed_positions)
+            possible_pieces = self.__get_same_but_diff(target_piece, prop1, PropertyNames.REL_POSITION, pos)
+            piece = random.choice(possible_pieces)
+            piece_set.append(piece)
+            pos_counts[piece.rel_position] += 1
+            for pos, counts in pos_counts.items():
+                if counts >= 2:
+                    if pos in allowed_positions:
+                        allowed_positions.remove(pos)
+        return PieceConfigSet(piece_set)
+
+    def __get_same_but_diff(self, target_piece: PieceConfig,
+                            same_prop: PropertyNames, diff_prop: PropertyNames, pos):
+        possible_pieces = self.meta[same_prop][target_piece[same_prop]]
+        possible_pieces = [p for p in possible_pieces if p[diff_prop] != target_piece[diff_prop]]
+        return [p for p in possible_pieces if p.rel_position == pos]
+
+    def sample_some_with_prop1_and_prop2(self, target_piece: PieceConfig, prop1: PropertyNames, prop2: PropertyNames,
+                                         n_pieces: int, pieces_per_pos: int = 2):
+        # hierarchical sampling:
+        # 1. sample position (so we can block certain positions if drawn already twice)
+        # 2. sample piece on position
+        # Note: if you dont need this, simply use random.sample(n,k)
+        allowed_positions = list(RelPositions)
+        num_pos = len(allowed_positions)
+        num_possible = pieces_per_pos * num_pos
+        if num_possible < n_pieces:
+            raise Exception(f"with pieces_per_pos={pieces_per_pos} and num_pos={num_pos} "
+                            f"there can be maximal n_pieces={num_possible} in the set")
+        pos_counts = dict([(pos, 0) for pos in allowed_positions])
+        piece_set = []
+        # select at least one, but never all for the first property
+        split_size = random.randint(1, n_pieces - 1)
+        for _ in range(split_size):
+            pos = random.choice(allowed_positions)
+            possible_pieces = self.__get_same_but_diff(target_piece, prop1, prop2, pos)
+            piece = random.choice(possible_pieces)
+            piece_set.append(piece)
+            pos_counts[piece.rel_position] += 1
+            for pos, counts in pos_counts.items():
+                if counts >= 2:
+                    if pos in allowed_positions:
+                        allowed_positions.remove(pos)
+        # select the remaining ones for the second property
+        for _ in range(n_pieces - split_size):
+            pos = random.choice(allowed_positions)
+            possible_pieces = self.__get_same_but_diff(target_piece, prop2, prop1, pos)
+            piece = random.choice(possible_pieces)
+            piece_set.append(piece)
+            pos_counts[piece.rel_position] += 1
+            for pos, counts in pos_counts.items():
+                if counts >= 2:
+                    if pos in allowed_positions:
+                        allowed_positions.remove(pos)
+        return PieceConfigSet(piece_set)
+
+    def sample_with_position_restriction(self, n_pieces: int, pieces_per_pos: int = 2,
+                                         disallow_pos: List[RelPositions] = None):
+        # hierarchical sampling:
+        # 1. sample position (so we can block certain positions if drawn already twice)
+        # 2. sample piece on position
+        # Note: if you dont need this, simply use random.sample(n,k)
+        allowed_positions = list(RelPositions)
+        # if we allow all positions, but there are only pieces of the same shape and color
+        # then there will be no pieces available at the target piece position e.g. for position-only utterances
+        for pos in disallow_pos:
+            if pos in allowed_positions:
+                allowed_positions.remove(pos)
+
+        num_pos = len(allowed_positions)
+        num_possible = pieces_per_pos * num_pos
+        if num_possible < n_pieces:
+            raise Exception(f"with pieces_per_pos={pieces_per_pos} and num_pos={num_pos} "
+                            f"there can be maximal n_pieces={num_possible} in the set")
+        pos_counts = dict([(pos, 0) for pos in allowed_positions])
+        piece_set = []
+        for _ in range(n_pieces):
+            pos = random.choice(allowed_positions)
+            possible_pieces = self.pieces_by_pos[pos]
+            piece = random.choice(possible_pieces)
+            piece_set.append(piece)
+            pos_counts[piece.rel_position] += 1
+            for pos, counts in pos_counts.items():
+                if counts >= 2:
+                    if pos in allowed_positions:
+                        allowed_positions.remove(pos)
+        return PieceConfigSet(piece_set)
+
+
+class UtteranceTypeOrientedDistractorSetSampler:
+
+    def __init__(self, pieces: List[PieceConfig], target_piece: PieceConfig, n_retries=100):
+        self.n_retries = n_retries
+        # remove the target from the piece set
+        pieces.remove(target_piece)
+        # group pieces by their property values
+        pieces_by_value = defaultdict(list)
+        for piece in pieces:
+            for pn in list(PropertyNames):
+                pieces_by_value[piece[pn]].append(piece)
+        self.pieces = pieces
+        self.pieces_by_value = pieces_by_value
+        self.target_piece = target_piece
+
+    def sample_distractors(self, utterance_type, n_sets, pieces_per_set, verbose=False):
+        n_min, n_max = pieces_per_set[0], pieces_per_set[1]
+        distractors_sets = set()
+        retries = 0
+        while len(distractors_sets) < n_sets and retries < self.n_retries:
+            set_size = random.randint(n_min, n_max) - 1  # already 1 reserved for target piece
+            distractor_set = self.create_distractor_configs_csp(unique_props=set(utterance_type),
+                                                                num_distractors=set_size)
+            if distractor_set in distractors_sets:  # avoid duplicates (if sample space is small)
+                retries += 1
+                continue
+            distractors_sets.add(distractor_set)
+        if verbose and len(distractors_sets) < n_sets:
+            print("Warn: Too many duplicates. Sampled sets:", len(distractors_sets))
+        if verbose and retries > 0:
+            print("Warn: Retries", retries)
+        return distractors_sets
+
+    def create_distractor_configs_csp(self, unique_props: Set[PropertyNames], num_distractors: int = 1):
+        """
+        Note: The preference order is fix [PropertyNames.COLOR, PropertyNames.SHAPE, PropertyNames.REL_POSITION]
+
+        So, if we want to generate distractors for
+
+            color:    any other distractor, but different colors
+                        Diff(color), Any(shape), Any(pos)
+            shape:    all having the same color (no exclusions), but different shapes; random positions
+                        All(color), Diff(shape), Any(pos)
+            position: all having the same color and shape (no exclusions), but different positions
+                        All(color), All(shape), Diff(pos)
+
+            color,shape:    at least one (and never all) distractor shares the color or the shape
+                        Some(color), Some(shape), Any(pos)
+            color,position: at least one (and never all) distractor shares the color or the position; all same shapes
+                        Some(color), All(shape), Some(pos)
+            shape,position: at least one (and never all) distractor shares the shape or the position; all same color
+                        All(color), Some(shape), Some(pos)
+
+            color,shape,position:
+                        Some(color), Some(shape), Some(pos)
+
+        :return:
+        """
+        if num_distractors < 1:
+            raise Exception(f"There must be at least one distractor, but num_distractors is {num_distractors}")
+
+        # When we have a single uniq prop, then all other pieces are disallowed to have that prop
+        if len(unique_props) == 1:
+            unique_prop = list(unique_props)[0]
+            disallowed_positions = []
+            """
+            color:    any other distractor, but different colors
+                        Diff(color), Any(shape), Any(pos)
+            """
+            if unique_prop == PropertyNames.COLOR:
+                # all pieces which do not share the same color
+                possible_distractors = [piece for piece in self.pieces if piece.color != self.target_piece.color]
+
+            """
+            shape:    all having the same color (no exclusions), but different shapes; random positions
+                        All(color), Diff(shape), Any(pos)
+            """
+            if unique_prop == PropertyNames.SHAPE:
+                possible_distractors = self.pieces_by_value[self.target_piece.color]
+                possible_distractors = [piece for piece in possible_distractors
+                                        if piece.shape != self.target_piece.shape]
+
+            """
+            position: all having the same color and shape (no exclusions), but different positions
+                        All(color), All(shape), Diff(pos)
+            """
+            if unique_prop == PropertyNames.REL_POSITION:
+                possible_distractors = self.pieces_by_value[self.target_piece.color]
+                possible_distractors = [piece for piece in possible_distractors
+                                        if piece.shape == self.target_piece.shape]
+                possible_distractors = [piece for piece in possible_distractors
+                                        if piece.rel_position != self.target_piece.rel_position]
+                disallowed_positions.append(self.target_piece.rel_position)
+
+            sampler = RestrictivePieceConfigSetSampler(possible_distractors)
+            return sampler.sample_with_position_restriction(num_distractors, disallow_pos=disallowed_positions)
+
+        if len(unique_props) == 2:
+            """
+            color,shape:    at least one (and never all) distractor shares the color or the shape
+                        Some(color), Some(shape), Any(pos)
+            """
+            if PropertyNames.COLOR in unique_props and PropertyNames.SHAPE in unique_props:
+                sampler = RestrictivePieceConfigSetSampler(self.pieces)
+                return sampler.sample_some_with_prop1_and_prop2(self.target_piece,
+                                                                PropertyNames.COLOR,
+                                                                PropertyNames.SHAPE,
+                                                                n_pieces=num_distractors)
+            """
+            color,position: at least one (and never all) distractor shares the color or the position; all same shapes
+                        Some(color), All(shape), Some(pos)
+            """
+            if PropertyNames.COLOR in unique_props and PropertyNames.REL_POSITION in unique_props:
+                possible_distractors = self.pieces_by_value[self.target_piece.shape]
+                sampler = RestrictivePieceConfigSetSampler(possible_distractors)
+                return sampler.sample_some_with_prop1_and_position(self.target_piece,
+                                                                   PropertyNames.COLOR,
+                                                                   n_pieces=num_distractors)
+            """
+            shape,position: at least one (and never all) distractor shares the shape or the position; all same color
+                        All(color), Some(shape), Some(pos)
+            """
+            if PropertyNames.SHAPE in unique_props and PropertyNames.REL_POSITION in unique_props:
+                possible_distractors = self.pieces_by_value[self.target_piece.color]
+                sampler = RestrictivePieceConfigSetSampler(possible_distractors)
+                return sampler.sample_some_with_prop1_and_position(self.target_piece,
+                                                                   PropertyNames.SHAPE,
+                                                                   n_pieces=num_distractors)
+
+        if len(unique_props) == 3:
+            """
+            color,shape,position:
+                        1 x Share(color), 1 Share(shape), Diff(pos)
+                        1 x Share(color), 1 Diff(shape), Diff(pos), 
+                     others Any(color), Any(shape), Any(pos)
+            """
+            sampler = RestrictivePieceConfigSetSampler(self.pieces)
+            return sampler.sample_special(self.target_piece, n_pieces=num_distractors)
 
 
 class Piece:
@@ -592,16 +895,6 @@ class Board:
         return False
 
     @classmethod
-    def create_compositional(cls, board_width, board_height,
-                             piece_config: PieceConfig,
-                             unique_props: Set[PropertyNames],
-                             num_distractors: int = 1,
-                             varieties: Dict[PropertyNames, int] = None,
-                             ambiguities: Dict[PropertyNames, int] = None):
-        distractors = create_distractor_configs_csp(piece_config, unique_props, num_distractors, varieties, ambiguities)
-        return cls.create_compositional_from_configs(board_width, board_height, piece_config, distractors)
-
-    @classmethod
     def create_compositional_from_configs(cls, board_width, board_height,
                                           piece_config: PieceConfig, distractor_set: PieceConfigSet):
         board = Board(board_width, board_height)
@@ -634,153 +927,6 @@ def exclude_property_values(piece_config: PieceConfig, unique_props: Set[Propert
             if prop_variety > 0:
                 reduced_values[prop_name] = random.sample(reduced_values[prop_name], k=prop_variety)
     return reduced_values
-
-
-def diff_prop(prop: PropertyNames, distractor_configs: List[PieceConfig], property_values):
-    for distractor_config in distractor_configs:
-        distractor_config[prop] = random.choice(property_values[prop])
-
-
-def any_prop(prop: PropertyNames, distractor_configs: List[PieceConfig], property_values):
-    for distractor_config in distractor_configs:
-        distractor_config[prop] = random.choice(property_values[prop])
-
-
-def some_prop2(prop1: PropertyNames, prop2: PropertyNames, distractor_configs: List[PieceConfig], property_values):
-    """
-        At least one, but never all distractors share the same prop value.
-
-        Note: The distractors initially share all prop values with the target piece.
-        Thus, we simply choose some to differ. The property values must already exclude
-        the target piece prop value, so that we cannot "rechoose" the inital value.
-
-        Furthermore, we do not want to potentially "not-select" a piece.
-    """
-    select_size = random.randint(1, len(distractor_configs) - 1)
-    for distractor_config in distractor_configs[:select_size]:
-        distractor_config[prop1] = random.choice(property_values[prop1])
-    for distractor_config in distractor_configs[select_size:]:
-        distractor_config[prop2] = random.choice(property_values[prop2])
-
-
-def create_distractor_configs_csp(piece_config: PieceConfig,
-                                  unique_props: Set[PropertyNames],
-                                  num_distractors: int = 1,
-                                  varieties: Dict[PropertyNames, int] = None) \
-        -> PieceConfigSet:
-    """
-    Note: The preference order is fix [PropertyNames.COLOR, PropertyNames.SHAPE, PropertyNames.REL_POSITION]
-
-    So, if we want to generate distractors for
-
-        color:    any other distractor, but different colors
-                    Diff(color), Any(shape), Any(pos)
-        shape:    all having the same color (no exclusions), but different shapes; random positions
-                    All(color), Diff(shape), Any(pos)
-        position: all having the same color and shape (no exclusions), but different positions
-                    All(color), All(shape), Diff(pos)
-
-        color,shape:    at least one (and never all) distractor shares the color or the shape
-                    Some(color), Some(shape), Any(pos)
-        color,position: at least one (and never all) distractor shares the color or the position; all same shapes
-                    Some(color), All(shape), Some(pos)
-        shape,position: at least one (and never all) distractor shares the shape or the position; all same color
-                    All(color), Some(shape), Some(pos)
-
-        color,shape,position:
-                    Some(color), Some(shape), Some(pos)
-
-    :param varieties: this is basically an "amount-based" white list for property values. Zero, means that all available
-            values are possible to choose from. Otherwise, the possible property values are reduced to the given number.
-            Defaults to use all available property values.
-    :return:
-    """
-    if num_distractors < 1:
-        raise Exception(f"There must be at least one distractor, but num_distractors is {num_distractors}")
-    # initialize all possible values
-    property_values = {
-        PropertyNames.SHAPE: list(Shapes),
-        PropertyNames.COLOR: list(Colors),
-        PropertyNames.REL_POSITION: list(RelPositions),
-        PropertyNames.ROTATION: list(Rotations)
-    }
-    # initialize all looking the same (IA fails)
-    distractor_configs = [piece_config.copy() for _ in range(num_distractors)]
-
-    # When we have a single uniq prop, then all other pieces are disallowed to have that prop
-    if len(unique_props) == 1:
-        unique_prop = list(unique_props)[0]
-        atoms_reduced_unique = exclude_property_values(piece_config, unique_props, property_values, varieties)
-        """
-        color:    any other distractor, but different colors
-                    Diff(color), Any(shape), Any(pos)
-        """
-        if unique_prop == PropertyNames.COLOR:
-            diff_prop(unique_prop, distractor_configs, atoms_reduced_unique)
-            any_prop(PropertyNames.SHAPE, distractor_configs, atoms_reduced_unique)
-            any_prop(PropertyNames.REL_POSITION, distractor_configs, atoms_reduced_unique)
-        """
-        shape:    all having the same color (no exclusions), but different shapes; random positions
-                    All(color), Diff(shape), Any(pos)
-        """
-        if unique_prop == PropertyNames.SHAPE:
-            # all_prop(color) initially all are the same anyway
-            diff_prop(unique_prop, distractor_configs, atoms_reduced_unique)
-            any_prop(PropertyNames.REL_POSITION, distractor_configs, atoms_reduced_unique)
-        """
-        position: all having the same color and shape (no exclusions), but different positions
-                    All(color), All(shape), Diff(pos)
-        """
-        if unique_prop == PropertyNames.REL_POSITION:
-            # all_prop(color) initially all are the same anyway
-            # all_prop(shape) initially all are the same anyway
-            diff_prop(unique_prop, distractor_configs, atoms_reduced_unique)
-
-    if len(unique_props) == 2:
-        atoms_reduced_unique = exclude_property_values(piece_config, unique_props, property_values, varieties)
-        """
-        color,shape:    at least one (and never all) distractor shares the color or the shape
-                    Some(color), Some(shape), Any(pos)
-        """
-        if PropertyNames.COLOR in unique_props and PropertyNames.SHAPE in unique_props:
-            some_prop2(PropertyNames.COLOR, PropertyNames.SHAPE, distractor_configs, atoms_reduced_unique)
-            any_prop(PropertyNames.REL_POSITION, distractor_configs, atoms_reduced_unique)
-        """
-        color,position: at least one (and never all) distractor shares the color or the position; all same shapes
-                    Some(color), All(shape), Some(pos)
-        """
-        if PropertyNames.COLOR in unique_props and PropertyNames.REL_POSITION in unique_props:
-            some_prop2(PropertyNames.COLOR, PropertyNames.REL_POSITION, distractor_configs, atoms_reduced_unique)
-            # all_prop(shape) initially all are the same anyway
-        """
-        shape,position: at least one (and never all) distractor shares the shape or the position; all same color
-                    All(color), Some(shape), Some(pos)
-        """
-        if PropertyNames.SHAPE in unique_props and PropertyNames.REL_POSITION in unique_props:
-            # all_prop(color) initially all are the same anyway
-            some_prop2(PropertyNames.SHAPE, PropertyNames.REL_POSITION, distractor_configs, atoms_reduced_unique)
-
-    if len(unique_props) == 3:
-        atoms_reduced_unique = exclude_property_values(piece_config, unique_props, property_values, varieties)
-        """
-        color,shape,position:
-                    1 x Share(color), 1 Share(shape), Diff(pos)
-                    1 x Share(color), 1 Diff(shape), Diff(pos), 
-                 others Any(color), Any(shape), Any(pos)
-        """
-        # one dist must share color and shape, otherwise IA stops already
-        share_color_shape = distractor_configs[0]
-        diff_prop(PropertyNames.REL_POSITION, [share_color_shape], atoms_reduced_unique)
-        # one dist must share color, but not shape, so that shape must be mentioned
-        share_color_not_shape = distractor_configs[1]
-        diff_prop(PropertyNames.SHAPE, [share_color_not_shape], atoms_reduced_unique)
-        diff_prop(PropertyNames.REL_POSITION, [share_color_not_shape], atoms_reduced_unique)
-        # other distractors can look like anything (but not identical to the target)
-        other_dist = distractor_configs[2:]
-        any_prop(PropertyNames.COLOR, other_dist, atoms_reduced_unique)
-        any_prop(PropertyNames.SHAPE, other_dist, atoms_reduced_unique)
-        any_prop(PropertyNames.REL_POSITION, other_dist, atoms_reduced_unique)
-    return PieceConfigSet(distractor_configs)
 
 
 def create_all_distractor_configs(piece_config: PieceConfig,
