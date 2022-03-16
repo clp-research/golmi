@@ -50,11 +50,11 @@ $(document).ready(function () {
                     {value: "TOP_LEFT", name: "top left"},
                     {value: "TOP_CENTER", name: "top center"},
                     {value: "TOP_RIGHT", name: "top right"},
-                    {value: "CENTER_RIGHT", name: "right"},
+                    {value: "RIGHT", name: "right"},
                     {value: "BOTTOM_RIGHT", name: "bottom right"},
                     {value: "BOTTOM_CENTER", name: "bottom center"},
                     {value: "BOTTOM_LEFT", name: "bottom left"},
-                    {value: "CENTER_LEFT", name: "left"},
+                    {value: "LEFT", name: "left"},
                     {value: "CENTER", name: "center"}
                 ],
                 onChange: function (value, text, $selectedItem) {
