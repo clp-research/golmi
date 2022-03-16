@@ -13,6 +13,7 @@ def main():
         "giver": f"{token}-2"
     }
     
+    print("Tokens [instruction receiver == admin]:")
     for key, value in tokens.items():
         print(f"Instruction {key}:\t{value}")
     
