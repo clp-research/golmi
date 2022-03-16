@@ -17,7 +17,12 @@
 	<link rel="stylesheet" href="{{ url_for('descrimage_bp.static', filename='css/descrimage.css') }}">
 </head>
 
+<script>
+    var token = "{{ token }}"
+</script>
+
 <body>
+    
     <div style="padding:10px;">
         <button id="start" autocomplete="off">Start</button>
         <button id="stop" autocomplete="off">Stop</button>
@@ -40,7 +45,7 @@
     <script src="{{ url_for('static', filename='js/view/LView.js') }}"></script>
     <script src="{{ url_for('static', filename='js/controller/LocalKeyController.js') }}"></script>
     <!-- Interface specific functionality -->
-    <script src="{{ url_for('descrimage_bp.static', filename='js/descrimage.js') }}"></script>
+    <script src="{{ url_for('descrimage_bp.static', filename='js/giver.js') }}"></script>
 </body>
 
 </html>

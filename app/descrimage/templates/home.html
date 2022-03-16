@@ -1,0 +1,29 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>Pentomino in GOLMI</title>
+
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <meta name="description" content="Demo of a Pentomino interface build using the GOLMI framework">
+    <meta name="author" content="clpresearch, Karla Friedrichs">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layer_style.css') }}">
+	<link rel="stylesheet" href="{{ url_for('descrimage_bp.static', filename='css/descrimage.css') }}">
+</head>
+
+<body>
+    Here some description
+    <form method="POST">
+        <input name="token" autofocus="autofocus" autocomplete="off"> 
+        <input type="submit" value="Submit">
+    </form>
+
+</body>
+
+</html>

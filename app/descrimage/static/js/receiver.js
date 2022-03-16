@@ -97,12 +97,12 @@ $(document).ready(function () {
     }
 
     // --- stop and start drawing --- //
-    function start() {
+    function start(token) {
         // reset the controller in case any key is currently pressed
         controller.resetKeys()
         controller.attachModel(socket);
         // join a GOLMI room with the name "test_room_id"
-        socket.emit("join", {"room_id": "test_room_id"});
+        socket.emit("join", {"room_id": token});
     }
 
     function stop() {
@@ -116,7 +116,7 @@ $(document).ready(function () {
 
     // --- buttons --- //
     $("#start").click(() => {
-        start();
+        start(token);
         // disable this button, otherwise it is now in focus and Space/Enter will trigger the click again
         $("#start").prop("disabled", true);
     });
