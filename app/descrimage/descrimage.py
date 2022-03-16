@@ -17,13 +17,44 @@ descrimage_bp = Blueprint('descrimage_bp', __name__,
                          static_folder='static',
                          url_prefix="/descrimage")
 
-@cross_origin
+# @cross_origin
+# @descrimage_bp.route("/", methods=["GET"])
+# def descrimage():
+#     """
+#     Interactive interface.
+#     """
+#     return render_template("descrimage.html")
+
+
+#@cross_origin
 @descrimage_bp.route("/", methods=["GET"])
-def descrimage():
+def homepage():
     """
     Interactive interface.
     """
-    return render_template("descrimage.html")
+    return render_template("home.html")
+
+@cross_origin
+@descrimage_bp.route('/', methods=['POST'])
+def my_form_post():
+    token = request.form['token']
+    token, role = token.split("-")
+
+    if role == "1":
+        return receiver(token)
+    elif role == "2":
+        return giver(token)
+    else:
+        return "INVALID TOKEN"
+
+#@descrimage_bp.route('/receiver', methods=['GET'])
+def receiver(token):
+    return render_template("receiver.html", token=token)
+
+#@descrimage_bp.route('/giver', methods=['GET'])
+def giver(token):
+    return render_template("giver.html", token=token)
+
 
 # TODO: add socketios
 # @socketio.on("dynamatt_mouseclick")
