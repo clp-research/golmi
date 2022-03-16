@@ -1,10 +1,11 @@
+import itertools
+
 from flask_cors import cross_origin
 from flask import render_template, Blueprint, request
 from app import DEFAULT_CONFIG_FILE
 from app.app import socketio, room_manager
 from model.pentomino import Board, PieceConfig, Colors, Shapes, RelPositions, PropertyNames, \
-    create_distractor_configs_csp, \
-    PentoIncrementalAlgorithm
+    PentoIncrementalAlgorithm, UtteranceTypeOrientedDistractorSetSampler
 from model.state import State
 import random
 
@@ -76,15 +77,17 @@ def on_new_comp_scene(event):
 
     target = PieceConfig(target_piece_color, target_piece_shape, piece_rel_position)
     unique_props = set(property_names)
+    varieties = {
+        PropertyNames.COLOR: varieties_config["num_colors"],
+        PropertyNames.SHAPE: varieties_config["num_shapes"],
+        PropertyNames.REL_POSITION: varieties_config["num_positions"],
+    }
+    pieces = PieceConfig.create_all()
     # The preference order is FIX as in KF BA work
     pia = PentoIncrementalAlgorithm([PropertyNames.COLOR, PropertyNames.SHAPE, PropertyNames.REL_POSITION])
-    distractors = create_distractor_configs_csp(piece_config=target, unique_props=unique_props,
-                                                num_distractors=distractors_config["num_distractors"],
-                                                varieties={
-                                                    PropertyNames.COLOR: varieties_config["num_colors"],
-                                                    PropertyNames.SHAPE: varieties_config["num_shapes"],
-                                                    PropertyNames.REL_POSITION: varieties_config["num_positions"],
-                                                })
+    sampler = UtteranceTypeOrientedDistractorSetSampler(pieces=pieces, target_piece=target)
+    distractors = sampler.create_distractor_configs_csp(unique_props=unique_props,
+                                                        num_distractors=distractors_config["num_distractors"])
     instruction, _, _ = pia.generate(distractors, target)
     board = Board.create_compositional_from_configs(board_width=model.config.width, board_height=model.config.height,
                                                     piece_config=target, distractor_set=distractors)
