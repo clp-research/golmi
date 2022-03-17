@@ -1,6 +1,6 @@
 {
-  "width": 24,
-  "height": 24,
+  "width": 30,
+  "height": 30,
   "snap_to_grid": false,
   "prevent_overlap": true,
   "actions": ["move", "rotate"],
