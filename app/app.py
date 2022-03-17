@@ -94,6 +94,13 @@ def client_connect(auth):
     if auth["password"] != AUTH:
         raise ConnectionRefusedError("authentication failed")
 
+
+@socketio.on("list_rooms")
+def list_rooms():
+    # emit a list of used rooms to check for conflicts
+    emit("room_list", list(room_manager.room_to_clients.keys()))
+
+
 @socketio.on("join")
 def join(params):
     # Assign a (new) room with the given id
