@@ -83,7 +83,7 @@ $(document).ready(function () {
             // Piece Configuration
             $("#select_num_distractors")
                 .slider({
-                    min: 1, max: 9,
+                    min: 3, max: 9,
                     start: 4, step: 1,
                     onChange: function (value, text, $selectedItem) {
                         console.log("select_num_distractors: " + value)
