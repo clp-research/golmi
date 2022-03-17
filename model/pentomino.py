@@ -575,7 +575,10 @@ class RestrictivePieceConfigSetSampler:
         # hierarchical sampling:
         # 1. sample position (so we can block certain positions if drawn already twice)
         # 2. sample piece on position
-        # Note: if you dont need this, simply use random.sample(n,k)
+        if n_pieces < 3:
+            print(f"Warn: (color,shape,position) requires at least 3 distractors, but only {n_pieces} given. "
+                  "Otherwise it will reduce to (shape,position).")
+
         allowed_positions = self.__check_and_get_allowed_positions(n_pieces)
         pos_counts = dict([(pos, 0) for pos in allowed_positions])
 
@@ -597,25 +600,25 @@ class RestrictivePieceConfigSetSampler:
         pos_counts[piece.rel_position] += 1
         piece_set.append(piece)
 
-        if n_pieces <= 2:  # we are already finished
+        if n_pieces <= 2:  # we are already finished (this is only (shape,position) though)
             return PieceConfigSet(piece_set)
 
         # remove already, if we have reached the limit at a pos
         self.__check_and_reduce(allowed_positions, pos_counts)
 
-        # other distractors can look like anything (but not identical to the target)
+        # other piece have any shape and position, but not color, so that color must be mentioned
         # Note: target piece is not in pieces already
         for _ in range(n_pieces - 2):
             pos = random.choice(allowed_positions)
             possible_pieces = self.pieces_by_pos[pos]
+            possible_pieces = [p for p in possible_pieces if p.color != target_piece.color]
             piece = random.choice(possible_pieces)
             piece_set.append(piece)
             pos_counts[piece.rel_position] += 1
             self.__check_and_reduce(allowed_positions, pos_counts)
         return PieceConfigSet(piece_set)
 
-    def sample_some_with_prop1_and_position(self, target_piece: PieceConfig, prop1: PropertyNames,
-                                            n_pieces: int, pieces_per_pos: int = 2):
+    def sample_some_with_prop1_and_position(self, target_piece: PieceConfig, prop1: PropertyNames, n_pieces: int):
         # hierarchical sampling:
         # 1. sample position (so we can block certain positions if drawn already twice)
         # 2. sample piece on position
@@ -659,7 +662,7 @@ class RestrictivePieceConfigSetSampler:
         return possible_pieces
 
     def sample_some_with_prop1_and_prop2(self, target_piece: PieceConfig, prop1: PropertyNames, prop2: PropertyNames,
-                                         n_pieces: int, pieces_per_pos: int = 2):
+                                         n_pieces: int):
         # hierarchical sampling:
         # 1. sample position (so we can block certain positions if drawn already twice)
         # 2. sample piece on position
@@ -686,8 +689,7 @@ class RestrictivePieceConfigSetSampler:
             self.__check_and_reduce(allowed_positions, pos_counts)
         return PieceConfigSet(piece_set)
 
-    def sample_with_position_restriction(self, n_pieces: int, pieces_per_pos: int = 2,
-                                         disallow_pos: List[RelPositions] = None):
+    def sample_with_position_restriction(self, n_pieces: int, disallow_pos: List[RelPositions] = None):
         # hierarchical sampling:
         # 1. sample position (so we can block certain positions if drawn already twice)
         # 2. sample piece on position
