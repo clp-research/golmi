@@ -125,6 +125,11 @@ class Shapes(Enum):
     def __str__(self):
         return self.value
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.value == other.value
+        return False
+
     def __lt__(self, other):
         return self.value.__lt__(other.value)
 
@@ -153,6 +158,11 @@ class Rotations(IntEnum):
 
     def __str__(self):
         return self.value
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.value == other.value
+        return False
 
     def __lt__(self, other):
         return self.value.__lt__(other.value)
@@ -195,6 +205,11 @@ class Colors(Enum):
 
     def __str__(self):
         return self.value_name
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.value_name == other.value_name
+        return False
 
     def __lt__(self, other):
         return self.value_name.__lt__(other.value_name)
@@ -352,6 +367,11 @@ class PropertyNames(Enum):
     def __str__(self):
         return self.value
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.value == other.value
+        return False
+
     def __lt__(self, other):
         return self.value.__lt__(other.value)
 
@@ -423,7 +443,7 @@ class PieceConfig:
     def __eq__(self, other):
         if isinstance(other, PieceConfig):
             return self.__key() == other.__key()
-        return NotImplemented
+        raise ValueError(f"Other is not {self.__class__} but {other.__class__}")
 
     def copy(self):
         return PieceConfig(self.color, self.shape, self.rel_position)
@@ -500,7 +520,7 @@ class PieceConfigSet:
     def __eq__(self, other):
         if isinstance(other, PieceConfigSet):
             return self.__key() == other.__key()
-        return NotImplemented
+        raise ValueError(f"Other is not {self.__class__} but {other.__class__}")
 
     def to_json(self):
         return [p.to_json() for p in self.pieces]
@@ -512,11 +532,12 @@ class PieceConfigSet:
 
 class RestrictivePieceConfigSetSampler:
 
-    def __init__(self, pieces: List[PieceConfig]):
+    def __init__(self, pieces: List[PieceConfig], pieces_per_pos: int = 2):
         """
 
         :param pieces: without the target_piece
         """
+        self.pieces_per_pos = pieces_per_pos
         self.pieces_by_color: Dict[Colors, List[PieceConfig]] = PieceConfig.group_by_color(pieces)
         self.pieces_by_shape: Dict[Shapes, List[PieceConfig]] = PieceConfig.group_by_shape(pieces)
         self.pieces_by_pos: Dict[RelPositions, List[PieceConfig]] = PieceConfig.group_by_pos(pieces)
@@ -526,7 +547,25 @@ class RestrictivePieceConfigSetSampler:
             PropertyNames.REL_POSITION: self.pieces_by_pos,
         }
 
-    def sample_special(self, target_piece: PieceConfig, n_pieces: int, pieces_per_pos: int = 2):
+    def __check_allowed_positions(self, allowed_positions, n_pieces):
+        num_pos = len(allowed_positions)
+        num_possible = self.pieces_per_pos * num_pos
+        if num_possible < n_pieces:
+            raise Exception(f"with pieces_per_pos={self.pieces_per_pos} and num_pos={num_pos} "
+                            f"there can be maximal n_pieces={num_possible} in the set")
+
+    def __check_and_get_allowed_positions(self, n_pieces):
+        allowed_positions = list(self.pieces_by_pos.keys())  # all positions, where there are pieces for
+        self.__check_allowed_positions(allowed_positions, n_pieces)
+        return allowed_positions
+
+    def __check_and_reduce(self, allowed_positions, pos_counts):
+        for pos, counts in pos_counts.items():
+            if counts >= self.pieces_per_pos:
+                if pos in allowed_positions:
+                    allowed_positions.remove(pos)
+
+    def sample_special(self, target_piece: PieceConfig, n_pieces: int):
         """
         color,shape,position:
                     1 x Share(color), 1 Share(shape), Diff(pos)
@@ -537,12 +576,7 @@ class RestrictivePieceConfigSetSampler:
         # 1. sample position (so we can block certain positions if drawn already twice)
         # 2. sample piece on position
         # Note: if you dont need this, simply use random.sample(n,k)
-        allowed_positions = list(RelPositions)
-        num_pos = len(allowed_positions)
-        num_possible = pieces_per_pos * num_pos
-        if num_possible < n_pieces:
-            raise Exception(f"with pieces_per_pos={pieces_per_pos} and num_pos={num_pos} "
-                            f"there can be maximal n_pieces={num_possible} in the set")
+        allowed_positions = self.__check_and_get_allowed_positions(n_pieces)
         pos_counts = dict([(pos, 0) for pos in allowed_positions])
 
         piece_set = []
@@ -566,6 +600,9 @@ class RestrictivePieceConfigSetSampler:
         if n_pieces <= 2:  # we are already finished
             return PieceConfigSet(piece_set)
 
+        # remove already, if we have reached the limit at a pos
+        self.__check_and_reduce(allowed_positions, pos_counts)
+
         # other distractors can look like anything (but not identical to the target)
         # Note: target piece is not in pieces already
         for _ in range(n_pieces - 2):
@@ -574,10 +611,7 @@ class RestrictivePieceConfigSetSampler:
             piece = random.choice(possible_pieces)
             piece_set.append(piece)
             pos_counts[piece.rel_position] += 1
-            for pos, counts in pos_counts.items():
-                if counts >= 2:
-                    if pos in allowed_positions:
-                        allowed_positions.remove(pos)
+            self.__check_and_reduce(allowed_positions, pos_counts)
         return PieceConfigSet(piece_set)
 
     def sample_some_with_prop1_and_position(self, target_piece: PieceConfig, prop1: PropertyNames,
@@ -586,40 +620,43 @@ class RestrictivePieceConfigSetSampler:
         # 1. sample position (so we can block certain positions if drawn already twice)
         # 2. sample piece on position
         # Note: if you dont need this, simply use random.sample(n,k)
-        allowed_positions = list(RelPositions)
-        num_pos = len(allowed_positions)
-        num_possible = pieces_per_pos * num_pos
-        if num_possible < n_pieces:
-            raise Exception(f"with pieces_per_pos={pieces_per_pos} and num_pos={num_pos} "
-                            f"there can be maximal n_pieces={num_possible} in the set")
-        pos_counts = dict([(pos, 0) for pos in allowed_positions])
         piece_set = []
 
         # exactly on with the same position, but different prop
         possible_pieces = self.pieces_by_pos[target_piece.rel_position]
         possible_pieces = [p for p in possible_pieces if p[prop1] != target_piece[prop1]]
-        piece_set.append(random.choice(possible_pieces))
-        # remove position afterwards (we only want exactly one additional here)
-        with suppress(ValueError, AttributeError):  # its fine when its not there
-            allowed_positions.remove(target_piece.rel_position)
+        piece1 = random.choice(possible_pieces)
+        piece_set.append(piece1)
+
+        # others with same prop, but different position
+        possible_pieces = self.meta[prop1][target_piece[prop1]]
+        possible_pieces = [p for p in possible_pieces if p.rel_position != target_piece.rel_position]
+        possible_pieces_by_pos = PieceConfig.group_by_pos(possible_pieces)
+
+        # positions are defined by the other possible pieces that do not share the target piece position
+        allowed_positions = [p.rel_position for p in possible_pieces]
+        pos_counts = dict([(pos, 0) for pos in allowed_positions])
 
         for _ in range(n_pieces - 1):
             pos = random.choice(allowed_positions)
-            possible_pieces = self.__get_same_but_diff(target_piece, prop1, PropertyNames.REL_POSITION, pos)
-            piece = random.choice(possible_pieces)
+            piece = random.choice(possible_pieces_by_pos[pos])
             piece_set.append(piece)
             pos_counts[piece.rel_position] += 1
-            for pos, counts in pos_counts.items():
-                if counts >= 2:
-                    if pos in allowed_positions:
-                        allowed_positions.remove(pos)
+            self.__check_and_reduce(allowed_positions, pos_counts)
         return PieceConfigSet(piece_set)
 
     def __get_same_but_diff(self, target_piece: PieceConfig,
                             same_prop: PropertyNames, diff_prop: PropertyNames, pos):
         possible_pieces = self.meta[same_prop][target_piece[same_prop]]
         possible_pieces = [p for p in possible_pieces if p[diff_prop] != target_piece[diff_prop]]
-        return [p for p in possible_pieces if p.rel_position == pos]
+        possible_pieces = [p for p in possible_pieces if p.rel_position == pos]
+        if not possible_pieces:
+            print("target_piece:", target_piece)
+            print("same_prop:", same_prop)
+            print("diff_prop:", diff_prop)
+            print("pos:", pos)
+            print(self.meta[same_prop][target_piece[same_prop]])
+        return possible_pieces
 
     def sample_some_with_prop1_and_prop2(self, target_piece: PieceConfig, prop1: PropertyNames, prop2: PropertyNames,
                                          n_pieces: int, pieces_per_pos: int = 2):
@@ -627,12 +664,7 @@ class RestrictivePieceConfigSetSampler:
         # 1. sample position (so we can block certain positions if drawn already twice)
         # 2. sample piece on position
         # Note: if you dont need this, simply use random.sample(n,k)
-        allowed_positions = list(RelPositions)
-        num_pos = len(allowed_positions)
-        num_possible = pieces_per_pos * num_pos
-        if num_possible < n_pieces:
-            raise Exception(f"with pieces_per_pos={pieces_per_pos} and num_pos={num_pos} "
-                            f"there can be maximal n_pieces={num_possible} in the set")
+        allowed_positions = self.__check_and_get_allowed_positions(n_pieces)
         pos_counts = dict([(pos, 0) for pos in allowed_positions])
         piece_set = []
         # select at least one, but never all for the first property
@@ -643,10 +675,7 @@ class RestrictivePieceConfigSetSampler:
             piece = random.choice(possible_pieces)
             piece_set.append(piece)
             pos_counts[piece.rel_position] += 1
-            for pos, counts in pos_counts.items():
-                if counts >= 2:
-                    if pos in allowed_positions:
-                        allowed_positions.remove(pos)
+            self.__check_and_reduce(allowed_positions, pos_counts)
         # select the remaining ones for the second property
         for _ in range(n_pieces - split_size):
             pos = random.choice(allowed_positions)
@@ -654,10 +683,7 @@ class RestrictivePieceConfigSetSampler:
             piece = random.choice(possible_pieces)
             piece_set.append(piece)
             pos_counts[piece.rel_position] += 1
-            for pos, counts in pos_counts.items():
-                if counts >= 2:
-                    if pos in allowed_positions:
-                        allowed_positions.remove(pos)
+            self.__check_and_reduce(allowed_positions, pos_counts)
         return PieceConfigSet(piece_set)
 
     def sample_with_position_restriction(self, n_pieces: int, pieces_per_pos: int = 2,
@@ -666,18 +692,12 @@ class RestrictivePieceConfigSetSampler:
         # 1. sample position (so we can block certain positions if drawn already twice)
         # 2. sample piece on position
         # Note: if you dont need this, simply use random.sample(n,k)
-        allowed_positions = list(RelPositions)
+        allowed_positions = self.__check_and_get_allowed_positions(n_pieces)
         # if we allow all positions, but there are only pieces of the same shape and color
         # then there will be no pieces available at the target piece position e.g. for position-only utterances
         for pos in disallow_pos:
             if pos in allowed_positions:
                 allowed_positions.remove(pos)
-
-        num_pos = len(allowed_positions)
-        num_possible = pieces_per_pos * num_pos
-        if num_possible < n_pieces:
-            raise Exception(f"with pieces_per_pos={pieces_per_pos} and num_pos={num_pos} "
-                            f"there can be maximal n_pieces={num_possible} in the set")
         pos_counts = dict([(pos, 0) for pos in allowed_positions])
         piece_set = []
         for _ in range(n_pieces):
@@ -686,10 +706,7 @@ class RestrictivePieceConfigSetSampler:
             piece = random.choice(possible_pieces)
             piece_set.append(piece)
             pos_counts[piece.rel_position] += 1
-            for pos, counts in pos_counts.items():
-                if counts >= 2:
-                    if pos in allowed_positions:
-                        allowed_positions.remove(pos)
+            self.__check_and_reduce(allowed_positions, pos_counts)
         return PieceConfigSet(piece_set)
 
 
@@ -698,13 +715,13 @@ class UtteranceTypeOrientedDistractorSetSampler:
     def __init__(self, pieces: List[PieceConfig], target_piece: PieceConfig, n_retries=100):
         self.n_retries = n_retries
         # remove the target from the piece set
-        pieces.remove(target_piece)
+        self.pieces = list(pieces)
+        self.pieces.remove(target_piece)
         # group pieces by their property values
         pieces_by_value = defaultdict(list)
-        for piece in pieces:
+        for piece in self.pieces:
             for pn in list(PropertyNames):
                 pieces_by_value[piece[pn]].append(piece)
-        self.pieces = pieces
         self.pieces_by_value = pieces_by_value
         self.target_piece = target_piece
 
