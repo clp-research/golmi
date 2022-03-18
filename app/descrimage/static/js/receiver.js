@@ -59,6 +59,11 @@ $(document).ready(function () {
         logView.sendData("/pentomino/save_log");
     });
 
+    socket.on("description_from_server", (data) => {
+        console.log(data)
+        document.getElementById("description").value = data;
+    });
+
     var setup_complete = false;
     socket.on("update_config", (config) => {
         // only do setup once (reconnections can occur, we don't want to reset the state every time)
@@ -82,6 +87,7 @@ $(document).ready(function () {
             // 2. pass state & attach manually to specific gripper
             socket.emit("add_gripper");
             setup_complete = true;
+            document.getElementById("description").value = data
         }
     });
 
@@ -114,6 +120,10 @@ $(document).ready(function () {
         socket.disconnect();
     }
 
+    function bad_description() {
+        socket.emit("descrimage_bad_description", description);
+    }
+
     // --- buttons --- //
     $("#start").click(() => {
         start(token);
@@ -124,5 +134,8 @@ $(document).ready(function () {
         stop();
         // reactive the start button
         $("#start").prop("disabled", false);
+    });
+    $("#bad_description").click(() => {
+        bad_description();
     });
 }); // on document ready end

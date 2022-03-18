@@ -18,16 +18,7 @@ descrimage_bp = Blueprint('descrimage_bp', __name__,
                          static_folder='static',
                          url_prefix="/descrimage")
 
-# @cross_origin
-# @descrimage_bp.route("/", methods=["GET"])
-# def descrimage():
-#     """
-#     Interactive interface.
-#     """
-#     return render_template("descrimage.html")
 
-
-#@cross_origin
 @descrimage_bp.route("/", methods=["GET", "POST"])
 def homepage():
     """
@@ -47,22 +38,32 @@ def homepage():
         return render_template("home.html")
 
 
-# @descrimage_bp.route('/', methods=['POST', "GET"])
-# def my_form_post():
-    
-    # else:
-    #     description = request.form["description"]
-    #     print(description)
-
 @descrimage_bp.route('/receiver', methods=['GET'])
 def receiver(token):
     return render_template("receiver.html", token=token)
+
 
 @descrimage_bp.route('/giver', methods=['GET'])
 def giver(token):
     return render_template("giver.html", token=token)
 
-# TODO: add socketios
+
+# SOCKETIO EVENTS
 @socketio.on("descrimage_description")
 def on_mouseclick(description):
+
+    # do something with description?
     print(description)
+
+    # send to other view the description
+    socketio.emit("description_from_server", description)
+
+
+@socketio.on("descrimage_bad_description")
+def on_mouseclick(data):
+
+    # do something with description?
+    print("BAD DESCRIPTION")
+
+    # send to other view the description
+    socketio.emit("descrimage_bad_description")

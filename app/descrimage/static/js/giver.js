@@ -59,6 +59,12 @@ $(document).ready(function () {
         logView.sendData("/pentomino/save_log");
     });
 
+    socket.on("descrimage_bad_description", (data) => {
+        console.log(data)
+        // CREATE POPUP
+        alert("Your description is bad and you should feel bad");
+    });
+
     // for debugging: log all events
     socket.onAny((eventName, ...args) => {
         console.log(eventName, args);
