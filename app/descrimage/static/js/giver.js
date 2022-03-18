@@ -88,6 +88,13 @@ $(document).ready(function () {
         socket.disconnect();
     }
 
+    function send_description() {
+        // join a GOLMI room with the name "test_room_id"
+        let description = document.getElementById("description").value;
+        socket.emit("descrimage_description", description);
+        document.getElementById("description").value = "";
+    }
+
     // --- buttons --- //
     $("#start").click(() => {
         start(token);
@@ -98,5 +105,8 @@ $(document).ready(function () {
         stop();
         // reactive the start button
         $("#start").prop("disabled", false);
+    });
+    $("#description_button").click(() => {
+        send_description();
     });
 }); // on document ready end
