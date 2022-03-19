@@ -1,3 +1,13 @@
 /**
  * Put custom css here
  */
+
+ /* input{width: 100%} */
+ .textarea {
+    border: 1px solid #ccc;
+    font-family: inherit;
+    font-size: inherit;
+    min-height: 70px;
+    min-width: 600px;
+    padding: 1px 6px;
+  }
