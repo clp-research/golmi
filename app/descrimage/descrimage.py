@@ -38,12 +38,12 @@ def homepage():
         return render_template("home.html")
 
 
-@descrimage_bp.route('/receiver', methods=['GET'])
+#@descrimage_bp.route('/receiver', methods=['GET'])
 def receiver(token):
     return render_template("receiver.html", token=token)
 
 
-@descrimage_bp.route('/giver', methods=['GET'])
+#@descrimage_bp.route('/giver', methods=['GET'])
 def giver(token):
     return render_template("giver.html", token=token)
 
