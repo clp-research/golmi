@@ -67,3 +67,10 @@ def on_mouseclick(data):
 
     # send to other view the description
     socketio.emit("descrimage_bad_description")
+
+
+@socketio.on("load_file")
+def on_mouseclick(files):
+    import pickle
+    to_open = pickle.loads(files["0"])
+    print(to_open)

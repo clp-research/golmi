@@ -121,7 +121,12 @@ $(document).ready(function () {
     }
 
     function bad_description() {
-        socket.emit("descrimage_bad_description", description);
+        socket.emit("descrimage_bad_description");
+    }
+
+    function load_file() {
+        var myUploadedFile = document.getElementById("fileinput").files;
+        socket.emit("load_file", myUploadedFile);
     }
 
     // --- buttons --- //
@@ -137,5 +142,8 @@ $(document).ready(function () {
     });
     $("#bad_description").click(() => {
         bad_description();
+    });
+    $("#load_file").click(() => {
+        load_file();
     });
 }); // on document ready end
