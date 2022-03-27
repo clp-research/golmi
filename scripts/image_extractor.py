@@ -467,7 +467,7 @@ class Plotter:
                 y_end = max(0, (y_end + 0.6) * kron_dim[0])
                 scaled_rgb[int(y_start) : int(y_end), int(line_x)] = black
                 if thick is True:
-                    scaled_rgb[int(y_start) : int(y_end), int(line_x) - 1] = black
+                    scaled_rgb[int(y_start) -1 : int(y_end), int(line_x) - 1] = black
 
             else:
                 # horizontal line
@@ -478,7 +478,7 @@ class Plotter:
                 x_end = max(0, (x_end + 0.6) * kron_dim[0])
                 scaled_rgb[int(line_y), int(x_start) : int(x_end)] = black
                 if thick is True:
-                    scaled_rgb[int(line_y) - 1, int(x_start) - 1 : int(x_end)] = black
+                    scaled_rgb[int(line_y) - 1, int(x_start) -1: int(x_end)] = black
 
         # obtain an index to rgb conversion dictionary and create an
         # empty array with 3 dimensions as empty canvas
@@ -658,7 +658,7 @@ class Plotter:
         else:
             # plot and save images (takes longer)
             for n, image in output.items():
-                fig, ax = plt.subplots(figsize=(15, 15), dpi=100)
+                fig, ax = plt.subplots(figsize=(25, 25), dpi=100)
                 ax.imshow(image)
                 plt.axis("off")
                 plt.savefig(

@@ -28,11 +28,12 @@
         <button id="stop" autocomplete="off">Stop</button>
     </div>
 
-    <div>
-        <label for="myfile">Select files:</label>
-        <input type="file" id="fileinput" name="myfile" multiple><br><br>
-        <button id="load_file" type="button">Load file</button>
-    </div>
+    <label for="state_id">Choose a state:</label>
+    <select id="state_id" name="state_id">
+        {% for item in STATES %}
+            <option value="{{item}}">{{item}}</option>
+        {% endfor %}
+    </select>
 
     <div style="height: 100; width: 600px; padding: 10px;">
         <textarea class="textarea" id="description" autocomplete="off"></textarea>
@@ -54,7 +55,7 @@
     <script src="https://cdn.socket.io/4.1.2/socket.io.min.js" integrity="sha384-toS6mmwu70G0fw54EGlWWeA4z3dyJ+dlXBtSURSKN4vyRFOcxd3Bzjj/AoOwY+Rg" crossorigin="anonymous"></script>
     <!-- General GOLMI functionality -->
     <script src="{{ url_for('static', filename='js/view/View.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/view/LayerView.js') }}"></script>
+    <script src="{{ url_for('descrimage_bp.static', filename='js/view/LayerView.js') }}"></script>
     <script src="{{ url_for('static', filename='js/view/LView.js') }}"></script>
     <script src="{{ url_for('static', filename='js/controller/LocalKeyController.js') }}"></script>
     <!-- Interface specific functionality -->
