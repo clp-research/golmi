@@ -186,11 +186,17 @@ $(document).ready(function () {
                     for (const [grippedId, grippedObj] of Object.entries(gripper.gripped)) {
                         let blockMatrix = grippedObj.block_matrix;
 
+                        if (grId == "init"){
+                            var highlight_color = "red";
+                        } else {
+                            var highlight_color = "green";
+                        }
+
                         let params = {
                             x: grippedObj.x,
                             y: grippedObj.y,
                             color: grippedObj.color,
-                            highlight: "black" // highlight a gripped object
+                            highlight: highlight_color // highlight a gripped object
                         }
                         this._drawBlockObj(ctx,
                                            blockMatrix,
@@ -198,24 +204,26 @@ $(document).ready(function () {
                     }
                 }
 
-                // modify style depending on whether an object is gripped
-                let grSize = gripper.gripped ? 0.2 : 0.5;
+                // if (grId != "init"){
+                //     // modify style depending on whether an object is gripped
+                //     let grSize = gripper.gripped ? 0.2 : 0.5;
 
-                // draw the gripper itself
-                // --- config ---
-                ctx.lineStyle = "red";
-                ctx.lineWidth = 2;
-                // draw. The gripper is a simple cross
-                ctx.beginPath();
-                ctx.moveTo(this._toPxl(gripper.x-grSize),
-                           this._toPxl(gripper.y-grSize));
-                ctx.lineTo(this._toPxl(gripper.x+grSize),
-                           this._toPxl(gripper.y+grSize));
-                ctx.moveTo(this._toPxl(gripper.x-grSize),
-                           this._toPxl(gripper.y+grSize));
-                ctx.lineTo(this._toPxl(gripper.x+grSize),
-                           this._toPxl(gripper.y-grSize));
-                ctx.stroke();
+                //     // draw the gripper itself
+                //     // --- config ---
+                //     ctx.lineStyle = "red";
+                //     ctx.lineWidth = 2;
+                //     // draw. The gripper is a simple cross
+                //     ctx.beginPath();
+                //     ctx.moveTo(this._toPxl(gripper.x-grSize),
+                //             this._toPxl(gripper.y-grSize));
+                //     ctx.lineTo(this._toPxl(gripper.x+grSize),
+                //             this._toPxl(gripper.y+grSize));
+                //     ctx.moveTo(this._toPxl(gripper.x-grSize),
+                //             this._toPxl(gripper.y+grSize));
+                //     ctx.lineTo(this._toPxl(gripper.x+grSize),
+                //             this._toPxl(gripper.y-grSize));
+                //     ctx.stroke();
+                // }
             }
         }
 

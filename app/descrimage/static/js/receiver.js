@@ -138,6 +138,17 @@ $(document).ready(function () {
         console.log("this workd")
         snd.play();
     }
+
+
+    // listener for state selection
+    var selectElem = document.getElementById('state_id')
+    selectElem.addEventListener('change', function() {
+        var index = selectElem.selectedIndex;
+        // Add that data to the <p>
+        socket.emit("load_state_index", index, token);
+    })
+
+
     start(token);
     socket.emit("add_gripper")
     // --- buttons --- //
