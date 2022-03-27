@@ -46,10 +46,10 @@ def receiver(token):
     states = [i for i in range(len(data["states"]))]
     room_manager.add_room(token, data["config"])
 
-    # to_replace = list(data["states"][0]["grippers"].keys())[0]
-    # data["states"][0]["grippers"]["init"] = data["states"][0]["grippers"][to_replace]
-    # data["states"][0]["grippers"]["init"]["id_n"] = "init"
-    # del data["states"][0]["grippers"][to_replace]
+    to_replace = list(data["states"][0]["grippers"].keys())[0]
+    data["states"][0]["grippers"]["init"] = data["states"][0]["grippers"][to_replace]
+    data["states"][0]["grippers"]["init"]["id_n"] = "init"
+    del data["states"][0]["grippers"][to_replace]
 
     for o in data["states"][0]["objs"].values():
         if o["gripped"] is True:
@@ -94,3 +94,16 @@ def on_mouseclick(files):
 @socketio.on("test_person_connected")
 def test_person_connected():
     socketio.emit("incoming connection")
+
+
+@socketio.on("load_state_index")
+def load_state_index(index, token):
+    with open(f"app/descrimage/data/{token}.pckl", "rb") as infile:
+        data = pickle.load(infile)
+
+    to_replace = list(data["states"][index]["grippers"].keys())[0]
+    data["states"][index]["grippers"]["init"] = data["states"][index]["grippers"][to_replace]
+    data["states"][index]["grippers"]["init"]["id_n"] = "init"
+    del data["states"][index]["grippers"][to_replace]
+
+    room_manager.get_model_of_room(token).set_state(data["states"][index])
