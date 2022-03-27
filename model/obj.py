@@ -168,14 +168,17 @@ class Obj:
             y=float(source_dict["y"]),
             block_matrix=bm
         )
+        
+        if "gripped" in source_dict:
+            if source_dict["gripped"] is True:
+                new_obj.gripped = True
+        # # process optional info
+        # if "rotation" in source_dict and source_dict["rotation"] != 0:
+        #     new_obj.rotate(float(source_dict["rotation"]))
 
-        # process optional info
-        if "rotation" in source_dict and source_dict["rotation"] != 0:
-            new_obj.rotate(float(source_dict["rotation"]))
-
-        # flip the object if "mirrored" is true in the dictionary
-        if "mirrored" in source_dict and source_dict["mirrored"]:
-            new_obj.flip()
+        # # flip the object if "mirrored" is true in the dictionary
+        # if "mirrored" in source_dict and source_dict["mirrored"]:
+        #     new_obj.flip()
 
         # apply color
         if "color" in source_dict:

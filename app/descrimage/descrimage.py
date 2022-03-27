@@ -4,7 +4,8 @@ from flask_cors import cross_origin
 import json
 import os
 from datetime import datetime
-from app.app import socketio
+import pickle
+from app.app import socketio, room_manager
 
 
 def apply_config_to(app):
@@ -26,21 +27,35 @@ def homepage():
     """
     if "token" in request.form:
         token = request.form['token']
-        token, role = token.split("-")
 
-        if role == "1":
-            return receiver(token)
-        elif role == "2":
-            return giver(token)
-        else:
-            return "INVALID TOKEN"
+        return receiver(token)
+
     else:
         return render_template("home.html")
+
+@descrimage_bp.route("/<token>", methods=["GET"])
+def candidate_page(token):
+    return giver(token)
 
 
 #@descrimage_bp.route('/receiver', methods=['GET'])
 def receiver(token):
-    return render_template("receiver.html", token=token)
+    with open(f"app/descrimage/data/{token}.pckl", "rb") as infile:
+        data = pickle.load(infile)
+
+    states = [i for i in range(len(data["states"]))]
+    room_manager.add_room(token, data["config"])
+
+    # to_replace = list(data["states"][0]["grippers"].keys())[0]
+    # data["states"][0]["grippers"]["init"] = data["states"][0]["grippers"][to_replace]
+    # data["states"][0]["grippers"]["init"]["id_n"] = "init"
+    # del data["states"][0]["grippers"][to_replace]
+
+    for o in data["states"][0]["objs"].values():
+        if o["gripped"] is True:
+            print(o)
+    room_manager.get_model_of_room(token).set_state(data["states"][0])
+    return render_template("receiver.html", token=token, STATES=states)
 
 
 #@descrimage_bp.route('/giver', methods=['GET'])
@@ -60,7 +75,7 @@ def on_mouseclick(description):
 
 
 @socketio.on("descrimage_bad_description")
-def on_mouseclick(data):
+def on_mouseclick():
 
     # do something with description?
     print("BAD DESCRIPTION")
@@ -74,3 +89,8 @@ def on_mouseclick(files):
     import pickle
     to_open = pickle.loads(files["0"])
     print(to_open)
+
+
+@socketio.on("test_person_connected")
+def test_person_connected():
+    socketio.emit("incoming connection")

@@ -237,7 +237,7 @@ class State:
                     new_object = Obj.from_dict(
                         id_n, obj_dict, type_config
                     )
-                    objs[id_n] = new_object
+                    targets[id_n] = new_object
 
         except KeyError:
             raise KeyError(

@@ -48,7 +48,7 @@ $(document).ready(function () {
     });
 
     socket.on("joined_room", (data) => {
-        socket.emit("load_config", CUSTOM_CONFIG);
+        // socket.emit("load_config", CUSTOM_CONFIG);
         console.log(`Joined room ${data.room_id} as client ${data.client_id}`);
     })
 
@@ -64,33 +64,37 @@ $(document).ready(function () {
         document.getElementById("description").value = data;
     });
 
-    var setup_complete = false;
-    socket.on("update_config", (config) => {
-        // only do setup once (reconnections can occur, we don't want to reset the state every time)
-        if (!setup_complete && custom_config_is_applied(CUSTOM_CONFIG,
-                                                        config)) {
-            // ask model to load a random state
-            socket.emit("random_init", {"n_objs": N_OBJECTS,
-                                        "n_grippers": N_GRIPPERS,
-                                        "random_gr_position":false,
-                                        "obj_area": "top",
-                                        "target_area": "bottom"});
-            // manually add a gripper that will be assigned to the controller
-            // TODO: Should this happen somewhere else?
-            // Options:
-            // - automatically get gripper when joining room / use join parameter
-            //      -> but then why do we even need pre-generated grippers?
-            // - manually add gripper once room is joined
-            //      -> but then I need to know generated names? or same problem.
-            // so maybe there are 2 approaches that make sense:
-            // 1. random init on model side + automatically attach to some gripper that is generated on the fly
-            // 2. pass state & attach manually to specific gripper
-            socket.emit("add_gripper");
-            setup_complete = true;
-            document.getElementById("description").value = data
-        }
+    socket.on("incoming connection", () => {
+        audio_notification();
     });
 
+    // var setup_complete = false;
+    // socket.on("update_config", (config) => {
+    //     // only do setup once (reconnections can occur, we don't want to reset the state every time)
+    //     if (!setup_complete && custom_config_is_applied(CUSTOM_CONFIG,
+    //                                                     config)) {
+    //         // ask model to load a random state
+    //         socket.emit("random_init", {"n_objs": N_OBJECTS,
+    //                                     "n_grippers": N_GRIPPERS,
+    //                                     "random_gr_position":false,
+    //                                     "obj_area": "top",
+    //                                     "target_area": "bottom"});
+    //         // manually add a gripper that will be assigned to the controller
+    //         // TODO: Should this happen somewhere else?
+    //         // Options:
+    //         // - automatically get gripper when joining room / use join parameter
+    //         //      -> but then why do we even need pre-generated grippers?
+    //         // - manually add gripper once room is joined
+    //         //      -> but then I need to know generated names? or same problem.
+    //         // so maybe there are 2 approaches that make sense:
+    //         // 1. random init on model side + automatically attach to some gripper that is generated on the fly
+    //         // 2. pass state & attach manually to specific gripper
+    //         socket.emit("add_gripper");
+    //         setup_complete = true;
+    //         document.getElementById("description").value = data
+    //     }
+    // });
+    
     // for debugging: log all events
     socket.onAny((eventName, ...args) => {
         console.log(eventName, args);
@@ -129,6 +133,13 @@ $(document).ready(function () {
         socket.emit("load_file", myUploadedFile);
     }
 
+    function audio_notification() {
+        var snd = new Audio("static/notification.mp3");
+        console.log("this workd")
+        snd.play();
+    }
+    start(token);
+    socket.emit("add_gripper")
     // --- buttons --- //
     $("#start").click(() => {
         start(token);

@@ -38,7 +38,8 @@ class Gripper(Obj):
         # process optional info
         if "gripped" in source_dict:
             # cast object name to str too
-            gripped_id = str(source_dict["gripped"])
+            # TODO: gripped is a dictionary {id: object_dict}
+            gripped_id = str(list(source_dict["gripped"].keys())[0])
             new_gripper.gripped = gripped_id
 
         if "width" in source_dict:
