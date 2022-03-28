@@ -1,16 +1,13 @@
 """
 script to create state-images from a file containing a list of states and a configuration file.
-
 Syntax:
     python image_extractor.py file.pckl --outputdir images-output --plot objects borders --single-objects
-
     Args:
         - file.pckl: a pickled dictionary: 
         {
             "config": config_dict_format,
             "states": [list of states(dict) to plot]
         }
-
         --plot: a list of things to plot. available: objects, targets, grippers, grid, borders
         --single-objects: each object and its 5x5 square will be saved individually
         --to-numpy: instead of saving images, a dictionary containing numpy RGB arrays will be saved
@@ -19,7 +16,6 @@ Syntax:
                 "object_idn": np.array(RGB-object box),
                 ...
             }
-
     in the output folder the script will create following output:
         i.png --> entire state where i is the index of the state within the list
         i_idn.png --> a 5x5 image of the idn object from the i-th state 
@@ -431,8 +427,7 @@ class Plotter:
             labelbottom=False,
             labelleft=False,
         )
-
-        # if self.to_numpy is True:
+        plt.axis('off')
         fig.tight_layout(pad=0)
         ax.figure.canvas.draw()
         # Get the RGBA buffer from the figure
@@ -467,7 +462,7 @@ class Plotter:
                 y_end = max(0, (y_end + 0.6) * kron_dim[0])
                 scaled_rgb[int(y_start) : int(y_end), int(line_x)] = black
                 if thick is True:
-                    scaled_rgb[int(y_start) : int(y_end), int(line_x) - 1] = black
+                    scaled_rgb[int(y_start) -1 : int(y_end), int(line_x) - 1] = black
 
             else:
                 # horizontal line
@@ -478,7 +473,7 @@ class Plotter:
                 x_end = max(0, (x_end + 0.6) * kron_dim[0])
                 scaled_rgb[int(line_y), int(x_start) : int(x_end)] = black
                 if thick is True:
-                    scaled_rgb[int(line_y) - 1, int(x_start) - 1 : int(x_end)] = black
+                    scaled_rgb[int(line_y) - 1, int(x_start) -1: int(x_end)] = black
 
         # obtain an index to rgb conversion dictionary and create an
         # empty array with 3 dimensions as empty canvas
