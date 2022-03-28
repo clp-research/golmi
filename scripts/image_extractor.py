@@ -408,6 +408,7 @@ class Plotter:
         norm = colors.BoundaryNorm(bounds, cmap.N)
 
         # plot image
+        #ax.imshow(np.ones((50, 50)), cmap=colors.ListedColormap(["white", "white"]))
         ax.imshow(data, cmap=cmap, norm=norm)
 
         if self.plot_grid is True:
@@ -431,8 +432,7 @@ class Plotter:
             labelbottom=False,
             labelleft=False,
         )
-
-        # if self.to_numpy is True:
+        plt.axis('off')
         fig.tight_layout(pad=0)
         ax.figure.canvas.draw()
         # Get the RGBA buffer from the figure
