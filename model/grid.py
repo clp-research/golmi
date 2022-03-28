@@ -11,6 +11,7 @@ class Tile:
         -its coordinates (x, y)
         -which object(s) on it
     """
+
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -19,7 +20,7 @@ class Tile:
     def __repr__(self):
         if not self.objects:
             return " "
-        return "+"
+        return "-".join([i.id_n for i in self.objects])
 
     def __str__(self):
         return self.__repr__()
@@ -30,6 +31,7 @@ class Converter:
     class used to convert integer coordinates x, y
     to float ones given the step size used by the model
     """
+
     def __init__(self, step):
         self.factor = step
         self.multiplier = max(1, math.floor(1 / step))
@@ -57,10 +59,32 @@ class Converter:
                 }
 
 
+class GridConfig:
+
+    def __init__(self, width: int, height: int, move_step: int, prevent_overlap: bool):
+        self.width = width
+        self.height = height
+        self.move_step = move_step
+        self.prevent_overlap = prevent_overlap
+
+    def to_dict(self):
+        return {
+            "width": self.width,
+            "height": self.height,
+            "move_step": self.move_step,
+            "prevent_overlap": self.prevent_overlap,
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(d["width"], d["height"], d["move_step"], d["prevent_overlap"])
+
+
 class Grid:
     """
     a grid is a 2D-Array of Tiles
     """
+
     def __init__(self, width, height, step, prevent_overlap):
         self.width = width
         self.height = height
@@ -74,8 +98,11 @@ class Grid:
         self.clear_grid()
         self.converter = Converter(self.step)
 
+    def get_grid_config(self):
+        return GridConfig(self.width, self.height, self.step, self.prevent_overlap)
+
     @classmethod
-    def create_from_config(cls, config):
+    def create_from_config(cls, config: GridConfig):
         return cls(
             config.width,
             config.height,

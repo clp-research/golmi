@@ -3,7 +3,7 @@ import numpy as np
 
 class Obj:
     def __init__(
-            self, id_n, obj_type, x, y, width=None, height=None, block_matrix=[],
+            self, id_n, obj_type, x, y, block_matrix=[],
             rotation=0, mirrored=False, color="blue", gripped=False):
         self.id_n = id_n
         self.type = obj_type
@@ -138,7 +138,7 @@ class Obj:
         return np.flip(matrix, axis=0).tolist()
 
     @classmethod
-    def from_dict(cls, id_n, source_dict, type_config):
+    def from_dict(cls, id_n, source_dict, type_config=None):
         """
         Construct a new Obj instance from a dictionary, e.g., parsed json.
         @param id_n identifier for the object
@@ -148,21 +148,25 @@ class Obj:
         @return new Obj instance with the given attributes
         """
         # make sure mandatory keys are part of dictionary
-        mandatory_key = {"type", "x", "y", "width", "height"}
+        mandatory_key = {"type", "x", "y"}
         if any(source_dict.get(key) is None for key in mandatory_key):
             raise KeyError(
                 f"Object construction failed, key {mandatory_key} missing"
             )
-
+        bm = None
+        if type_config:
+            bm = type_config[source_dict["type"]]
+        if "block_matrix" in source_dict:
+            bm = source_dict["block_matrix"]
+        if not bm:
+            raise Exception("Either provide type_config or block_matrix")
         # create new object from the mandatory keys
         new_obj = cls(
             id_n=id_n,
             obj_type=source_dict["type"],
             x=float(source_dict["x"]),
             y=float(source_dict["y"]),
-            width=float(source_dict["width"]),
-            height=float(source_dict["height"]),
-            block_matrix=type_config[source_dict["type"]]
+            block_matrix=bm
         )
 
         # process optional info
@@ -177,6 +181,10 @@ class Obj:
         if "color" in source_dict:
             new_obj.color = source_dict["color"]
 
+        # apply gripped
+        if "gripped" in source_dict:
+            new_obj.gripped = source_dict["gripped"]
+
         return new_obj
 
     def to_dict(self):
@@ -184,16 +192,17 @@ class Obj:
         Constructs a JSON-friendly dictionary representation of this instance.
         @return dictionary containing all important properties
         """
-        return {
-            "id_n":         self.id_n,
-            "type":			self.type,
-            "x":			self.x,
-            "y":			self.y,
-            "width":		self.width,
-            "height":		self.height,
-            "rotation":		self.rotation,
-            "mirrored":		self.mirrored,
-            "color":		self.color,
-            "block_matrix":	self.block_matrix,
-            "gripped":		self.gripped
+        d = {
+            "id_n": self.id_n,
+            "type": self.type,
+            "x": self.x,
+            "y": self.y,
+            "rotation": self.rotation,
+            "color": self.color,
+            "block_matrix": self.block_matrix
         }
+        if self.mirrored:
+            d["mirrored"] = self.mirrored
+        if self.gripped:
+            d["gripped"] = self.gripped
+        return d

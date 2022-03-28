@@ -2,16 +2,18 @@ import json
 
 from model.obj import Obj
 from model.gripper import Gripper
-from model.grid import Grid
+from model.grid import Grid, GridConfig
 
 
 class State:
-    def __init__(self, objs, grippers, targets, config):
+    def __init__(self, objs, grippers, targets, grid_config: GridConfig, state_id: int = None):
+        self.state_id = state_id
         self.objs = objs
         self.grippers = grippers
         self.targets = targets
-        self.object_grid = Grid.create_from_config(config)
-        self.target_grid = Grid.create_from_config(config)
+        self.grid_config = grid_config
+        self.object_grid = Grid.create_from_config(grid_config)
+        self.target_grid = Grid.create_from_config(grid_config)
         self.plot_objects_targets()
 
     def plot_objects_targets(self):
@@ -174,13 +176,14 @@ class State:
 
     @classmethod
     # TODO: make sure pieces are on the board! (at least emit warning)
-    def from_dict(cls, source_dict, type_config, config):
+    def from_dict(cls, source_dict, type_config=None, grid_config: GridConfig = None):
         """
         @param source_dict  Dict containing State constructor parameters.
                             The keys "objs" and "grippers" are mandatory.
                             Refer to the documentation for additional format
                             instructions.
         @param type_config  dict mapping type names to block matrices
+        @param grid_config dict to initialize the grids
         @return new State instance with the given attributes
         """
         if not isinstance(source_dict.get("objs"), dict) or \
@@ -189,6 +192,14 @@ class State:
                 "source_dict must contain the keys 'objs' and 'grippers' "
                 "mapping to dictionaries."
             )
+
+        gc = None
+        if grid_config:
+            gc = grid_config
+        if "grid_config" in source_dict:
+            gc = GridConfig.from_dict(source_dict["grid_config"])
+        if not gc:
+            raise Exception("Either provide grid_config as a value in 'source_dict' or to 'from_dict' directly")
 
         try:
             # construct objects
@@ -234,7 +245,10 @@ class State:
                 "does not have the right format.\n"
                 "Please refer to the documentation."
             )
-        return cls(objs, grippers, targets, config)
+        state_id = None
+        if "state_id" in source_dict:
+            state_id = source_dict["state_id"]
+        return cls(objs, grippers, targets, gc, state_id)
 
     def remove_object(self, obj, object_is_target=False):
         """
@@ -280,14 +294,16 @@ class State:
 
         return grid.get_single_tile({"x": x, "y": y})
 
-
-    def to_dict(self):
+    def to_dict(self, include_grid_config=False):
         """
         Create a JSON-friendly representation of the current state
         @return dict containing current grippers and objects
         """
         state_dict = dict()
+        state_dict["state_id"] = self.state_id
         state_dict["grippers"] = self.get_gripper_dict()
         state_dict["objs"] = self.get_obj_dict()
         state_dict["targets"] = self.get_target_dict()
+        if include_grid_config:
+            state_dict["grid_config"] = self.object_grid.get_grid_config().to_dict()
         return state_dict
