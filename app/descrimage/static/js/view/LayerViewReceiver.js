@@ -187,20 +187,25 @@ $(document).ready(function () {
                         let blockMatrix = grippedObj.block_matrix;
 
                         if (grId == "init"){
-                            var highlight_color = "red";
+                            let params = {
+                                x: grippedObj.x,
+                                y: grippedObj.y,
+                                color: grippedObj.color
+                            }
+                            this._drawBlockObj(ctx,
+                                               blockMatrix,
+                                               params);
                         } else {
-                            var highlight_color = "green";
+                            let params = {
+                                x: grippedObj.x,
+                                y: grippedObj.y,
+                                color: grippedObj.color,
+                                highlight: "green" // highlight a gripped object
+                            }
+                            this._drawBlockObj(ctx,
+                                               blockMatrix,
+                                               params);
                         }
-
-                        let params = {
-                            x: grippedObj.x,
-                            y: grippedObj.y,
-                            color: grippedObj.color,
-                            highlight: highlight_color // highlight a gripped object
-                        }
-                        this._drawBlockObj(ctx,
-                                           blockMatrix,
-                                           params);
                     }
                 }
 
