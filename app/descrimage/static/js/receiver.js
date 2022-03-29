@@ -114,7 +114,6 @@ $(document).ready(function () {
         var index = selectElem.selectedIndex;
         // Add that data to the <p>
         socket.emit("load_state_index", index, token);
-        socket.emit("add_gripper");
     })
 
 
