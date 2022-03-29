@@ -187,7 +187,7 @@ $(document).ready(function () {
                         let blockMatrix = grippedObj.block_matrix;
 
                         if (grId == "init"){
-                            var highlight_color = "red";
+                            var highlight_color = "black";
                         } else {
                             var highlight_color = "green";
                         }
@@ -201,29 +201,15 @@ $(document).ready(function () {
                         this._drawBlockObj(ctx,
                                            blockMatrix,
                                            params);
+
+                        if (grId == "init"){
+                            this._drawBB(ctx, blockMatrix, params, "red");
+                        }
+                        else{
+                            this._drawBB(ctx, blockMatrix, params, "green");
+                        }
                     }
                 }
-
-                // if (grId != "init"){
-                //     // modify style depending on whether an object is gripped
-                //     let grSize = gripper.gripped ? 0.2 : 0.5;
-
-                //     // draw the gripper itself
-                //     // --- config ---
-                //     ctx.lineStyle = "red";
-                //     ctx.lineWidth = 2;
-                //     // draw. The gripper is a simple cross
-                //     ctx.beginPath();
-                //     ctx.moveTo(this._toPxl(gripper.x-grSize),
-                //             this._toPxl(gripper.y-grSize));
-                //     ctx.lineTo(this._toPxl(gripper.x+grSize),
-                //             this._toPxl(gripper.y+grSize));
-                //     ctx.moveTo(this._toPxl(gripper.x-grSize),
-                //             this._toPxl(gripper.y+grSize));
-                //     ctx.lineTo(this._toPxl(gripper.x+grSize),
-                //             this._toPxl(gripper.y-grSize));
-                //     ctx.stroke();
-                // }
             }
         }
 
@@ -238,6 +224,23 @@ $(document).ready(function () {
         }
 
         // --- draw helper functions ---
+
+        _drawBB(ctx, bMatrix, params, color) {
+            // Draw blocks       
+            for (let i=0; i< bMatrix.length; i++) {
+                this._drawUpperBorder(ctx, params.x + i, params.y, color);
+            }
+            for (let i=0; i< bMatrix.length; i++) {
+                this._drawLowerBorder(ctx, params.x + i, params.y + bMatrix.length -1, color);
+            }
+            for (let i=0; i< bMatrix.length; i++) {
+                this._drawLeftBorder(ctx, params.x, params.y + i, color);
+            }
+            for (let i=0; i< bMatrix.length; i++) {
+                this._drawRightBorder(ctx, params.x + bMatrix[0].length -1, params.y + i, color);
+            }
+
+        }
 
         _drawBlockObj(ctx, bMatrix, params) {
             // Draw blocks
@@ -281,22 +284,22 @@ $(document).ready(function () {
 
         _drawUpperBorder(
             ctx, x, y, highlight=false, borderColor="black", borderWidth=2) {
-            this._drawBorder(ctx, x, y, x+1, y, highlight);
+            this._drawBorder(ctx, x, y, x+1, y, highlight, borderColor, borderWidth);
         }
 
         _drawLowerBorder(
             ctx, x, y, highlight=false, borderColor="black", borderWidth=2) {
-            this._drawBorder(ctx, x, y+1, x+1, y+1, highlight);
+            this._drawBorder(ctx, x, y+1, x+1, y+1, highlight, borderColor, borderWidth);
         }
 
         _drawLeftBorder(
             ctx, x, y, highlight=false, borderColor="black", borderWidth=2) {
-            this._drawBorder(ctx, x, y, x, y+1, highlight);
+            this._drawBorder(ctx, x, y, x, y+1, highlight, borderColor, borderWidth);
         }
 
         _drawRightBorder(
             ctx, x, y, highlight=false, borderColor="black", borderWidth=2) {
-            this._drawBorder(ctx, x+1, y, x+1, y+1, highlight);
+            this._drawBorder(ctx, x+1, y, x+1, y+1, highlight, borderColor, borderWidth);
         }
 
         _drawBorder(ctx, x1, y1, x2, y2, highlight=false, borderColor="black",
