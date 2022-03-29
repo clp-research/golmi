@@ -149,7 +149,6 @@ $(document).ready(function () {
             // draw each object
             for (const obj of Object.values(this.objs))	{
                 // skip any gripped object here
-                if (obj.gripped) { continue; }
 
                 let blockMatrix = obj.block_matrix;
 

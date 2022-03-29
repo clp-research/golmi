@@ -20,52 +20,35 @@ descrimage_bp = Blueprint('descrimage_bp', __name__,
                          url_prefix="/descrimage")
 
 
-@descrimage_bp.route("/", methods=["GET", "POST"])
-def homepage():
-    """
-    Interactive interface.
-    """
-    if "token" in request.form:
-        token = request.form['token']
-
-        return receiver(token)
-
-    else:
-        return render_template("home.html")
-
-@descrimage_bp.route("/<token>", methods=["GET"])
-def candidate_page(token):
-    return giver(token)
+@descrimage_bp.route("/r/<token>", methods=["GET"])
+def receiver_page(token):
+    return receiver(token, 0)
 
 
-#@descrimage_bp.route('/receiver', methods=['GET'])
-def receiver(token):
-    with open(f"app/descrimage/data/{token}.pckl", "rb") as infile:
-        data = pickle.load(infile)
+@descrimage_bp.route("/g/<token>", methods=["GET"])
+def giver_page(token):
+    return render_template("giver.html", token=token)
+
+ 
+def receiver(token, state_index):
+    with open(f"app/descrimage/data/{token}.json", "rb") as infile:
+        data = json.load(infile)
 
     states = [i for i in range(len(data["states"]))]
     room_manager.add_room(token, data["config"])
 
-    to_replace = list(data["states"][0]["grippers"].keys())[0]
-    data["states"][0]["grippers"]["init"] = data["states"][0]["grippers"][to_replace]
-    data["states"][0]["grippers"]["init"]["id_n"] = "init"
-    del data["states"][0]["grippers"][to_replace]
+    to_replace = list(data["states"][state_index]["grippers"].keys())[0]
+    data["states"][state_index]["grippers"]["init"] = data["states"][0]["grippers"][to_replace]
+    data["states"][state_index]["grippers"]["init"]["id_n"] = "init"
+    del data["states"][state_index]["grippers"][to_replace]
 
-    for o in data["states"][0]["objs"].values():
-        if o["gripped"] is True:
-            print(o)
-    room_manager.get_model_of_room(token).set_state(data["states"][0])
+    room_manager.get_model_of_room(token).set_state(data["states"][state_index])
     return render_template("receiver.html", token=token, STATES=states)
-
-
-#@descrimage_bp.route('/giver', methods=['GET'])
-def giver(token):
-    return render_template("giver.html", token=token)
 
 
 # SOCKETIO EVENTS
 @socketio.on("descrimage_description")
-def on_mouseclick(description):
+def send_description(description):
 
     # do something with description?
     print(description)
@@ -75,7 +58,7 @@ def on_mouseclick(description):
 
 
 @socketio.on("descrimage_bad_description")
-def on_mouseclick():
+def bad_description():
 
     # do something with description?
     print("BAD DESCRIPTION")
@@ -85,7 +68,7 @@ def on_mouseclick():
 
 
 @socketio.on("load_file")
-def on_mouseclick(files):
+def load_file(files):
     import pickle
     to_open = pickle.loads(files["0"])
     print(to_open)
@@ -98,8 +81,8 @@ def test_person_connected():
 
 @socketio.on("load_state_index")
 def load_state_index(index, token):
-    with open(f"app/descrimage/data/{token}.pckl", "rb") as infile:
-        data = pickle.load(infile)
+    with open(f"app/descrimage/data/{token}.json", "rb") as infile:
+        data = json.load(infile)
 
     to_replace = list(data["states"][index]["grippers"].keys())[0]
     data["states"][index]["grippers"]["init"] = data["states"][index]["grippers"][to_replace]
@@ -107,3 +90,23 @@ def load_state_index(index, token):
     del data["states"][index]["grippers"][to_replace]
 
     room_manager.get_model_of_room(token).set_state(data["states"][index])
+
+
+@socketio.on("descrimage_mouseclick")
+def on_mouseclick(event):
+    # looks like we need a "mouse"-gripper b.c. everything expects a gripper instance
+    token = event["token"]
+    model = room_manager.get_model_of_room(token)
+    x, y = translate(event["offset_x"], event["offset_y"], event["block_size"])
+ 
+    if "mouse" in model.state.grippers:
+        model.remove_gr("mouse")
+        for obj in model.state.objs.values():
+            obj.gripped = False
+
+    model.add_gr("mouse", x, y)
+    model.grip("mouse")
+   
+
+def translate(x, y, granularity):
+    return x // granularity, y // granularity
