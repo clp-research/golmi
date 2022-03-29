@@ -2,10 +2,9 @@ from app import DEFAULT_CONFIG_FILE
 from flask import render_template, Blueprint, request, abort
 from flask_cors import cross_origin
 import json
-import os
 from datetime import datetime
-import pickle
 from app.app import socketio, room_manager
+from pathlib import Path
 
 
 def apply_config_to(app):
@@ -22,56 +21,80 @@ descrimage_bp = Blueprint('descrimage_bp', __name__,
 
 @descrimage_bp.route("/r/<token>", methods=["GET"])
 def receiver_page(token):
-    return receiver(token, 0)
+    return receiver(token)
 
 
 @descrimage_bp.route("/g/<token>", methods=["GET"])
 def giver_page(token):
-    return render_template("giver.html", token=token)
-
- 
-def receiver(token, state_index):
     with open(f"app/descrimage/data/{token}.json", "rb") as infile:
         data = json.load(infile)
 
     states = [i for i in range(len(data["states"]))]
+
+    return render_template("giver.html", token=token, n_states=len(states), this_state=0)
+
+ 
+def receiver(token):
+    to_load = Path(f"app/descrimage/data/{token}.json")
+    with open(to_load, "r") as infile:
+        data = json.load(infile)
+
+    logfile = Path(f"app/descrimage/data/{token}.log.json")
+    if not logfile.exists:
+        with open(logfile, "w") as infile:
+            json.dump({}, infile)
+
+    states = [i for i in range(len(data["states"]))]
     room_manager.add_room(token, data["config"])
 
-    to_replace = list(data["states"][state_index]["grippers"].keys())[0]
-    data["states"][state_index]["grippers"]["init"] = data["states"][0]["grippers"][to_replace]
-    data["states"][state_index]["grippers"]["init"]["id_n"] = "init"
-    del data["states"][state_index]["grippers"][to_replace]
+    state_to_load = prepare_state(token, 0)
 
-    room_manager.get_model_of_room(token).set_state(data["states"][state_index])
-    return render_template("receiver.html", token=token, STATES=states)
+    room_manager.get_model_of_room(token).set_state(state_to_load)
+    return render_template("receiver.html", token=token, STATES=states, n_states=len(states), this_state=0)
 
 
 # SOCKETIO EVENTS
 @socketio.on("descrimage_description")
-def send_description(description):
+def send_description(data):
+    description = data["description"]
+    token = data["token"]
+    state_index = str(data["state"])
 
-    # do something with description?
-    print(description)
+    with open(f"app/descrimage/data/{token}.log.json", "r") as infile:
+        data = json.load(infile)
+
+    if state_index not in data:
+        data[state_index] = list()
+
+    data[state_index].append({"description": description})
+
+    with open(f"app/descrimage/data/{token}.log.json", "w") as infile:
+        json.dump(data, infile)
 
     # send to other view the description
     socketio.emit("description_from_server", description)
 
 
 @socketio.on("descrimage_bad_description")
-def bad_description():
+def bad_description(data):
 
-    # do something with description?
-    print("BAD DESCRIPTION")
+    description = data["description"]
+    token = data["token"]
+    state_index = str(data["state"])
+
+    with open(f"app/descrimage/data/{token}.log.json", "r") as infile:
+        data = json.load(infile)
+
+    this_description = {"description": description}
+
+    to_modify = data[str(state_index)].index(this_description)
+    data[state_index][to_modify]["bad description"] = True
+
+    with open(f"app/descrimage/data/{token}.log.json", "w") as infile:
+        json.dump(data, infile)
 
     # send to other view the description
     socketio.emit("descrimage_bad_description")
-
-
-@socketio.on("load_file")
-def load_file(files):
-    import pickle
-    to_open = pickle.loads(files["0"])
-    print(to_open)
 
 
 @socketio.on("test_person_connected")
@@ -81,15 +104,8 @@ def test_person_connected():
 
 @socketio.on("load_state_index")
 def load_state_index(index, token):
-    with open(f"app/descrimage/data/{token}.json", "rb") as infile:
-        data = json.load(infile)
-
-    to_replace = list(data["states"][index]["grippers"].keys())[0]
-    data["states"][index]["grippers"]["init"] = data["states"][index]["grippers"][to_replace]
-    data["states"][index]["grippers"]["init"]["id_n"] = "init"
-    del data["states"][index]["grippers"][to_replace]
-
-    room_manager.get_model_of_room(token).set_state(data["states"][index])
+    state = prepare_state(token, index)
+    room_manager.get_model_of_room(token).set_state(state)
 
 
 @socketio.on("descrimage_mouseclick")
@@ -106,7 +122,35 @@ def on_mouseclick(event):
 
     model.add_gr("mouse", x, y)
     model.grip("mouse")
+    
+    grippers = model.get_gripper_dict()
+    target = grippers["init"]["gripped"]
+    gripped = grippers["mouse"]["gripped"]
+
+    if target == gripped:
+        this_state = int(event["this_state"])
+        if this_state < int(event["n_states"]) -1:
+            state = prepare_state(token, this_state + 1)
+            room_manager.get_model_of_room(token).set_state(state)
+            socketio.emit("next_state", this_state + 1)
+        else:
+            socketio.emit("next_state", this_state + 1)
+            socketio.emit("finish")
    
 
 def translate(x, y, granularity):
     return x // granularity, y // granularity
+
+
+def prepare_state(token, index):
+    # open state
+    with open(f"app/descrimage/data/{token}.json", "rb") as infile:
+        data = json.load(infile)
+
+    # replace gripper with init gripper
+    to_replace = list(data["states"][index]["grippers"].keys())[0]
+    data["states"][index]["grippers"]["init"] = data["states"][index]["grippers"][to_replace]
+    data["states"][index]["grippers"]["init"]["id_n"] = "init"
+    del data["states"][index]["grippers"][to_replace]
+
+    return data["states"][index]
