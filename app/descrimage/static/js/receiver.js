@@ -44,7 +44,9 @@ $(document).ready(function () {
             "x": event.x,
             "y": event.y,
             "block_size": layerView.blockSize,
-            "token": token
+            "token": token,
+            "this_state": document.getElementById("progress").value,
+            "n_states": document.getElementById("progress").max
         })
     }
     grLayer.onclick = onMouseClick
@@ -78,7 +80,16 @@ $(document).ready(function () {
     socket.on("incoming connection", () => {
         audio_notification();
     });
+
+    socket.on("next_state", (state) => {
+        document.getElementById("description").value = ""
+        document.getElementById("progress").value = state;
+    });
     
+    socket.on("finish", () => {
+        alert("We are done here, you can close the window");
+    });
+
     // for debugging: log all events
     socket.onAny((eventName, ...args) => {
         console.log(eventName, args);
@@ -94,12 +105,10 @@ $(document).ready(function () {
     }
 
     function bad_description() {
-        socket.emit("descrimage_bad_description");
-    }
+        let description = document.getElementById("description").value
+        let state_index = document.getElementById("progress").value;
 
-    function load_file() {
-        var myUploadedFile = document.getElementById("fileinput").files;
-        socket.emit("load_file", myUploadedFile);
+        socket.emit("descrimage_bad_description", {"description":description, "token": token, "state": state_index});
     }
 
     function audio_notification() {
@@ -107,15 +116,6 @@ $(document).ready(function () {
         console.log("this workd")
         snd.play();
     }
-
-    // listener for state selection
-    var selectElem = document.getElementById('state_id')
-    selectElem.addEventListener('change', function() {
-        var index = selectElem.selectedIndex;
-        // Add that data to the <p>
-        socket.emit("load_state_index", index, token);
-    })
-
 
     start(token);
     // --- buttons --- //

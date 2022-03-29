@@ -65,6 +65,14 @@ $(document).ready(function () {
         alert("Your description is bad and you should feel bad");
     });
 
+    socket.on("next_state", (state) => {
+        document.getElementById("progress").value = state;
+    });
+    
+    socket.on("finish", () => {
+        alert("We are done here, you can close the window");
+    });
+
     // for debugging: log all events
     socket.onAny((eventName, ...args) => {
         console.log(eventName, args);
@@ -97,7 +105,8 @@ $(document).ready(function () {
     function send_description() {
         // join a GOLMI room with the name "test_room_id"
         let description = document.getElementById("description").value;
-        socket.emit("descrimage_description", description);
+        let state_index = document.getElementById("progress").value;
+        socket.emit("descrimage_description", {"description":description, "token": token, "state": state_index});
         document.getElementById("description").value = "";
     }
 
@@ -107,11 +116,6 @@ $(document).ready(function () {
         socket.emit("test_person_connected")
         // disable this button, otherwise it is now in focus and Space/Enter will trigger the click again
         $("#start").prop("disabled", true);
-    });
-    $("#stop").click(() => {
-        stop();
-        // reactive the start button
-        $("#start").prop("disabled", false);
     });
     $("#description_button").click(() => {
         send_description();
