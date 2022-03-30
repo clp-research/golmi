@@ -105,8 +105,9 @@ $(document).ready(function () {
     }
 
     function bad_description() {
-        let description = document.getElementById("description").value
+        let description = document.getElementById("description").value;
         let state_index = document.getElementById("progress").value;
+        document.getElementById("description").value = ""
 
         socket.emit("descrimage_bad_description", {"description":description, "token": token, "state": state_index});
     }
