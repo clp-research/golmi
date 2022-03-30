@@ -86,9 +86,12 @@ def bad_description(data):
         data = json.load(infile)
 
     this_description = {"description": description}
-
-    to_modify = data[str(state_index)].index(this_description)
-    data[state_index][to_modify]["bad description"] = True
+    if this_description in data[state_index]:
+        to_modify = data[state_index].index(this_description)
+        data[state_index][to_modify]["bad description"] = True
+    else:
+        this_description["bad description"] = True
+        to_modify = data[state_index].append(this_description)
 
     with open(f"app/descrimage/data/{token}.log.json", "w") as infile:
         json.dump(data, infile)
