@@ -7,14 +7,14 @@ $(document).ready(function () {
 
     // parameters for random initial state
     // (state is generated once the configuration is received)
-    const N_OBJECTS = 10;
-    const N_GRIPPERS = 0; // no pre-generated gripper
+    // const N_OBJECTS = 10;
+    // const N_GRIPPERS = 0; // no pre-generated gripper
 
-    const CUSTOM_CONFIG = {
-        "move_step": 0.5,
-        "width": 25,
-        "height": 25
-    };
+    // const CUSTOM_CONFIG = {
+    //     "move_step": 0.5,
+    //     "width": 25,
+    //     "height": 25
+    // };
 
     // --- create a socket --- //
     // don't connect yet
@@ -48,7 +48,6 @@ $(document).ready(function () {
     });
 
     socket.on("joined_room", (data) => {
-        socket.emit("load_config", CUSTOM_CONFIG);
         console.log(`Joined room ${data.room_id} as client ${data.client_id}`);
     })
 
@@ -114,8 +113,8 @@ $(document).ready(function () {
     document.getElementById("score").value = 0;
     $(document).ready(function(){   
         setTimeout(function () {
-            $("#start_popup").fadeIn(700);
-        }, 1000);
+            $("#start_popup").fadeIn(50);
+        }, 200);
         $(".start_popupOK").click(function() {
             $("#start_popup").fadeOut(700);
             start(token);
