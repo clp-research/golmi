@@ -154,10 +154,13 @@ class Obj:
                 f"Object construction failed, key {mandatory_key} missing"
             )
         bm = None
-        if type_config:
-            bm = type_config[source_dict["type"]]
+
+        # TODO: remove possibility to load from source dict as transformation
+        # cannot be safely reproduced
         if "block_matrix" in source_dict:
             bm = source_dict["block_matrix"]
+        elif type_config:
+            bm = type_config[source_dict["type"]]
         if not bm:
             raise Exception("Either provide type_config or block_matrix")
         # create new object from the mandatory keys

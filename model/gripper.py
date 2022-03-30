@@ -9,7 +9,7 @@ class Gripper(Obj):
         # For Gripper, it maps to None or the id of the Obj
         # instance that is currently gripped
         super().__init__(
-            id_n, "gripper", x, y, width, height, [[1]],
+            id_n, "gripper", x, y, [[1]],
             rotation=0, mirrored=False, color=color, gripped=gripped
         )
 
@@ -30,9 +30,9 @@ class Gripper(Obj):
             )
 
         new_gripper = cls(
-            id_n,
-            float(source_dict["x"]),
-            float(source_dict["y"])
+            id_n=id_n,
+            x=float(source_dict["x"]),
+            y=float(source_dict["y"])
         )
 
         # process optional info
