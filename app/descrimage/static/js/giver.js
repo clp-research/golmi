@@ -83,12 +83,6 @@ $(document).ready(function () {
         console.log(eventName, args);
     });
 
-    function custom_config_is_applied(custom_config, config_update) {
-        return Object.keys(custom_config).every(key => {
-            return config_update[key] == custom_config[key];
-        });
-    }
-
     // --- stop and start drawing --- //
     function start(token) {
         // reset the controller in case any key is currently pressed
@@ -111,18 +105,21 @@ $(document).ready(function () {
         // join a GOLMI room with the name "test_room_id"
         let description = document.getElementById("description").value;
         let state_index = document.getElementById("progress").value;
-        socket.emit("descrimage_description", {"description":description, "token": token, "state": state_index});
-        document.getElementById("description").value = "";
+        if (description != ""){
+            socket.emit("descrimage_description", {"description":description, "token": token, "state": state_index});
+            document.getElementById("description").value = "";
+        }
     }
 
     document.getElementById("score").value = 0;
     $(document).ready(function(){   
         setTimeout(function () {
             $("#start_popup").fadeIn(700);
-         }, 1000);
+        }, 1000);
         $(".start_popupOK").click(function() {
             $("#start_popup").fadeOut(700);
             start(token);
+            $("#description_button").prop("disabled", false);
             socket.emit("test_person_connected");
         }); 
     }); 
@@ -137,4 +134,5 @@ $(document).ready(function () {
     $("#description_button").click(() => {
         send_description();
     });
+    $("#description_button").prop("disabled", true);
 }); // on document ready end
