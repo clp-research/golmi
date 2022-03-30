@@ -88,6 +88,7 @@ $(document).ready(function () {
     
     socket.on("finish", () => {
         alert("We are done here, you can close the window");
+        stop();
     });
 
     // for debugging: log all events
@@ -102,6 +103,15 @@ $(document).ready(function () {
         controller.attachModel(socket);
         // join a GOLMI room with the name "test_room_id"
         socket.emit("join", {"room_id": token});
+    }
+
+    function stop() {
+        // reset the controller in case any key is currently pressed
+        controller.resetKeys();
+        // disconnect the controller
+        controller.detachModel(socket);
+        // manually disconnect
+        socket.disconnect();
     }
 
     function bad_description() {
