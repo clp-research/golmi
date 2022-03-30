@@ -75,6 +75,7 @@ $(document).ready(function () {
     
     socket.on("finish", () => {
         alert("We are done here, you can close the window");
+        stop();
     });
 
     // for debugging: log all events
