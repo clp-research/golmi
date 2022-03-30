@@ -86,6 +86,7 @@ def bad_description(data):
         data = json.load(infile)
 
     this_description = {"description": description}
+    # TODO: if description was already bad cannot catch it
     if this_description in data[state_index]:
         to_modify = data[state_index].index(this_description)
         data[state_index][to_modify]["bad description"] = True
