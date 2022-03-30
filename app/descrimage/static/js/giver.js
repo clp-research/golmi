@@ -114,7 +114,19 @@ $(document).ready(function () {
         socket.emit("descrimage_description", {"description":description, "token": token, "state": state_index});
         document.getElementById("description").value = "";
     }
+
     document.getElementById("score").value = 0;
+    $(document).ready(function(){   
+        setTimeout(function () {
+            $("#start_popup").fadeIn(700);
+         }, 1000);
+        $(".start_popupOK").click(function() {
+            $("#start_popup").fadeOut(700);
+            start(token);
+            socket.emit("test_person_connected");
+        }); 
+    }); 
+    
     // --- buttons --- //
     $("#start").click(() => {
         start(token);
