@@ -78,6 +78,7 @@ $(document).ready(function () {
 
     socket.on("incoming connection", () => {
         audio_notification();
+        alert("A user connected to this room");
     });
 
     socket.on("next_state", (state) => {
@@ -128,6 +129,7 @@ $(document).ready(function () {
     }
 
     start(token);
+    document.getElementById("description").focus();
     // --- buttons --- //
     $("#bad_description").click(() => {
         bad_description();
