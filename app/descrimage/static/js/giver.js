@@ -63,10 +63,14 @@ $(document).ready(function () {
         console.log(data)
         // CREATE POPUP
         alert("Your description is bad and you should feel bad");
+        old_score = parseInt(document.getElementById("score").value);
+        document.getElementById("score").value = old_score - 1;
     });
 
     socket.on("next_state", (state) => {
         document.getElementById("progress").value = state;
+        old_score = parseInt(document.getElementById("score").value);
+        document.getElementById("score").value = old_score + 1;
     });
     
     socket.on("finish", () => {
@@ -109,7 +113,7 @@ $(document).ready(function () {
         socket.emit("descrimage_description", {"description":description, "token": token, "state": state_index});
         document.getElementById("description").value = "";
     }
-
+    document.getElementById("score").value = 0;
     // --- buttons --- //
     $("#start").click(() => {
         start(token);
