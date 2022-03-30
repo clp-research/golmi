@@ -11,3 +11,11 @@
     min-width: 600px;
     padding: 1px 6px;
   }
+
+  progress {
+    width: 200px;
+  }
+
+  input{
+    width: 50px;
+  }
