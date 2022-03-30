@@ -169,7 +169,13 @@ class Obj:
             obj_type=source_dict["type"],
             x=float(source_dict["x"]),
             y=float(source_dict["y"]),
+<<<<<<< HEAD
             block_matrix=bm
+=======
+            width=float(source_dict["width"]),
+            height=float(source_dict["height"]),
+            block_matrix=source_dict["block_matrix"]
+>>>>>>> a6c606b39676d5c8581e5fa8d91c0cf08da88e51
         )
         
         if "gripped" in source_dict:
