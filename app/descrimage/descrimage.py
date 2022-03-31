@@ -8,15 +8,18 @@ from pathlib import Path
 
 
 def apply_config_to(app):
-    app.config[DEFAULT_CONFIG_FILE] = (
-        "app/descrimage/static/resources/config/descrimage_config.json"
-    )
+    app.config[
+        DEFAULT_CONFIG_FILE
+    ] = "app/descrimage/static/resources/config/descrimage_config.json"
 
 
-descrimage_bp = Blueprint('descrimage_bp', __name__,
-                         template_folder='templates',
-                         static_folder='static',
-                         url_prefix="/descrimage")
+descrimage_bp = Blueprint(
+    "descrimage_bp",
+    __name__,
+    template_folder="templates",
+    static_folder="static",
+    url_prefix="/descrimage",
+)
 
 
 @descrimage_bp.route("/r/<token>", methods=["GET"])
@@ -31,9 +34,11 @@ def giver_page(token):
 
     states = [i for i in range(len(data["states"]))]
 
-    return render_template("giver.html", token=token, n_states=len(states), this_state=0)
+    return render_template(
+        "giver.html", token=token, n_states=len(states), this_state=0
+    )
 
- 
+
 def receiver(token):
     to_load = Path(f"app/descrimage/data/{token}.json")
     with open(to_load, "r") as infile:
@@ -50,7 +55,9 @@ def receiver(token):
     state_to_load = prepare_state(token, 0)
 
     room_manager.get_model_of_room(token).set_state(state_to_load)
-    return render_template("receiver.html", token=token, STATES=states, n_states=len(states), this_state=0)
+    return render_template(
+        "receiver.html", token=token, n_states=len(states), this_state=0
+    )
 
 
 # SOCKETIO EVENTS
@@ -118,7 +125,7 @@ def on_mouseclick(event):
     token = event["token"]
     model = room_manager.get_model_of_room(token)
     x, y = translate(event["offset_x"], event["offset_y"], event["block_size"])
- 
+
     if "mouse" in model.state.grippers:
         model.remove_gr("mouse")
         for obj in model.state.objs.values():
@@ -126,21 +133,21 @@ def on_mouseclick(event):
 
     model.add_gr("mouse", x, y)
     model.grip("mouse")
-    
+
     grippers = model.get_gripper_dict()
     target = grippers["init"]["gripped"]
     gripped = grippers["mouse"]["gripped"]
 
     if target == gripped:
         this_state = int(event["this_state"])
-        if this_state < int(event["n_states"]) -1:
+        if this_state < int(event["n_states"]) - 1:
             state = prepare_state(token, this_state + 1)
             room_manager.get_model_of_room(token).set_state(state)
             socketio.emit("next_state", this_state + 1)
         else:
             socketio.emit("next_state", this_state + 1)
             socketio.emit("finish")
-   
+
 
 def translate(x, y, granularity):
     return x // granularity, y // granularity
@@ -153,7 +160,9 @@ def prepare_state(token, index):
 
     # replace gripper with init gripper
     to_replace = list(data["states"][index]["grippers"].keys())[0]
-    data["states"][index]["grippers"]["init"] = data["states"][index]["grippers"][to_replace]
+    data["states"][index]["grippers"]["init"] = data["states"][index]["grippers"][
+        to_replace
+    ]
     data["states"][index]["grippers"]["init"]["id_n"] = "init"
     del data["states"][index]["grippers"][to_replace]
 

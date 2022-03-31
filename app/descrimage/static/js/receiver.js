@@ -84,6 +84,8 @@ $(document).ready(function () {
     socket.on("next_state", (state) => {
         document.getElementById("description").value = ""
         document.getElementById("progress").value = state;
+        old_score = parseInt(document.getElementById("score").value);
+        document.getElementById("score").value = old_score + 1;
     });
     
     socket.on("finish", () => {
@@ -118,6 +120,8 @@ $(document).ready(function () {
         let description = document.getElementById("description").value;
         let state_index = document.getElementById("progress").value;
         document.getElementById("description").value = ""
+        old_score = parseInt(document.getElementById("score").value);
+        document.getElementById("score").value = old_score - 1;
 
         socket.emit("descrimage_bad_description", {"description":description, "token": token, "state": state_index});
     }
@@ -127,9 +131,9 @@ $(document).ready(function () {
         var snd = new Audio(notification_file);
         snd.play();
     }
-
     start(token);
-    document.getElementById("description").focus();
+    document.getElementById("score").value = 0;
+
     // --- buttons --- //
     $("#bad_description").click(() => {
         bad_description();
