@@ -1,14 +1,18 @@
 import json
 
+from typing import Dict
+
 from model.obj import Obj
 from model.gripper import Gripper
 from model.grid import Grid, GridConfig
 
 
 class State:
-    def __init__(self, objs, grippers, targets, grid_config: GridConfig, state_id: int = None):
+    def __init__(self, objs, grippers, targets, grid_config: GridConfig,
+                 state_id: int = None, global_id: int = None):
         self.state_id = state_id
-        self.objs = objs
+        self.global_id = global_id
+        self.objs: Dict[int, Obj] = objs
         self.grippers = grippers
         self.targets = targets
         self.grid_config = grid_config
@@ -237,7 +241,7 @@ class State:
                     new_object = Obj.from_dict(
                         id_n, obj_dict, type_config
                     )
-                    targets[id_n] = new_object
+                    objs[id_n] = new_object
 
         except KeyError:
             raise KeyError(
@@ -248,7 +252,10 @@ class State:
         state_id = None
         if "state_id" in source_dict:
             state_id = source_dict["state_id"]
-        return cls(objs, grippers, targets, gc, state_id)
+        global_id = None
+        if "global_id" in source_dict:
+            global_id = source_dict["global_id"]
+        return cls(objs, grippers, targets, gc, state_id, global_id)
 
     def remove_object(self, obj, object_is_target=False):
         """
@@ -301,6 +308,8 @@ class State:
         """
         state_dict = dict()
         state_dict["state_id"] = self.state_id
+        if self.global_id:
+            state_dict["global_id"] = self.global_id
         state_dict["grippers"] = self.get_gripper_dict()
         state_dict["objs"] = self.get_obj_dict()
         state_dict["targets"] = self.get_target_dict()
