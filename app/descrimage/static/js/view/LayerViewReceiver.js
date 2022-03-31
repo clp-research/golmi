@@ -98,6 +98,7 @@ $(document).ready(function () {
             // white rectangle for background
             ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 
+            /** no grid for now
             // horizontal lines
             for (let row = 0; row <= this.rows; row++) {
                 ctx.moveTo(0, row * this.blockSize);
@@ -109,7 +110,7 @@ $(document).ready(function () {
                 ctx.lineTo(col * this.blockSize, this.canvasHeight);
             }
             // draw to the screen
-            ctx.stroke();
+            ctx.stroke();**/
 
             // add targets
             for (const target of Object.values(this.targets))	{
@@ -157,7 +158,7 @@ $(document).ready(function () {
                 let params = {
                     x: obj.x,
                     y: obj.y,
-                    color: obj.color
+                    color: obj.color[1]
                 }
                 this._drawBlockObj(ctx, blockMatrix, params);
             }
