@@ -5,14 +5,14 @@ from typing import List, Set, Dict, Tuple
 
 from collections import defaultdict
 
-from grid import Grid, GridConfig
-from obj import Obj
+from .grid import Grid, GridConfig
+from .obj import Obj
 
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import colors as plt_colors
 
-from state import State
+from .state import State
 
 
 class ShapesMatrix(Enum):
