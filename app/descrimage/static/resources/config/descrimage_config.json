@@ -1,30 +1,14 @@
 {
-  "width": 20,
-  "height": 20,
-  "snap_to_grid": true,
-  "prevent_overlap": true,
-  "actions": ["move", "rotate"],
+  "width": 30,
+  "height": 30,
   "move_step": 0.5,
+  "prevent_overlap": true,
+  "snap_to_grid": true,
+  "actions": [],
   "rotation_step": 90,
   "action_interval": 0.1,
   "verbose": false,
   "lock_on_target": false,
-  "actions": [
-    "move",
-    "rotate",
-    "flip",
-    "grip"
-  ],
-  "colors": [
-    "#ff0000",
-    "#ffa500",
-    "#ffff00",
-    "#008000",
-    "#0000ff",
-    "#800080",
-    "#8b4513",
-    "#808080"
-  ],
   "type_config": {
     "__comment1__": "Block matrices for the 12 Pentomino pieces.",
     "__comment2__": "Block matrices should be square to support rotation",

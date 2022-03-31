@@ -1,10 +1,12 @@
+import os.path
+
 from app import DEFAULT_CONFIG_FILE
-from flask import render_template, Blueprint, request, abort
-from flask_cors import cross_origin
+from flask import render_template, Blueprint
 import json
-from datetime import datetime
-from app.app import socketio, room_manager
+from app.app import socketio, room_manager, get_default_config
 from pathlib import Path
+
+from neureg.data.types import DataCollectionState
 
 
 def apply_config_to(app):
@@ -29,35 +31,19 @@ def receiver_page(token):
 
 @descrimage_bp.route("/g/<token>", methods=["GET"])
 def giver_page(token):
-    with open(f"app/descrimage/data/{token}.json", "rb") as infile:
-        data = json.load(infile)
-
-    states = [i for i in range(len(data["states"]))]
-
+    states = __load_states(token)
     return render_template(
         "giver.html", token=token, n_states=len(states), this_state=0
     )
 
 
 def receiver(token):
-    to_load = Path(f"app/descrimage/data/{token}.json")
-    with open(to_load, "r") as infile:
-        data = json.load(infile)
-
-    logfile = Path(f"app/descrimage/data/{token}.log.json")
-    if not logfile.exists:
-        with open(logfile, "w") as infile:
-            json.dump({}, infile)
-
-    states = [i for i in range(len(data["states"]))]
-    room_manager.add_room(token, data["config"])
-
-    state_to_load = prepare_state(token, 0)
-
+    __prepare_log_file(token)
+    room_manager.add_room(token, get_default_config())
+    states = __load_states(token)
+    state_to_load = __prepare_state(states, 0)
     room_manager.get_model_of_room(token).set_state(state_to_load)
-    return render_template(
-        "receiver.html", token=token, n_states=len(states), this_state=0
-    )
+    return render_template("receiver.html", token=token, n_states=len(states), this_state=0)
 
 
 # SOCKETIO EVENTS
@@ -67,7 +53,8 @@ def send_description(data):
     token = data["token"]
     state_index = str(data["state"])
 
-    with open(f"app/descrimage/data/{token}.log.json", "r") as infile:
+    log_file_path = __prepare_log_file(token)
+    with open(log_file_path, "r") as infile:
         data = json.load(infile)
 
     if state_index not in data:
@@ -75,7 +62,7 @@ def send_description(data):
 
     data[state_index].append({"description": description})
 
-    with open(f"app/descrimage/data/{token}.log.json", "w") as infile:
+    with open(log_file_path, "w") as infile:
         json.dump(data, infile)
 
     # send to other view the description
@@ -84,12 +71,12 @@ def send_description(data):
 
 @socketio.on("descrimage_bad_description")
 def bad_description(data):
-
     description = data["description"]
     token = data["token"]
     state_index = str(data["state"])
 
-    with open(f"app/descrimage/data/{token}.log.json", "r") as infile:
+    log_file_path = __prepare_log_file(token)
+    with open(log_file_path, "r") as infile:
         data = json.load(infile)
 
     this_description = {"description": description}
@@ -101,7 +88,7 @@ def bad_description(data):
         this_description["bad description"] = True
         to_modify = data[state_index].append(this_description)
 
-    with open(f"app/descrimage/data/{token}.log.json", "w") as infile:
+    with open(log_file_path, "w") as infile:
         json.dump(data, infile)
 
     # send to other view the description
@@ -115,7 +102,8 @@ def test_person_connected():
 
 @socketio.on("load_state_index")
 def load_state_index(index, token):
-    state = prepare_state(token, index)
+    states = __load_states(token)
+    state = __prepare_state(states, index)
     room_manager.get_model_of_room(token).set_state(state)
 
 
@@ -141,7 +129,8 @@ def on_mouseclick(event):
     if target == gripped:
         this_state = int(event["this_state"])
         if this_state < int(event["n_states"]) - 1:
-            state = prepare_state(token, this_state + 1)
+            states = __load_states(token)
+            state = __prepare_state(states, this_state + 1)
             room_manager.get_model_of_room(token).set_state(state)
             socketio.emit("next_state", this_state + 1)
         else:
@@ -153,17 +142,35 @@ def translate(x, y, granularity):
     return x // granularity, y // granularity
 
 
-def prepare_state(token, index):
-    # open state
-    with open(f"app/descrimage/data/{token}.json", "rb") as infile:
-        data = json.load(infile)
+def __prepare_log_file(token):
+    # todo make this path configurable
+    collect_dir = "/home/philippsa/git/075_neureg_data/data_collection/epoch_1/logs"
+    if not os.path.exists(collect_dir):
+        os.mkdir(collect_dir)
+    logfile = f"{collect_dir}/{token}.log.json"
+    if not os.path.exists(logfile):
+        print("Create log file at", logfile)
+        with open(logfile, "w") as f:
+            json.dump({}, f)
+    return logfile
 
+
+def __load_states(token):
+    # todo make this configurable
+    collect_dir = "/home/philippsa/git/075_neureg_data/data_collection/epoch_1"
+    data = DataCollectionState.load_many(collect_dir, file_name=token)
+    states = [d["state"] for d in data]
+    return states
+
+
+def __prepare_state(states, index):
     # replace gripper with init gripper
-    to_replace = list(data["states"][index]["grippers"].keys())[0]
-    data["states"][index]["grippers"]["init"] = data["states"][index]["grippers"][
-        to_replace
-    ]
-    data["states"][index]["grippers"]["init"]["id_n"] = "init"
-    del data["states"][index]["grippers"][to_replace]
-
-    return data["states"][index]
+    if len(states[index]["grippers"]) > 0:
+        to_replace = list(states[index]["grippers"].keys())[0]
+        states[index]["grippers"]["init"] = states[index]["grippers"][to_replace]
+        states[index]["grippers"]["init"]["id_n"] = "init"
+        del states[index]["grippers"][to_replace]
+    else:
+        init_gripper = {"id_n": "init", "x": 0, "y": 0, "color": "blue"}
+        states[index]["grippers"]["init"] = init_gripper
+    return states[index]
