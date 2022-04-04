@@ -161,7 +161,14 @@ def __get_collect_dir():
 
 def __load_states(token):
     data = DataCollectionState.load_many(__get_collect_dir(), file_name=token)
-    states = [d["state"] for d in data]
+    states = []
+    for d in data:
+        anno = d["annotation"]
+        state = d["state"]
+        target_idx = anno["target"]
+        target = state["objs"][str(target_idx)]
+        state["targets"][target["id_n"]] = target
+        states.append(state)
     return states
 
 

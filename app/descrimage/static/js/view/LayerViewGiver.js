@@ -128,7 +128,11 @@ $(document).ready(function () {
                     y: target.y,
                     color: "Cornsilk"
                 }
+                // there should be only a single target (which is then overdrawn by the actual piece)
                 this._drawBlockObj(ctx, blockMatrix, params);
+
+                // draw bounding box around target (there should be only a single one in this experiment)
+                this._drawBB(ctx, blockMatrix, params, "red");
             }
         }
 
