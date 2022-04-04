@@ -1,5 +1,7 @@
 import itertools
+import json
 import math
+import os
 
 import numpy as np
 
@@ -61,7 +63,7 @@ class Converter:
 
 class GridConfig:
 
-    def __init__(self, width: int, height: int, move_step: int, prevent_overlap: bool):
+    def __init__(self, width: int, height: int, move_step: float, prevent_overlap: bool):
         self.width = width
         self.height = height
         self.move_step = move_step
@@ -75,9 +77,24 @@ class GridConfig:
             "prevent_overlap": self.prevent_overlap,
         }
 
+    def store(self, file_name, data_dir):
+        if file_name.endswith(".config"):
+            file_name = os.path.splitext(file_name)[0]  # remove extension
+        file_path = os.path.join(data_dir, f"{file_name}.config")
+        print(f"Store GridConfig to", file_path)
+        with open(file_path, "w") as f:
+            json.dump(self.to_dict(), f)
+
     @classmethod
     def from_dict(cls, d):
         return cls(d["width"], d["height"], d["move_step"], d["prevent_overlap"])
+
+    @classmethod
+    def load(cls, data_dir, file_name="grid"):
+        file_path = os.path.join(data_dir, f"{file_name}.config")
+        print("Load GridConfig from", file_path)
+        with open(file_path, "r") as f:
+            return cls.from_dict(json.load(f))
 
 
 class Grid:
