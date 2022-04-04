@@ -274,15 +274,11 @@ $(document).ready(function () {
         _drawBlock(ctx, x, y, color, lineColor="grey", lineWidth=1) {
             // --- config ---
             ctx.fillStyle = color;
-
-            ctx.beginPath();
-            ctx.moveTo(this._toPxl(x), this._toPxl(y));
-            ctx.lineTo(this._toPxl(x+1), this._toPxl(y)); // top right
-            ctx.lineTo(this._toPxl(x+1), this._toPxl(y+1)); // bottom right
-            ctx.lineTo(this._toPxl(x), this._toPxl(y+1)); // bottom left
-            ctx.closePath(); // return to starting point
-            ctx.stroke(); // draw the returning line
-            ctx.fill(); // add color
+            let px = this._toPxl(x);
+            let py = this._toPxl(y);
+            let w = Math.abs(px - this._toPxl(x+1));
+            let h =  Math.abs(py - this._toPxl(y+1));
+            ctx.fillRect(px, py, w, h);
         }
 
         _drawUpperBorder(
