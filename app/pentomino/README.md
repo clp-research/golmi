@@ -17,7 +17,8 @@ pentomino
     |           +- config
     |               +- pentomino_config.json (the main config for your experiments)
     +- templates
-        +- pentomino.html (your main html file)
+    |    +- pentomino.html (your main html file)
+    +- pentomino.py        (define global variables, the blueprint, custom endpoints and events)
 ```
 
 You can reference your static files in your html using the following syntax:
