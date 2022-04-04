@@ -3,8 +3,7 @@ import os.path
 from app import DEFAULT_CONFIG_FILE
 from flask import render_template, Blueprint
 import json
-from app.app import socketio, room_manager, get_default_config
-from pathlib import Path
+from app.app import app, socketio, room_manager, get_default_config
 
 from neureg.data.types import DataCollectionState
 
@@ -144,10 +143,10 @@ def translate(x, y, granularity):
 
 def __prepare_log_file(token):
     # todo make this path configurable
-    collect_dir = "/home/philippsa/git/075_neureg_data/data_collection/epoch_1/logs"
-    if not os.path.exists(collect_dir):
-        os.mkdir(collect_dir)
-    logfile = f"{collect_dir}/{token}.log.json"
+    log_dir = __get_collect_dir() + "/logs"
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+    logfile = f"{log_dir}/{token}.log.json"
     if not os.path.exists(logfile):
         print("Create log file at", logfile)
         with open(logfile, "w") as f:
@@ -155,10 +154,13 @@ def __prepare_log_file(token):
     return logfile
 
 
+def __get_collect_dir():
+    collect_dir = app.config["COLLECT_DIR"]
+    return collect_dir
+
+
 def __load_states(token):
-    # todo make this configurable
-    collect_dir = "/home/philippsa/git/075_neureg_data/data_collection/epoch_1"
-    data = DataCollectionState.load_many(collect_dir, file_name=token)
+    data = DataCollectionState.load_many(__get_collect_dir(), file_name=token)
     states = [d["state"] for d in data]
     return states
 
