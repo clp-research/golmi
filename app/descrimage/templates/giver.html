@@ -14,7 +14,8 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/layer_style.css') }}">
-	<link rel="stylesheet" href="{{ url_for('descrimage_bp.static', filename='css/descrimage.css') }}">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.8/dist/semantic.min.css">
+    <link rel="stylesheet" href="{{ url_for('descrimage_bp.static', filename='css/descrimage.css') }}">
 </head>
 
 <script>
@@ -29,35 +30,54 @@
 
 
 <body>
-    Progress: <progress id="progress" max={{n_states}} value={{this_state}} width="200"></progress>
-    <br>
-    Your Score: <input id="score" value="0"/>
-
-    <!-- The "viewport" id and three stacked canvases of the same size are needed to
-        properly render using the LayerView class -->
-    <div id="viewport" style="height: 600px; width: 600px; padding: 10px;">
-        <canvas id="background" width="600" height="600"></canvas>
-        <canvas id="objects" width="600" height="600"></canvas>
-        <canvas id="gripper" width="600" height="600"></canvas>
+<div id="content" class="ui centered container">
+    <div class="row">
+        Progress:
+        <progress id="progress" max={{ n_states }} value={{ this_state }} width="200"></progress>
     </div>
-
-    <div style="height: 100; width: 600px; padding: 10px;">
-        <textarea class="textarea" id="description" autocomplete="off"></textarea>
-        <br>
-        <button id="description_button" type="button">Send Description</button>
+    <div class="row">
+        Your Score: <input id="score" value="0"/>
     </div>
-
-    <!-- jquery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-    <!-- socketio -->
-    <script src="https://cdn.socket.io/4.1.2/socket.io.min.js" integrity="sha384-toS6mmwu70G0fw54EGlWWeA4z3dyJ+dlXBtSURSKN4vyRFOcxd3Bzjj/AoOwY+Rg" crossorigin="anonymous"></script>
-    <!-- General GOLMI functionality -->
-    <script src="{{ url_for('static', filename='js/view/View.js') }}"></script>
-    <script src="{{ url_for('descrimage_bp.static', filename='js/view/LayerViewGiver.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/view/LView.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/controller/LocalKeyController.js') }}"></script>
-    <!-- Interface specific functionality -->
-    <script src="{{ url_for('descrimage_bp.static', filename='js/giver.js') }}"></script>
+    <div class="row">
+        <!-- The "viewport" id and three stacked canvases of the same size are needed to
+            properly render using the LayerView class -->
+        <div id="viewport" style="height: 600px; width: 600px; margin: 10px 0 10px 0;">
+            <canvas id="background" width="600" height="600"></canvas>
+            <canvas id="objects" width="600" height="600"></canvas>
+            <canvas id="gripper" width="600" height="600"></canvas>
+        </div>
+    </div>
+    <div class="row">
+        <div class="ui action input" id="description_button_panel" style="width: 600px">
+            <input id="description" type="text" placeholder="Type...">
+            <div id="description_button" class="ui button">Send</div>
+        </div>
+        <!-- Here we show what the user typed -->
+        <div class="ui segment" id="description_text_panel">
+            <span class="ui info text">You said:</span>
+            <span id="description_text">Instruction</span>
+        </div>
+        <div class="ui segment" id="description_text_warning">
+            <span class="ui error text">Please type an instruction before sending it.</span>
+        </div>
+    </div>
+</div>
+<!-- You MUST include jQuery before Fomantic -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.8/dist/semantic.min.js"></script>
+<!-- socketio -->
+<script src="https://cdn.socket.io/4.1.2/socket.io.min.js"
+        integrity="sha384-toS6mmwu70G0fw54EGlWWeA4z3dyJ+dlXBtSURSKN4vyRFOcxd3Bzjj/AoOwY+Rg"
+        crossorigin="anonymous"></script>
+<!-- General GOLMI functionality -->
+<script src="{{ url_for('static', filename='js/view/View.js') }}"></script>
+<script src="{{ url_for('descrimage_bp.static', filename='js/view/LayerViewGiver.js') }}"></script>
+<script src="{{ url_for('static', filename='js/view/LView.js') }}"></script>
+<script src="{{ url_for('static', filename='js/controller/LocalKeyController.js') }}"></script>
+<!-- Interface specific functionality -->
+<script src="{{ url_for('descrimage_bp.static', filename='js/giver.js') }}"></script>
 </body>
 
 </html>

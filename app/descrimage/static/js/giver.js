@@ -19,7 +19,7 @@ $(document).ready(function () {
     // --- create a socket --- //
     // don't connect yet
     let socket = io(MODEL, {
-        auth: { "password": "GiveMeTheBigBluePasswordOnTheLeft" }
+        auth: {"password": "GiveMeTheBigBluePasswordOnTheLeft"}
     });
     // debug: print any messages to the console
     localStorage.debug = 'socket.io-client:socket';
@@ -30,9 +30,9 @@ $(document).ready(function () {
 
     // --- view --- //
     // Get references to the three canvas layers
-    let bgLayer     = document.getElementById("background");
-    let objLayer    = document.getElementById("objects");
-    let grLayer     = document.getElementById("gripper");
+    let bgLayer = document.getElementById("background");
+    let objLayer = document.getElementById("objects");
+    let grLayer = document.getElementById("gripper");
 
     // Set up the view js, this also sets up key listeners
     const layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
@@ -70,8 +70,9 @@ $(document).ready(function () {
         document.getElementById("progress").value = state;
         old_score = parseInt(document.getElementById("score").value);
         document.getElementById("score").value = old_score + 1;
+        set_description_panel(true, false)
     });
-    
+
     socket.on("finish", () => {
         alert("We are done here, you can close the window");
         stop();
@@ -100,29 +101,56 @@ $(document).ready(function () {
         socket.disconnect();
     }
 
+    function set_description_panel(activate, show_input) {
+        let $description = $("#description");
+        if (show_input) {
+            $("#description_text_panel").show()
+            $("#description_text").text($description.val())
+        } else {
+            // hide previous text
+            $("#description_text_panel").hide()
+        }
+        if (activate) {
+            // enable the inputs
+            $("#description_button").removeClass("disabled")
+            $("#description_button_panel").removeClass("disabled")
+            $description.focus()
+        } else {
+            // show the text
+            // reset and disable inputs
+            $description.val("").blur() // blur to remove focus
+            $("#description_button").addClass("disabled")
+            $("#description_button_panel").addClass("disabled")
+        }
+    }
+
     function send_description() {
         // join a GOLMI room with the name "test_room_id"
         let description = document.getElementById("description").value;
         let state_index = document.getElementById("progress").value;
-        if (description != ""){
-            socket.emit("descrimage_description", {"description":description, "token": token, "state": state_index});
-            document.getElementById("description").value = "";
+        if (description === "") {
+            $("#description_text_warning").show()
+        } else {
+            $("#description_text_warning").hide()
+            socket.emit("descrimage_description", {"description": description, "token": token, "state": state_index});
+            set_description_panel(false, true)
         }
     }
 
     document.getElementById("score").value = 0;
-    $(document).ready(function(){   
+    $(document).ready(function () {
         setTimeout(function () {
             $("#start_popup").fadeIn(50);
+            set_description_panel(false, false)
         }, 200);
-        $(".start_popupOK").click(function() {
+        $(".start_popupOK").click(function () {
+            set_description_panel(true, false)
             $("#start_popup").fadeOut(700);
             start(token);
-            $("#description_button").prop("disabled", false);
             socket.emit("test_person_connected");
-        }); 
-    }); 
-    
+        });
+    });
+
     // --- buttons --- //
     $("#start").click(() => {
         start(token);
@@ -132,6 +160,13 @@ $(document).ready(function () {
     });
     $("#description_button").click(() => {
         send_description();
+    }).prop("disabled", true);
+    $("#description").keypress(function (e) {
+        let code = (e.keyCode ? e.keyCode : e.which);
+        if (code === 13) { // press ENTER
+            send_description();
+        }
     });
-    $("#description_button").prop("disabled", true);
+    $("#description_text_panel").hide()
+    $("#description_text_warning").hide()
 }); // on document ready end
