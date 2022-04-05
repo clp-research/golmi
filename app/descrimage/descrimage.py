@@ -1,5 +1,7 @@
 import os.path
 
+from flask_cors import cross_origin
+
 from app import DEFAULT_CONFIG_FILE
 from flask import render_template, Blueprint
 import json
@@ -23,11 +25,19 @@ descrimage_bp = Blueprint(
 )
 
 
+@cross_origin
+@descrimage_bp.route("/", methods=["GET"])
+def home():
+    return render_template("home.html")
+
+
+@cross_origin
 @descrimage_bp.route("/r/<token>", methods=["GET"])
 def receiver_page(token):
     return receiver(token)
 
 
+@cross_origin
 @descrimage_bp.route("/g/<token>", methods=["GET"])
 def giver_page(token):
     states = __load_states(token)
