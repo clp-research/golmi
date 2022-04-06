@@ -52,7 +52,9 @@ def receiver(token):
     states = __load_states(token)
     state_to_load = __prepare_state(states, 0)
     room_manager.get_model_of_room(token).set_state(state_to_load)
-    return render_template("receiver.html", token=token, n_states=len(states), this_state=0)
+    return render_template(
+        "receiver.html", token=token, n_states=len(states), this_state=0
+    )
 
 
 # SOCKETIO EVENTS
@@ -132,15 +134,17 @@ def on_mouseclick(event):
     model.add_gr("mouse", x, y)
     model.grip("mouse")
 
+    socketio.sleep(1)
+
     grippers = model.get_gripper_dict()
-    #target = grippers["init"]["gripped"]
     gripped = grippers["mouse"]["gripped"]
     target = model.state.to_dict()["targets"]
-    
+
     # add gripped property to target dict
     for target_idn in target.keys():
         target[target_idn]["gripped"] = True
 
+    # user selected the righ piece, move to next state
     if target == gripped:
         this_state = int(event["this_state"])
         if this_state < int(event["n_states"]) - 1:
