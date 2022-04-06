@@ -45,8 +45,22 @@
             <div class="label">Progress</div>
         </div>
     </div>
-    <div class="row">
-        Your Score: <input id="score" value="0"/>
+    <div class="row" style="margin: 10px 0 10px 0; width: 600px">
+        <div class="ui horizontal segments">
+            <div class="ui segment">
+                <span class="ui text">Bonus:</span>
+                <span id="score" class="ui circular label">0</span>
+                <span class="ui text">out of {{ n_states }} correct</span>
+            </div>
+            <div id="positive_feedback" class="ui segment">
+                <div class="ui circular green label">+1</div>
+                <span class="ui green text">Congrats! Your follower picked the target piece.</span>
+            </div>
+            <div id="negative_feedback" class="ui segment">
+                <div class="ui circular yellow label">+0</div>
+                <span class="ui yellow text">Sorry, the follower could not pick the target piece.</span>
+            </div>
+        </div>
     </div>
     <div class="row">
         <!-- The "viewport" id and three stacked canvases of the same size are needed to

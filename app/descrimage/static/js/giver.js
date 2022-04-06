@@ -58,8 +58,17 @@ $(document).ready(function () {
     socket.on("next_state", (state) => {
         // todo show "success" progress, when final state
         $('#progress').progress('increment', 1)
-        old_score = parseInt(document.getElementById("score").value);
-        document.getElementById("score").value = old_score + 1;
+        // todo score should come from the server
+        let score_received = 1
+        if (score_received < 1) {
+            $("#negative_feedback").show()
+        } else {
+            $("#positive_feedback").show()
+        }
+        // increase the score
+        let $score = $("#score");
+        let old_score = parseInt($score.text());
+        $score.text(old_score + score_received);
         set_description_panel(true, false)
     });
 
@@ -122,6 +131,8 @@ $(document).ready(function () {
             $("#description_text_warning").show()
         } else {
             $("#description_text_warning").hide()
+            $("#positive_feedback").hide()
+            $("#negative_feedback").hide()
             socket.emit("descrimage_description", {"description": description, "token": token, "state": state_index});
             set_description_panel(false, true)
         }
@@ -159,4 +170,6 @@ $(document).ready(function () {
     });
     $("#description_text_panel").hide()
     $("#description_text_warning").hide()
+    $("#positive_feedback").hide()
+    $("#negative_feedback").hide()
 }); // on document ready end

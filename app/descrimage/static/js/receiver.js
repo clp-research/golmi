@@ -104,6 +104,7 @@ $(document).ready(function () {
         } else {
             $("#positive_feedback").show()
         }
+        // increase the score
         let $score = $("#score");
         let old_score = parseInt($score.text());
         $score.text(old_score + score_received);
