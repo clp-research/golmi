@@ -70,6 +70,8 @@ $(document).ready(function () {
         $("#description_text").text(data);
         $("#awaiting_text_panel").hide()
         $("#blocking_board_panel").hide()
+        $("#positive_feedback").hide()
+        $("#negative_feedback").hide()
         $('body').toast({
             class: 'info',
             message: `A new instruction arrived!`
@@ -95,8 +97,16 @@ $(document).ready(function () {
         $("#blocking_board_panel").show()
         // todo show "success" progress, when final state
         $('#progress').progress('increment', 1)
-        old_score = parseInt(document.getElementById("score").value);
-        document.getElementById("score").value = old_score + 1;
+        // todo score should come from the server
+        let score_received = 1
+        if (score_received < 1) {
+            $("#negative_feedback").show()
+        } else {
+            $("#positive_feedback").show()
+        }
+        let $score = $("#score");
+        let old_score = parseInt($score.text());
+        $score.text(old_score + score_received);
     });
 
     socket.on("finish", () => {
@@ -156,4 +166,6 @@ $(document).ready(function () {
     $("#load_file").click(() => {
         load_file();
     });
+    $("#positive_feedback").hide()
+    $("#negative_feedback").hide()
 }); // on document ready end
