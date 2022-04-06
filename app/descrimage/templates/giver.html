@@ -37,15 +37,15 @@
 
 <body>
 <div id="content" class="ui centered container">
-    <div class="row" style="margin: 10px 0 10px 0; width: 600px">
+    <div class="row" style="margin-top: 10px; margin-bottom: -25px; width: 600px">
         <div id="progress" class="ui progress" data-total={{ n_states }}> <!-- this is coming form the server -->
             <div class="bar">
                 <div class="progress centered"></div>
             </div>
-            <div class="label">Progress</div>
+            <!--<div class="label">Progress</div>-->
         </div>
     </div>
-    <div class="row" style="margin: 10px 0 10px 0; width: 600px">
+    <div class="row" style="width: 600px">
         <div class="ui horizontal segments">
             <div class="ui segment">
                 <span class="ui text">Bonus:</span>
@@ -65,10 +65,10 @@
     <div class="row">
         <!-- The "viewport" id and three stacked canvases of the same size are needed to
             properly render using the LayerView class -->
-        <div id="viewport" style="height: 600px; width: 600px; margin: 10px 0 10px 0;">
-            <canvas id="background" width="600" height="600"></canvas>
-            <canvas id="objects" width="600" height="600"></canvas>
-            <canvas id="gripper" width="600" height="600"></canvas>
+        <div id="viewport" style="height: 510px; width: 510px; margin-bottom: 10px; margin-left: 45px;">
+            <canvas id="background" width="510" height="510"></canvas>
+            <canvas id="objects" width="510" height="510"></canvas>
+            <canvas id="gripper" width="510" height="510"></canvas>
         </div>
     </div>
     <div class="row">

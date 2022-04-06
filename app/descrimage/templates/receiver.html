@@ -26,15 +26,15 @@
 
 <body>
 <div id="content" class="ui centered container">
-    <div class="row" style="margin: 10px 0 10px 0; width: 600px">
+    <div class="row" style="margin-top: 10px; margin-bottom: -25px; width: 510px">
         <div id="progress" class="ui progress" data-total={{ n_states }}> <!-- this is coming form the server -->
             <div class="bar">
                 <div class="progress centered"></div>
             </div>
-            <div class="label">Progress</div>
+            <!--<div class="label">Progress</div>-->
         </div>
     </div>
-    <div class="row" style="margin: 10px 0 10px 0; width: 600px">
+    <div class="row" style="width: 510px">
         <div class="ui horizontal segments">
             <div class="ui segment">
                 <span class="ui text">Giver's Score:</span>
@@ -50,8 +50,8 @@
             </div>
         </div>
     </div>
-    <div class="row" style="margin: 10px 0 10px 0; width: 600px">
-        <div class="ui raised segment" id="description_text_panel">
+    <div class="row" style="margin-bottom: 10px; width: 510px">
+        <div class="ui segment" id="description_text_panel">
             <div class="ui top attached label">Instruction</div>
             <p></p>
             <span class="ui text" id="description_text">Text</span>
@@ -67,10 +67,10 @@
     <div class="row">
         <!-- The "viewport" id and three stacked canvases of the same size are needed to
             properly render using the LayerView class -->
-        <div id="viewport" style="height: 600px; width: 600px; margin: 10px 0 10px 0;">
-            <canvas id="background" width="600" height="600"></canvas>
-            <canvas id="objects" width="600" height="600"></canvas>
-            <canvas id="gripper" width="600" height="600"></canvas>
+        <div id="viewport" style="height: 510px; width: 510px; margin-top: 10px;">
+            <canvas id="background" width="510" height="510"></canvas>
+            <canvas id="objects" width="510" height="510"></canvas>
+            <canvas id="gripper" width="510" height="510"></canvas>
             <div id="blocking_board_panel" class="ui active inverted dimmer">
                 <div class="ui elastic slow text loader">Please wait for the next instruction</div>
             </div>
