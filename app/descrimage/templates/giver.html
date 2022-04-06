@@ -23,7 +23,13 @@
 </script>
 
 <div id="start_popup">
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ultricies integer quis auctor elit sed vulputate. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar sapien. Iaculis eu non diam phasellus vestibulum lorem sed. Interdum consectetur libero id faucibus nisl tincidunt eget nullam. Purus gravida quis blandit turpis cursus in hac habitasse platea. Tortor condimentum lacinia quis vel eros donec ac odio tempor. Dignissim convallis aenean et tortor at. Etiam tempor orci eu lobortis. Egestas sed tempus urna et pharetra pharetra massa massa ultricies. Volutpat consequat mauris nunc congue nisi vitae. Sit amet massa vitae tortor. Ornare massa eget egestas purus viverra.
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna
+    aliqua. Ultricies integer quis auctor elit sed vulputate. Amet mauris commodo quis imperdiet massa tincidunt nunc
+    pulvinar sapien. Iaculis eu non diam phasellus vestibulum lorem sed. Interdum consectetur libero id faucibus nisl
+    tincidunt eget nullam. Purus gravida quis blandit turpis cursus in hac habitasse platea. Tortor condimentum lacinia
+    quis vel eros donec ac odio tempor. Dignissim convallis aenean et tortor at. Etiam tempor orci eu lobortis. Egestas
+    sed tempus urna et pharetra pharetra massa massa ultricies. Volutpat consequat mauris nunc congue nisi vitae. Sit
+    amet massa vitae tortor. Ornare massa eget egestas purus viverra.
     <br>
     <a class="start_popupOK">Start</a>
 </div>
@@ -31,9 +37,13 @@
 
 <body>
 <div id="content" class="ui centered container">
-    <div class="row">
-        Progress:
-        <progress id="progress" max={{ n_states }} value={{ this_state }} width="200"></progress>
+    <div class="row" style="margin: 10px 0 10px 0; width: 600px">
+        <div id="progress" class="ui progress" data-total={{ n_states }}> <!-- this is coming form the server -->
+            <div class="bar">
+                <div class="progress centered"></div>
+            </div>
+            <div class="label">Progress</div>
+        </div>
     </div>
     <div class="row">
         Your Score: <input id="score" value="0"/>

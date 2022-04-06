@@ -5,17 +5,6 @@ $(document).ready(function () {
     const MODEL = window.location.origin
     console.log("Connect to " + MODEL)
 
-    // parameters for random initial state
-    // (state is generated once the configuration is received)
-    // const N_OBJECTS = 10;
-    // const N_GRIPPERS = 0; // no pre-generated gripper
-
-    // const CUSTOM_CONFIG = {
-    //     "move_step": 0.5,
-    //     "width": 25,
-    //     "height": 25
-    // };
-
     // --- create a socket --- //
     // don't connect yet
     let socket = io(MODEL, {
@@ -67,7 +56,8 @@ $(document).ready(function () {
     });
 
     socket.on("next_state", (state) => {
-        document.getElementById("progress").value = state;
+        // todo show "success" progress, when final state
+        $('#progress').progress('increment', 1)
         old_score = parseInt(document.getElementById("score").value);
         document.getElementById("score").value = old_score + 1;
         set_description_panel(true, false)
@@ -101,9 +91,9 @@ $(document).ready(function () {
         socket.disconnect();
     }
 
-    function set_description_panel(activate, show_input) {
+    function set_description_panel(activate, show_written_text) {
         let $description = $("#description");
-        if (show_input) {
+        if (show_written_text) {
             $("#description_text_panel").show()
             $("#description_text").text($description.val())
         } else {
@@ -127,7 +117,7 @@ $(document).ready(function () {
     function send_description() {
         // join a GOLMI room with the name "test_room_id"
         let description = document.getElementById("description").value;
-        let state_index = document.getElementById("progress").value;
+        let state_index = $("#progress").progress("get value");
         if (description === "") {
             $("#description_text_warning").show()
         } else {
