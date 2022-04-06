@@ -118,6 +118,7 @@ def load_state_index(index, token):
 
 @socketio.on("descrimage_mouseclick")
 def on_mouseclick(event):
+    print("CLICK")
     # looks like we need a "mouse"-gripper b.c. everything expects a gripper instance
     token = event["token"]
     model = room_manager.get_model_of_room(token)
@@ -132,8 +133,13 @@ def on_mouseclick(event):
     model.grip("mouse")
 
     grippers = model.get_gripper_dict()
-    target = grippers["init"]["gripped"]
+    #target = grippers["init"]["gripped"]
     gripped = grippers["mouse"]["gripped"]
+    target = model.state.to_dict()["targets"]
+    
+    # add gripped property to target dict
+    for target_idn in target.keys():
+        target[target_idn]["gripped"] = True
 
     if target == gripped:
         this_state = int(event["this_state"])
@@ -192,4 +198,5 @@ def __prepare_state(states, index):
     else:
         init_gripper = {"id_n": "init", "x": 0, "y": 0, "color": "blue"}
         states[index]["grippers"]["init"] = init_gripper
+
     return states[index]
