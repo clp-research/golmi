@@ -5,21 +5,10 @@ $(document).ready(function () {
     const MODEL = window.location.origin
     console.log("Connect to " + MODEL)
 
-    // parameters for random initial state
-    // (state is generated once the configuration is received)
-    // const N_OBJECTS = 10;
-    // const N_GRIPPERS = 0; // no pre-generated gripper
-
-    // const CUSTOM_CONFIG = {
-    //     "move_step": 0.5,
-    //     "width": 25,
-    //     "height": 25
-    // };
-
     // --- create a socket --- //
     // don't connect yet
     let socket = io(MODEL, {
-        auth: { "password": "GiveMeTheBigBluePasswordOnTheLeft" }
+        auth: {"password": "GiveMeTheBigBluePasswordOnTheLeft"}
     });
     // debug: print any messages to the console
     localStorage.debug = 'socket.io-client:socket';
@@ -30,12 +19,13 @@ $(document).ready(function () {
 
     // --- view --- //
     // Get references to the three canvas layers
-    let bgLayer     = document.getElementById("background");
-    let objLayer    = document.getElementById("objects");
-    let grLayer     = document.getElementById("gripper");
+    let bgLayer = document.getElementById("background");
+    let objLayer = document.getElementById("objects");
+    let grLayer = document.getElementById("gripper");
 
     // Set up the view js, this also sets up key listeners
     const layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
+
     function onMouseClick(event) {
         socket.emit("descrimage_mouseclick", {
             "target_id": event.target.id,
@@ -49,6 +39,7 @@ $(document).ready(function () {
             "n_states": document.getElementById("progress").max
         })
     }
+
     grLayer.onclick = onMouseClick
     // --- logger --- //
     // second parameter disables full state logging, significantly reducing
@@ -73,21 +64,35 @@ $(document).ready(function () {
 
     socket.on("description_from_server", (data) => {
         console.log(data)
-        document.getElementById("description").value = data;
+        $("#description_text").text(data);
+        $("#awaiting_text_panel").hide()
+        $("#blocking_board_panel").hide()
+        $('body').toast({
+            class: 'info',
+            message: `A new instruction arrived!`
+        });
     });
 
     socket.on("incoming connection", () => {
         audio_notification();
-        alert("A user connected to this room");
+        $('body').toast({
+            class: 'success',
+            message: "A user connected to this room"
+        });
     });
 
     socket.on("next_state", (state) => {
-        document.getElementById("description").value = ""
+        $('body').toast({
+            class: 'warning',
+            message: "Next state has been loaded"
+        });
+        $("#awaiting_text_panel").show()
+        $("#blocking_board_panel").show()
         document.getElementById("progress").value = state;
         old_score = parseInt(document.getElementById("score").value);
         document.getElementById("score").value = old_score + 1;
     });
-    
+
     socket.on("finish", () => {
         alert("We are done here, you can close the window");
         stop();
@@ -123,7 +128,7 @@ $(document).ready(function () {
         old_score = parseInt(document.getElementById("score").value);
         document.getElementById("score").value = old_score - 1;
 
-        socket.emit("descrimage_bad_description", {"description":description, "token": token, "state": state_index});
+        socket.emit("descrimage_bad_description", {"description": description, "token": token, "state": state_index});
     }
 
     function audio_notification() {
@@ -131,6 +136,7 @@ $(document).ready(function () {
         var snd = new Audio(notification_file);
         snd.play();
     }
+
     start(token);
     document.getElementById("score").value = 0;
 
