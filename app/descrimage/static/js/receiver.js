@@ -27,6 +27,9 @@ $(document).ready(function () {
     const layerView = new document.LayerView(socket, bgLayer, objLayer, grLayer);
 
     function onMouseClick(event) {
+        let $progress = $("#progress");
+        let current = $progress.progress("get value")
+        let total = $progress.progress("get total")
         socket.emit("descrimage_mouseclick", {
             "target_id": event.target.id,
             "offset_x": event.offsetX,
@@ -35,8 +38,8 @@ $(document).ready(function () {
             "y": event.y,
             "block_size": layerView.blockSize,
             "token": token,
-            "this_state": document.getElementById("progress").value,
-            "n_states": document.getElementById("progress").max
+            "this_state": current,
+            "n_states": total
         })
     }
 
@@ -62,7 +65,7 @@ $(document).ready(function () {
         logView.sendData("/pentomino/save_log");
     });
 
-    socket.on("description_from_server", (data) => {
+    function on_description(data) {
         console.log(data)
         $("#description_text").text(data);
         $("#awaiting_text_panel").hide()
@@ -71,7 +74,9 @@ $(document).ready(function () {
             class: 'info',
             message: `A new instruction arrived!`
         });
-    });
+    }
+
+    socket.on("description_from_server", on_description);
 
     socket.on("incoming connection", () => {
         audio_notification();
@@ -88,7 +93,8 @@ $(document).ready(function () {
         });
         $("#awaiting_text_panel").show()
         $("#blocking_board_panel").show()
-        document.getElementById("progress").value = state;
+        // todo show "success" progress, when final state
+        $('#progress').progress('increment', 1)
         old_score = parseInt(document.getElementById("score").value);
         document.getElementById("score").value = old_score + 1;
     });
@@ -123,7 +129,7 @@ $(document).ready(function () {
 
     function bad_description() {
         let description = document.getElementById("description").value;
-        let state_index = document.getElementById("progress").value;
+        let state_index = $("#progress").progress("get value");
         document.getElementById("description").value = ""
         old_score = parseInt(document.getElementById("score").value);
         document.getElementById("score").value = old_score - 1;
@@ -143,6 +149,9 @@ $(document).ready(function () {
     // --- buttons --- //
     $("#bad_description").click(() => {
         bad_description();
+    });
+    $("#test_description").click(() => {
+        on_description("Dummy text");
     });
     $("#load_file").click(() => {
         load_file();
