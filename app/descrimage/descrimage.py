@@ -77,7 +77,7 @@ def send_description(data):
         json.dump(data, infile)
 
     # send to other view the description
-    socketio.emit("description_from_server", description)
+    socketio.emit("description_from_server", description, room=token)
 
 
 @socketio.on("descrimage_bad_description")
@@ -103,12 +103,12 @@ def bad_description(data):
         json.dump(data, infile)
 
     # send to other view the description
-    socketio.emit("descrimage_bad_description")
+    socketio.emit("descrimage_bad_description", room=token)
 
 
 @socketio.on("test_person_connected")
-def test_person_connected():
-    socketio.emit("incoming connection")
+def test_person_connected(token):
+    socketio.emit("incoming connection", room=token)
 
 
 @socketio.on("load_state_index")
@@ -151,10 +151,10 @@ def on_mouseclick(event):
             states = __load_states(token)
             state = __prepare_state(states, this_state + 1)
             room_manager.get_model_of_room(token).set_state(state)
-            socketio.emit("next_state", this_state + 1)
+            socketio.emit("next_state", this_state + 1, room=token)
         else:
-            socketio.emit("next_state", this_state + 1)
-            socketio.emit("finish")
+            socketio.emit("next_state", this_state + 1, room=token)
+            socketio.emit("finish", room=token)
 
 
 def translate(x, y, granularity):

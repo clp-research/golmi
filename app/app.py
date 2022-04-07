@@ -4,9 +4,8 @@ from os.path import isfile
 from flask import Flask, request
 from flask_cors import CORS
 from flask_socketio import (
-    SocketIO, emit, ConnectionRefusedError
+    SocketIO, emit, ConnectionRefusedError, join_room, leave_room
 )
-
 
 from model.room_manager import RoomManager
 from app import DEFAULT_CONFIG_FILE
@@ -117,10 +116,12 @@ def join(params):
 
     room_manager.add_client_to_room(request.sid, room_id)
 
+    join_room(room_id)
+
     # inform client about room name, current config and state using their
     # private channel
-    emit("update_config", room_manager.get_model_of_room(room_id).config.to_dict())
-    emit("update_state", room_manager.get_model_of_room(room_id).state.to_dict())
+    emit("update_config", room_manager.get_model_of_room(room_id).config.to_dict(), to=room_id)
+    emit("update_state", room_manager.get_model_of_room(room_id).state.to_dict(), to=room_id)
 
 
 @socketio.on("disconnect")
