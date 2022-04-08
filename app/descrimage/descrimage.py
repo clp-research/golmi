@@ -138,22 +138,29 @@ def on_mouseclick(event):
 
     grippers = model.get_gripper_dict()
     gripped = grippers["mouse"]["gripped"]
-    target = model.state.to_dict()["targets"]
+    
+    
+    if gripped is not None:
+        # user selected an item, go to next state
+        target = model.state.to_dict()["targets"]
 
-    # add gripped property to target dict
-    for target_idn in target.keys():
-        target[target_idn]["gripped"] = True
+        # add gripped property to target dict
+        for target_idn in target.keys():
+            target[target_idn]["gripped"] = True
 
-    # user selected the righ piece, move to next state
-    if target == gripped:
+        if target == gripped:
+            to_add = +1
+        else:
+            to_add = -1
+
         this_state = int(event["this_state"])
         if this_state < int(event["n_states"]) - 1:
             states = __load_states(token)
             state = states[this_state + 1]
             room_manager.get_model_of_room(token).set_state(state)
-            socketio.emit("next_state", this_state + 1, room=token)
+            socketio.emit("next_state", {"next_state": this_state + 1, "score_delta": to_add}, room=token)
         else:
-            socketio.emit("next_state", this_state + 1, room=token)
+            socketio.emit("next_state", {"next_state": this_state + 1, "score_delta": to_add}, room=token)
             socketio.emit("finish", room=token)
 
 

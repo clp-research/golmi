@@ -88,7 +88,7 @@ $(document).ready(function () {
         });
     });
 
-    socket.on("next_state", (state) => {
+    socket.on("next_state", (data) => {
         $('body').toast({
             class: 'warning',
             message: "Next state has been loaded"
@@ -98,7 +98,7 @@ $(document).ready(function () {
         // todo show "success" progress, when final state
         $('#progress').progress('increment', 1)
         // todo score should come from the server
-        let score_received = 1
+        let score_received = data.score_delta
         if (score_received < 1) {
             $("#negative_feedback").show()
         } else {
