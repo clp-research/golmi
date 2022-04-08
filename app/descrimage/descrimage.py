@@ -50,7 +50,7 @@ def receiver(token):
     __prepare_log_file(token)
     room_manager.add_room(token, get_default_config())
     states = __load_states(token)
-    state_to_load = __prepare_state(states, 0)
+    state_to_load = states[0]
     room_manager.get_model_of_room(token).set_state(state_to_load)
     return render_template(
         "receiver.html", token=token, n_states=len(states), this_state=0
@@ -114,7 +114,7 @@ def test_person_connected(token):
 @socketio.on("load_state_index")
 def load_state_index(index, token):
     states = __load_states(token)
-    state = __prepare_state(states, index)
+    state = states[index]
     room_manager.get_model_of_room(token).set_state(state)
 
 
@@ -149,7 +149,7 @@ def on_mouseclick(event):
         this_state = int(event["this_state"])
         if this_state < int(event["n_states"]) - 1:
             states = __load_states(token)
-            state = __prepare_state(states, this_state + 1)
+            state = states[this_state + 1]
             room_manager.get_model_of_room(token).set_state(state)
             socketio.emit("next_state", this_state + 1, room=token)
         else:
@@ -190,17 +190,3 @@ def __load_states(token):
         state["targets"][target["id_n"]] = target
         states.append(state)
     return states
-
-
-def __prepare_state(states, index):
-    # replace gripper with init gripper
-    if len(states[index]["grippers"]) > 0:
-        to_replace = list(states[index]["grippers"].keys())[0]
-        states[index]["grippers"]["init"] = states[index]["grippers"][to_replace]
-        states[index]["grippers"]["init"]["id_n"] = "init"
-        del states[index]["grippers"][to_replace]
-    else:
-        init_gripper = {"id_n": "init", "x": 0, "y": 0, "color": "blue"}
-        states[index]["grippers"]["init"] = init_gripper
-
-    return states[index]
