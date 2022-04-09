@@ -179,8 +179,9 @@ $(document).ready(function () {
         // alternative to alert where user does not press play
         audio_notification();
         $('body').toast({
-            class: 'success',
-            message: "You're taking too long, move on"
+            class: 'error',
+            displayTime: 0,
+            message: "You're taking too long, move on (click to dismiss)"
         });
     }
 
