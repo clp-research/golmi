@@ -122,6 +122,7 @@ def load_state_index(index, token):
     state = states[index]
     room_manager.get_model_of_room(token).set_state(state)
 
+
 @socketio.on("descrimage_mouseclick")
 def on_mouseclick(event):
     print("CLICK")
@@ -142,8 +143,7 @@ def on_mouseclick(event):
 
     grippers = model.get_gripper_dict()
     gripped = grippers["mouse"]["gripped"]
-    
-    
+
     if gripped is not None:
         # user selected an item, go to next state
         target = model.state.to_dict()["targets"]
@@ -162,9 +162,17 @@ def on_mouseclick(event):
             states = __load_states(token)
             state = states[this_state + 1]
             room_manager.get_model_of_room(token).set_state(state)
-            socketio.emit("next_state", {"next_state": this_state + 1, "score_delta": to_add}, room=token)
+            socketio.emit(
+                "next_state",
+                {"next_state": this_state + 1, "score_delta": to_add},
+                room=token,
+            )
         else:
-            socketio.emit("next_state", {"next_state": this_state + 1, "score_delta": to_add}, room=token)
+            socketio.emit(
+                "next_state",
+                {"next_state": this_state + 1, "score_delta": to_add},
+                room=token,
+            )
             socketio.emit("finish", room=token)
 
 
