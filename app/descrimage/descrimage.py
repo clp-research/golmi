@@ -111,12 +111,16 @@ def test_person_connected(token):
     socketio.emit("incoming connection", room=token)
 
 
+@socketio.on("timeout")
+def test_person_connected(token):
+    socketio.emit("timeout", room=token)
+
+
 @socketio.on("load_state_index")
 def load_state_index(index, token):
     states = __load_states(token)
     state = states[index]
     room_manager.get_model_of_room(token).set_state(state)
-
 
 @socketio.on("descrimage_mouseclick")
 def on_mouseclick(event):

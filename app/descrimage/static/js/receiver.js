@@ -58,6 +58,11 @@ $(document).ready(function () {
         console.log(`Joined room ${data.room_id} as client ${data.client_id}`);
     })
 
+    socket.on("timeout", () => {
+        alert("Your partner disconnected. The experiment is over")
+        stop();
+    })
+
     socket.on("disconnect", () => {
         console.log("Disconnected from model server");
         // demo of the logView: send the logged data to the server

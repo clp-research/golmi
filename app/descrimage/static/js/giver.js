@@ -148,26 +148,73 @@ $(document).ready(function () {
             set_description_panel(true, false)
             $("#start_popup").fadeOut(700);
             start(token);
-            socket.emit("test_person_connected");
+            socket.emit("test_person_connected", token);
         });
     });
+
+    // Tiping Timer
+    //  - 30 sec: a simple warning
+    //  - 60 sec: timeout; user will be disconnected 
+    var typingTimer1;
+    var typingTimer2;
+    var alertTimer = 30 * 1000;
+    var disconnectTimer = 60 * 1000;
+    var $description = $('#description');
+
+    $description.on('keyup', function () {
+        clearTimeout(typingTimer1);
+        clearTimeout(typingTimer2);
+        typingTimer1 = setTimeout(simpleAlert, alertTimer);
+        typingTimer2 = setTimeout(timeOut, disconnectTimer);
+    });
+
+    //on keydown, clear the countdowns
+    $description.on('keydown', function () {
+        clearTimeout(typingTimer1);
+        clearTimeout(typingTimer2);
+    });
+
+    // functions on timeouts
+    function simpleAlert() {
+        // alternative to alert where user does not press play
+        audio_notification();
+        $('body').toast({
+            class: 'success',
+            message: "You're taking too long, move on"
+        });
+    }
+
+    function timeOut() {
+        socket.emit("timeout", token)
+        stop();
+        alert("You've been disconnected, you can close the window");
+    }
+
+    function audio_notification() {
+        // console.log(descrimage_bp.static)
+        var snd = new Audio(notification_file);
+        snd.play();
+    }
 
     // --- buttons --- //
     $("#start").click(() => {
         start(token);
-        socket.emit("test_person_connected")
+        socket.emit("test_person_connected", token)
         // disable this button, otherwise it is now in focus and Space/Enter will trigger the click again
         $("#start").prop("disabled", true);
     });
+
     $("#description_button").click(() => {
         send_description();
     }).prop("disabled", true);
+
     $("#description").keypress(function (e) {
         let code = (e.keyCode ? e.keyCode : e.which);
         if (code === 13) { // press ENTER
             send_description();
         }
     });
+
     $("#description_text_panel").hide()
     $("#description_text_warning").hide()
     $("#positive_feedback").hide()
