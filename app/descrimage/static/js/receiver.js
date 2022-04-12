@@ -115,7 +115,7 @@ $(document).ready(function () {
         $score.text(old_score + score_received);
     });
 
-    socket.on("finish", () => {
+    socket.on("finish", (dada) => {
         alert("We are done here, you can close the window");
         stop();
     });

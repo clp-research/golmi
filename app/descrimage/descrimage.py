@@ -129,7 +129,7 @@ def on_mouseclick(event):
     # looks like we need a "mouse"-gripper b.c. everything expects a gripper instance
     token = event["token"]
     model = room_manager.get_model_of_room(token)
-    x, y = translate(event["offset_x"], event["offset_y"], event["block_size"])
+    x, y = __translate(event["offset_x"], event["offset_y"], event["block_size"])
 
     if "mouse" in model.state.grippers:
         model.remove_gr("mouse")
@@ -153,9 +153,9 @@ def on_mouseclick(event):
             target[target_idn]["gripped"] = True
 
         if target == gripped:
-            to_add = +1
+            to_add = 1
         else:
-            to_add = -1
+            to_add = 0
 
         this_state = int(event["this_state"])
         if this_state < int(event["n_states"]) - 1:
@@ -173,10 +173,24 @@ def on_mouseclick(event):
                 {"next_state": this_state + 1, "score_delta": to_add},
                 room=token,
             )
-            socketio.emit("finish", room=token)
+
+            # calculate token
+            final_token = __create_token()
+            message = (
+                f"We're done here.<br> Don't forget your token: {final_token}"
+                "<br> Thank you for participating"
+            )
+            socketio.emit("finish", message, room=token)
 
 
-def translate(x, y, granularity):
+def __create_token():
+    """
+    creates and logs a token
+    """
+    return "0bhWlm"
+
+
+def __translate(x, y, granularity):
     return x // granularity, y // granularity
 
 

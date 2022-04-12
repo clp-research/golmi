@@ -72,8 +72,10 @@ $(document).ready(function () {
         set_description_panel(true, false)
     });
 
-    socket.on("finish", () => {
-        alert("We are done here, you can close the window");
+    socket.on("finish", (message) => {
+        // we are done, show a message and the token
+        $('#start_popup').html(message);
+        $("#start_popup").fadeIn(50);
         stop();
     });
 
