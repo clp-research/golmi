@@ -199,14 +199,6 @@ $(document).ready(function () {
         snd.play();
     }
 
-    // --- buttons --- //
-    $("#start").click(() => {
-        start(token);
-        socket.emit("test_person_connected", token)
-        // disable this button, otherwise it is now in focus and Space/Enter will trigger the click again
-        $("#start").prop("disabled", true);
-    });
-
     $("#description_button").click(() => {
         send_description();
     }).prop("disabled", true);
