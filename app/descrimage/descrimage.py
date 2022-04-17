@@ -83,15 +83,14 @@ def send_description(data):
 @socketio.on("warning")
 def warning(data):
     """
-    Warning from receiver, gp to next state
+    Warning from receiver:
+        - go to next state
+        - remove 1 point
     """
     token = data["token"]
-    state_index = str(data["state"])
+    state_index = int(data["state"])
 
-    
-
-    # send to other view the description
-    socketio.emit("descrimage_bad_description", room=token)
+    __next_state(state_index, token, to_add=-1)
 
 
 @socketio.on("test_person_connected")
@@ -148,6 +147,12 @@ def on_mouseclick(event):
         # load next state
         this_state = int(event["this_state"])
         __next_state(this_state, token, to_add)
+
+    
+@socketio.on("abort")
+def abort(token):
+    message = "your partner aborted this session <br> You can now close this window"
+    socketio.emit("finish", message, room=token)
 
 
 def __next_state(this_state: int, token: int, to_add: int):

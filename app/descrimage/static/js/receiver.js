@@ -144,13 +144,17 @@ $(document).ready(function () {
     }
 
     function warning() {
-        let description = document.getElementById("description").value;
         let state_index = $("#progress").progress("get value");
-        document.getElementById("description").value = ""
+        // document.getElementById("description").value = ""
         old_score = parseInt(document.getElementById("score").value);
         document.getElementById("score").value = old_score - 1;
 
         socket.emit("warning", {"token": token, "state": state_index});
+    }
+
+    function abort() {
+        socket.emit("abort", token)
+        stop();
     }
 
     function audio_notification() {
@@ -166,6 +170,10 @@ $(document).ready(function () {
     $("#warning").click(() => {
         warning();
     });
+    $("#abort").click(() => {
+        abort();
+    });
+
     $("#test_description").click(() => {
         on_description("Dummy text");
     });
