@@ -152,7 +152,7 @@ def on_mouseclick(event):
         if "mouse" in model.state.grippers:
             model.remove_gr("mouse")
 
-    
+
 @socketio.on("abort")
 def abort(token):
     message = "your partner aborted this session <br> You can now close this window"
@@ -169,7 +169,7 @@ def __next_state(this_state: int, token: int, to_add: int):
     """
     states_in_token = __load_states(token)
 
-    # 
+    #
     if this_state < len(states_in_token) - 1:
         states = __load_states(token)
         state = states[this_state + 1]
@@ -179,7 +179,7 @@ def __next_state(this_state: int, token: int, to_add: int):
             {"next_state": this_state + 1, "score_delta": to_add},
             room=token,
         )
-    # this is the last state, 
+    # this is the last state,
     else:
         socketio.emit(
             "next_state",
