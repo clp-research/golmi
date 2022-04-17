@@ -146,6 +146,13 @@ $(document).ready(function () {
             $("#start_popup").fadeIn(50);
             set_description_panel(false, false)
         }, 200);
+
+        // timeout at start needed?
+        setTimeout(function () {
+            $('#start_popup').html("Connection Lost");
+            timeOut();
+        }, 60000);
+
         $(".start_popupOK").click(function () {
             set_description_panel(true, false)
             $("#start_popup").fadeOut(700);
