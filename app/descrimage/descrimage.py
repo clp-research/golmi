@@ -126,12 +126,11 @@ def on_mouseclick(event):
     model.add_gr("mouse", x, y)
     model.grip("mouse")
 
-    socketio.sleep(1)
-
     grippers = model.get_gripper_dict()
     gripped = grippers["mouse"]["gripped"]
 
     if gripped is not None:
+        socketio.sleep(1)
         # user selected an item, go to next state
         target = model.state.to_dict()["targets"]
 
@@ -147,6 +146,11 @@ def on_mouseclick(event):
         # load next state
         this_state = int(event["this_state"])
         __next_state(this_state, token, to_add)
+
+    else:
+        # remove the mouse gripper
+        if "mouse" in model.state.grippers:
+            model.remove_gr("mouse")
 
     
 @socketio.on("abort")
