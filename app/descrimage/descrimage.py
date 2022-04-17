@@ -80,27 +80,15 @@ def send_description(data):
     socketio.emit("description_from_server", description, room=token)
 
 
-@socketio.on("descrimage_bad_description")
-def bad_description(data):
-    description = data["description"]
+@socketio.on("warning")
+def warning(data):
+    """
+    Warning from receiver, gp to next state
+    """
     token = data["token"]
     state_index = str(data["state"])
 
-    log_file_path = __prepare_log_file(token)
-    with open(log_file_path, "r") as infile:
-        data = json.load(infile)
-
-    this_description = {"description": description}
-    # TODO: if description was already bad cannot catch it
-    if this_description in data[state_index]:
-        to_modify = data[state_index].index(this_description)
-        data[state_index][to_modify]["bad description"] = True
-    else:
-        this_description["bad description"] = True
-        to_modify = data[state_index].append(this_description)
-
-    with open(log_file_path, "w") as infile:
-        json.dump(data, infile)
+    
 
     # send to other view the description
     socketio.emit("descrimage_bad_description", room=token)
@@ -157,30 +145,46 @@ def on_mouseclick(event):
         else:
             to_add = 0
 
+        # load next state
         this_state = int(event["this_state"])
-        if this_state < int(event["n_states"]) - 1:
-            states = __load_states(token)
-            state = states[this_state + 1]
-            room_manager.get_model_of_room(token).set_state(state)
-            socketio.emit(
-                "next_state",
-                {"next_state": this_state + 1, "score_delta": to_add},
-                room=token,
-            )
-        else:
-            socketio.emit(
-                "next_state",
-                {"next_state": this_state + 1, "score_delta": to_add},
-                room=token,
-            )
+        __next_state(this_state, token, to_add)
 
-            # calculate token
-            final_token = __create_token()
-            message = (
-                f"We're done here.<br> Don't forget your token: {final_token}"
-                "<br> Thank you for participating"
-            )
-            socketio.emit("finish", message, room=token)
+
+def __next_state(this_state: int, token: int, to_add: int):
+    """
+    load the next state
+    parameters:
+        - this_state: the index of the current state
+        - token: the token of this batch
+        - to_add: the points to add to the current score
+    """
+    states_in_token = __load_states(token)
+
+    # 
+    if this_state < len(states_in_token) - 1:
+        states = __load_states(token)
+        state = states[this_state + 1]
+        room_manager.get_model_of_room(token).set_state(state)
+        socketio.emit(
+            "next_state",
+            {"next_state": this_state + 1, "score_delta": to_add},
+            room=token,
+        )
+    # this is the last state, 
+    else:
+        socketio.emit(
+            "next_state",
+            {"next_state": this_state + 1, "score_delta": to_add},
+            room=token,
+        )
+
+        # calculate token
+        final_token = __create_token()
+        message = (
+            f"We're done here.<br> Don't forget your token: {final_token}"
+            "<br> Thank you for participating"
+        )
+        socketio.emit("finish", message, room=token)
 
 
 def __create_token():

@@ -76,6 +76,8 @@ $(document).ready(function () {
         // we are done, show a message and the token
         $('#start_popup').html(message);
         $("#start_popup").fadeIn(50);
+        clearTimeout(typingTimer1);
+        clearTimeout(typingTimer2);
         stop();
     });
 
@@ -148,7 +150,8 @@ $(document).ready(function () {
         }, 200);
 
         // timeout at start needed?
-        setTimeout(function () {
+        var start_timeout;
+        start_timeout = setTimeout(function () {
             $('#start_popup').html("Connection Lost");
             timeOut();
         }, 60000);
@@ -156,6 +159,7 @@ $(document).ready(function () {
         $(".start_popupOK").click(function () {
             set_description_panel(true, false)
             $("#start_popup").fadeOut(700);
+            clearTimeout(start_timeout);
             start(token);
             socket.emit("test_person_connected", token);
         });

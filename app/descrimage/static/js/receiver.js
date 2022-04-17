@@ -143,14 +143,14 @@ $(document).ready(function () {
         socket.disconnect();
     }
 
-    function bad_description() {
+    function warning() {
         let description = document.getElementById("description").value;
         let state_index = $("#progress").progress("get value");
         document.getElementById("description").value = ""
         old_score = parseInt(document.getElementById("score").value);
         document.getElementById("score").value = old_score - 1;
 
-        socket.emit("descrimage_bad_description", {"description": description, "token": token, "state": state_index});
+        socket.emit("warning", {"token": token, "state": state_index});
     }
 
     function audio_notification() {
@@ -163,8 +163,8 @@ $(document).ready(function () {
     document.getElementById("score").value = 0;
 
     // --- buttons --- //
-    $("#bad_description").click(() => {
-        bad_description();
+    $("#warning").click(() => {
+        warning();
     });
     $("#test_description").click(() => {
         on_description("Dummy text");
