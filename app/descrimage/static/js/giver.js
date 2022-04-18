@@ -47,8 +47,7 @@ $(document).ready(function () {
         logView.sendData("/pentomino/save_log");
     });
 
-    socket.on("descrimage_bad_description", (data) => {
-        console.log(data)
+    socket.on("warning", () => {
         // CREATE POPUP
         alert("Your description is bad and you should feel bad");
         old_score = parseInt(document.getElementById("score").value);

@@ -103,6 +103,9 @@ def warning(data):
 
     data["score"] = -1
 
+    # notify instruction giver he is not doing the task
+    socketio.emit("warning", room=token)
+
     __next_state(state_index, token, to_add=-1)
 
 
