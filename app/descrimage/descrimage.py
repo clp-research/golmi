@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 import secrets
 import string
-from turtle import onscreenclick
 
 from flask_cors import cross_origin
 from flask import render_template, Blueprint
