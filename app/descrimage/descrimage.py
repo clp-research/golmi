@@ -1,10 +1,14 @@
-import os.path
+from datetime import datetime
+import json
+from pathlib import Path
+import secrets
+import string
+from turtle import onscreenclick
 
 from flask_cors import cross_origin
+from flask import render_template, Blueprint
 
 from app import DEFAULT_CONFIG_FILE
-from flask import render_template, Blueprint
-import json
 from app.app import app, socketio, room_manager, get_default_config
 
 from neureg.data.types import DataCollectionState
@@ -74,7 +78,7 @@ def send_description(data):
         data = json.load(infile)
 
     # add this description to the ist
-    if state_id not in data:
+    if state_id not in data["states"]:
         data["states"][state_id] = {"description": list(), "selected_obj": None}
 
     data["states"][state_id]["description"].append(description)
@@ -171,6 +175,8 @@ def on_mouseclick(event):
         # log selected object
         selected_key = set(gripped.keys()).pop()
         gripped_id_n = gripped[selected_key]["id_n"]
+        if state_id not in data["states"]:
+            data["states"][state_id] = dict()
         data["states"][state_id]["selected_obj"] = int(gripped_id_n)
 
         # log score
@@ -200,7 +206,12 @@ def abort(token):
     with open(log_file_path, "w") as ofile:
         json.dump(data, ofile)
 
-    message = "your partner aborted this session <br> You can now close this window"
+    final_token = __create_token(token)
+
+    message = (
+        f"This session was aborted.<br> Don't forget your token: {final_token}"
+        "<br> Thank you for participating"
+    )
     socketio.emit("finish", message, room=token)
 
 
@@ -235,7 +246,7 @@ def __next_state(this_state: int, token: int, to_add: int):
         )
 
         # calculate token
-        final_token = __create_token()
+        final_token = __create_token(token)
         message = (
             f"We're done here.<br> Don't forget your token: {final_token}"
             "<br> Thank you for participating"
@@ -243,11 +254,59 @@ def __next_state(this_state: int, token: int, to_add: int):
         socketio.emit("finish", message, room=token)
 
 
-def __create_token():
+def __create_token(token, token_len=10):
     """
     creates and logs a token
+    the token will encode:
+        - timestamp
+        - batch_id (argument_token)
+        - score
+        - aborted
     """
-    return "0bhWlm"
+    # TODO: change name of function to avoid confusion.
+    # suggestion: score_token
+
+    # TODO: change path and name of tokens.json?
+
+    token_file = Path("app/descrimage/tokens.json")
+    if not token_file.exists():
+        with open(token_file, "w") as ofile:
+            json.dump({}, ofile)
+
+    # read score and if aborted from log file
+    log_file_path = __prepare_log_file(token)
+    with open(log_file_path, "r") as infile:
+        data = json.load(infile)
+
+    aborted = data["abort"]
+    score = data["score"]
+
+    # get timestamp in iso format (can be parsed with
+    # datetime.fromisoformat())
+    timestamp = datetime.now().isoformat()
+
+    # create random token and make sure it's not given yet
+    with open(token_file, "r") as infile:
+        used_tokens = json.load(infile)
+
+    alphabet = string.ascii_letters + string.digits
+
+    while True:
+        giver_token = "".join(secrets.choice(alphabet) for _ in range(token_len))
+        if giver_token not in used_tokens:
+            break
+
+    used_tokens[giver_token] = {
+        "batch_id": token,
+        "score": score,
+        "aborted": aborted,
+        "timestamp": timestamp,
+    }
+
+    with open(token_file, "w") as ofile:
+        json.dump(used_tokens, ofile)
+
+    return giver_token
 
 
 def __translate(x, y, granularity):
@@ -255,14 +314,26 @@ def __translate(x, y, granularity):
 
 
 def __prepare_log_file(token):
+    """
+    returns the path of the log file
+    if the log file does not exists yet, this function
+    will create an empty one
+    """
+    # TODO: Problem: if the same token is used more than once
+    # the logging function will update the same log file
+    # this is problematic because score and descriptions will
+    # be modified.
+    # Options:
+    #     1- make sure a token is only ever used once
+    #     2- rename log file using the unique token for the receiver
+
     # todo make this path configurable
-    log_dir = __get_collect_dir() + "/logs"
-    if not os.path.exists(log_dir):
-        os.mkdir(log_dir)
+    log_dir = Path(f"{__get_collect_dir()}/logs")
+    log_dir.mkdir(exist_ok=True)
 
     # create an empty log file
-    logfile = f"{log_dir}/{token}.log.json"
-    if not os.path.exists(logfile):
+    logfile = Path(f"{log_dir}/{token}.log.json")
+    if not logfile.exists():
         print("Create log file at", logfile)
         with open(logfile, "w") as f:
             json.dump({"score": 0, "abort": False, "states": dict()}, f)
