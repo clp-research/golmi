@@ -62,19 +62,25 @@ def receiver(token):
 def send_description(data):
     description = data["description"]
     token = data["token"]
-    state_index = str(data["state"])
+    state_index = int(data["state"])
 
+    # get state identification number
+    states_in_token = __load_states(token)
+    state_id = str(states_in_token[state_index]["state_id"])
+
+    # open log of this batch
     log_file_path = __prepare_log_file(token)
     with open(log_file_path, "r") as infile:
         data = json.load(infile)
 
-    if state_index not in data:
-        data[state_index] = list()
+    # add this description to the ist
+    if state_id not in data:
+        data["states"][state_id] = {"description": list(), "selected_obj": None}
 
-    data[state_index].append({"description": description})
+    data["states"][state_id]["description"].append(description)
 
-    with open(log_file_path, "w") as infile:
-        json.dump(data, infile)
+    with open(log_file_path, "w") as ofile:
+        json.dump(data, ofile)
 
     # send to other view the description
     socketio.emit("description_from_server", description, room=token)
@@ -89,6 +95,13 @@ def warning(data):
     """
     token = data["token"]
     state_index = int(data["state"])
+
+    # load log file
+    log_file_path = __prepare_log_file(token)
+    with open(log_file_path, "r") as infile:
+        data = json.load(infile)
+
+    data["score"] = -1
 
     __next_state(state_index, token, to_add=-1)
 
@@ -143,8 +156,27 @@ def on_mouseclick(event):
         else:
             to_add = 0
 
-        # load next state
         this_state = int(event["this_state"])
+        states_in_token = __load_states(token)
+        state_id = str(states_in_token[this_state]["state_id"])
+
+        # load log file
+        log_file_path = __prepare_log_file(token)
+        with open(log_file_path, "r") as infile:
+            data = json.load(infile)
+
+        # log selected object
+        selected_key = set(gripped.keys()).pop()
+        gripped_id_n = gripped[selected_key]["id_n"]
+        data["states"][state_id]["selected_obj"] = int(gripped_id_n)
+
+        # log score
+        data["score"] += to_add
+
+        with open(log_file_path, "w") as ofile:
+            json.dump(data, ofile)
+
+        # load next state
         __next_state(this_state, token, to_add)
 
     else:
@@ -155,6 +187,16 @@ def on_mouseclick(event):
 
 @socketio.on("abort")
 def abort(token):
+    # log aborting of this session
+    log_file_path = __prepare_log_file(token)
+    with open(log_file_path, "r") as infile:
+        data = json.load(infile)
+
+    data["abort"] = True
+
+    with open(log_file_path, "w") as ofile:
+        json.dump(data, ofile)
+
     message = "your partner aborted this session <br> You can now close this window"
     socketio.emit("finish", message, room=token)
 
@@ -179,7 +221,9 @@ def __next_state(this_state: int, token: int, to_add: int):
             {"next_state": this_state + 1, "score_delta": to_add},
             room=token,
         )
-    # this is the last state,
+    # this is the last state, increase the progress bar
+    # (front end is 1 indexed, backend 0)
+    # we do not change the state of the model
     else:
         socketio.emit(
             "next_state",
@@ -212,11 +256,13 @@ def __prepare_log_file(token):
     log_dir = __get_collect_dir() + "/logs"
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
+
+    # create an empty log file
     logfile = f"{log_dir}/{token}.log.json"
     if not os.path.exists(logfile):
         print("Create log file at", logfile)
         with open(logfile, "w") as f:
-            json.dump({}, f)
+            json.dump({"score": 0, "abort": False, "states": dict()}, f)
     return logfile
 
 
