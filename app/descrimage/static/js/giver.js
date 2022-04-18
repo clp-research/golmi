@@ -219,6 +219,21 @@ $(document).ready(function () {
             send_description();
         }
     });
+    $("#help_button").click(() => {
+        $("#help_popup").css("display", "flex");
+
+        // halt timers
+        clearTimeout(typingTimer1);
+        clearTimeout(typingTimer2);
+    });
+    $("#help_popup").click(() => {
+        $("#help_popup").css("display", "none");
+        
+        // restart timers
+        typingTimer1 = setTimeout(simpleAlert, alertTimer);
+        typingTimer2 = setTimeout(timeOut, disconnectTimer);
+
+    });
 
     $("#description_text_panel").hide()
     $("#description_text_warning").hide()

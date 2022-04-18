@@ -29,13 +29,31 @@
   line-height: 26px;
   padding: 8px 8px 8px 30px;
   font-family: "Trebuchet MS",Helvetica,sans-serif;
-  position: fixed;
-  bottom: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
   left: 0;
   right: 0;
   display: none;
   z-index: 9999;
   text-align: center;
+}
+#help_popup {
+  background-color: rgba(20,20,20,0.8);
+  min-height: 150px;
+  font-size: 14px;
+  color: #ccc;
+  line-height: 26px;
+  padding: 8px 8px 8px 30px;
+  font-family: "Trebuchet MS",Helvetica,sans-serif;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 0;
+  right: 0;
+  display: none;
+  z-index: 9999;
+  
 }
 #start_popup a {
   color: #4B8EE7;
@@ -65,4 +83,11 @@
 #start_popup a.start_popupOK:hover {
   background-color: #3e75bd;
 }
-/*Cookie Consent End*/
+
+.imageclass {
+  float:left;
+}
+
+.textclass {
+  float:right;
+}
