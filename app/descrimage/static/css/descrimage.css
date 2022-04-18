@@ -91,3 +91,11 @@
 .textclass {
   float:right;
 }
+
+img {
+  width: auto;
+  height: auto;
+  /* Magic! */
+  max-width: 50vw;
+  max-height: 100vh;
+}
