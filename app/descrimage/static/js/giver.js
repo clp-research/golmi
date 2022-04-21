@@ -155,9 +155,9 @@ $(document).ready(function () {
             timeOut();
         }, 60000);
 
-        $(".start_popupOK").click(function () {
+        $("#start_popupOK").click(function () {
             set_description_panel(true, false)
-            $("#start_popup").fadeOut(700);
+            $("#welcome_prompt").removeClass("active")
             clearTimeout(start_timeout);
             start(token);
             socket.emit("test_person_connected", token);

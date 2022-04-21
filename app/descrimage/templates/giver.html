@@ -23,18 +23,6 @@
     var notification_file = "{{ url_for('descrimage_bp.static', filename='notification.mp3') }}"
 </script>
 
-<div id="start_popup">
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna
-    aliqua. Ultricies integer quis auctor elit sed vulputate. Amet mauris commodo quis imperdiet massa tincidunt nunc
-    pulvinar sapien. Iaculis eu non diam phasellus vestibulum lorem sed. Interdum consectetur libero id faucibus nisl
-    tincidunt eget nullam. Purus gravida quis blandit turpis cursus in hac habitasse platea. Tortor condimentum lacinia
-    quis vel eros donec ac odio tempor. Dignissim convallis aenean et tortor at. Etiam tempor orci eu lobortis. Egestas
-    sed tempus urna et pharetra pharetra massa massa ultricies. Volutpat consequat mauris nunc congue nisi vitae. Sit
-    amet massa vitae tortor. Ornare massa eget egestas purus viverra.
-    <br>
-    <a class="start_popupOK">Start</a>
-</div>
-
 <div id="help_popup">
     <!-- Very useful instruction here
     <br>
@@ -62,6 +50,39 @@
 
 <body>
 <div id="content" class="ui centered container">
+
+<div id="welcome_prompt" class="ui active inverted dimmer">
+    <div class="content ui segment">
+        <div class="ui label blue top right attached">Remaining time to start: <span>0</span> seconds</div>
+        <h1>Welcome!</h1>
+        <p>You will see a multiple boards with Pentomino pieces on them of which one is highlighted with a red box
+            around it. Here for example the cyan piece.</p>
+        <div class="ui tiny spaced bordered rounded image">
+            <img src="{{ url_for('descrimage_bp.static', filename='highlight.png') }}"
+                 alt="Image: An example of a highlighted piece">
+        </div>
+        <p></p>
+        <p><strong>Task:</strong> Your task is to come up with a good instruction so that the person on the other side
+            selects the highlighted piece. You can only insert one instruction per board! The other person cannot see
+            the highlighting, but you will see what they selected for a few seconds in a green box.</p>
+        <p> Tip: You can use the return key to send.</p>
+        <div class="ui large bordered rounded image">
+            <img src="{{ url_for('descrimage_bp.static', filename='task.png') }}"
+                 alt="Image: The instruction text field">
+        </div>
+        <p></p>
+        <p><strong>Bonus:</strong> For each correct selection you get a bonus payment after the experiment is completed.
+        For a wrong selection you do not get points.</p>
+        <div class="ui medium bordered rounded image">
+            <img src="{{ url_for('descrimage_bp.static', filename='bonus.png') }}"
+                 alt="Image: The bonus score">
+        </div>
+        <p></p>
+        <p>Good luck!</p>
+        <button id="start_popupOK" class="ui primary button">Click here to start</button>
+    </div>
+</div>
+
     <div class="row" style="margin-top: 10px; margin-bottom: -25px; width: 600px">
         <div id="progress" class="ui progress" data-total={{ n_states }}> <!-- this is coming form the server -->
             <div class="bar">

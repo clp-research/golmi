@@ -70,19 +70,6 @@
 #closestart_popup:hover {
   color: #FFF;
 }
-#start_popup a.start_popupOK {
-  background-color: #4B8EE7;
-  color: white;
-  display: inline-block;
-  border-radius: 5px;
-  padding: 0 20px;
-  cursor: pointer;
-  margin: 0 60px 0 10px;
-  transition: background-color 650ms;
-}
-#start_popup a.start_popupOK:hover {
-  background-color: #3e75bd;
-}
 
 .imageclass {
   float:left;
