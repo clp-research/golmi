@@ -207,11 +207,12 @@ def abort(token):
 
     final_token = __create_token(token)
 
-    message = (
-        f"This session was aborted.<br> Don't forget your token: {final_token}"
-        "<br> Thank you for participating"
-    )
-    socketio.emit("finish", message, room=token)
+    data = {
+        "message": "Sorry, but the experiment has been aborted.",
+        "message_color": "orange",
+        "token": final_token
+    }
+    socketio.emit("finish", data, room=token)
 
 
 def __next_state(this_state: int, token: int, to_add: int):
@@ -246,11 +247,12 @@ def __next_state(this_state: int, token: int, to_add: int):
 
         # calculate token
         final_token = __create_token(token)
-        message = (
-            f"We're done here.<br> Don't forget your token: {final_token}"
-            "<br> Thank you for participating"
-        )
-        socketio.emit("finish", message, room=token)
+        data = {
+            "message": "Thanks for your participation!",
+            "message_color": "green",
+            "token": final_token
+        }
+        socketio.emit("finish", data, room=token)
 
 
 def __create_token(token, token_len=10):

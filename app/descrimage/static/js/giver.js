@@ -71,19 +71,39 @@ $(document).ready(function () {
         set_description_panel(true, false)
     });
 
-    socket.on("finish", (message) => {
-        // we are done, show a message and the token
-        $('#start_popup').html(message);
-        $("#start_popup").fadeIn(50);
-        clearTimeout(typingTimer1);
-        clearTimeout(typingTimer2);
-        stop();
+    socket.on("finish", (data) => {
+        end_experiment(data["token"], data["message"], data["message_color"])
     });
 
     // for debugging: log all events
     socket.onAny((eventName, ...args) => {
         console.log(eventName, args);
     });
+
+    function end_experiment(token, message, text_color) {
+        // we are done, show a message and the token
+        $('#end_prompt').addClass("active");
+        $("#end_prompt_message").addClass(text_color).text(message)
+        if (token !== null) {
+            $("#end_prompt_token_box").show()
+            $('#end_prompt_token').text(token);
+        } else {
+            $("#end_prompt_token_box").hide()
+        }
+        clearTimeout(typingTimer1);
+        clearTimeout(typingTimer2);
+        stop();
+    }
+
+    $("#test_timeout_start").click(() => {
+        end_experiment(null, "Sorry, but you took too long to start the experiment", "red")
+    })
+    $("#test_timeout_write").click(() => {
+        end_experiment("test_token", "Sorry, but you took too long to continue the experiment", "yellow")
+    })
+    $("#test_success").click(() => {
+        end_experiment("test_token", "Thanks for your participation!", "green")
+    })
 
     // --- stop and start drawing --- //
     function start(token) {
@@ -143,15 +163,12 @@ $(document).ready(function () {
 
     document.getElementById("score").value = 0;
     $(document).ready(function () {
-        setTimeout(function () {
-            $("#start_popup").fadeIn(50);
-            set_description_panel(false, false)
-        }, 200);
+        set_description_panel(false, false)
 
         // timeout at start needed?
-        var start_timeout;
+        let start_timeout;
         start_timeout = setTimeout(function () {
-            $('#start_popup').html("Connection Lost");
+            on_start_timeout()
             timeOut();
         }, 60000);
 
@@ -200,7 +217,7 @@ $(document).ready(function () {
     function timeOut() {
         socket.emit("timeout", token)
         stop();
-        alert("You've been disconnected, you can close the window");
+        //alert("You've been disconnected, you can close the window");
     }
 
     function audio_notification() {
@@ -228,7 +245,7 @@ $(document).ready(function () {
     });
     $("#close_helpOK").click(() => {
         $("#help_prompt").removeClass("active");
-        
+
         // restart timers
         typingTimer1 = setTimeout(simpleAlert, alertTimer);
         typingTimer2 = setTimeout(timeOut, disconnectTimer);

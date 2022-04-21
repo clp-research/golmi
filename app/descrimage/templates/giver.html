@@ -23,10 +23,30 @@
     var notification_file = "{{ url_for('descrimage_bp.static', filename='notification.mp3') }}"
 </script>
 
+
+<div id="end_prompt" class="ui page dimmer">
+    <div class="content ui segment">
+        <p><span class="ui huge black text">Experiment Ended</span></p>
+        <p><span class="ui large text" id="end_prompt_message"></span></p>
+        <div id="end_prompt_token_box">
+            <p><span class="ui medium black text">Do not forget to copy-paste the following code to the AMT interface.
+            </span>
+            </p>
+            <p><span class="ui medium black text">
+                Otherwise, we cannot perform the payment. Then you can close this window.</span>
+            </p>
+            <div class="ui grey inverted segment">
+                <span class="ui huge text" id="end_prompt_token"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="help_prompt" class="ui inverted page dimmer">
     <div class="content ui segment">
         <h1>Help</h1>
-        <p><strong>Setting:</strong> You will see a multiple boards with Pentomino pieces on them of which one is highlighted with a red box
+        <p><strong>Setting:</strong> You will see a multiple boards with Pentomino pieces on them of which one is
+            highlighted with a red box
             around it. Here for example the cyan piece.</p>
         <div class="ui tiny spaced bordered rounded image">
             <img src="{{ url_for('descrimage_bp.static', filename='highlight.png') }}"
@@ -36,14 +56,14 @@
         <p><strong>Task:</strong> Your task is to come up with a good instruction so that the person on the other side
             selects the highlighted piece. You can only insert one instruction per board! The other person cannot see
             the highlighting, but you will see what they selected for a few seconds in a green box.</p>
-        <p><i>Tip: You can use the return key to send.</i> </p>
+        <p><i>Tip: You can use the return key to send.</i></p>
         <div class="ui large bordered rounded image">
             <img src="{{ url_for('descrimage_bp.static', filename='task.png') }}"
                  alt="Image: The instruction text field">
         </div>
         <p></p>
         <p><strong>Bonus:</strong> For each correct selection you get a bonus payment after the experiment is completed.
-        For a wrong selection you do not get points.</p>
+            For a wrong selection you do not get points.</p>
         <div class="ui medium bordered rounded image">
             <img src="{{ url_for('descrimage_bp.static', filename='bonus.png') }}"
                  alt="Image: The bonus score">
@@ -59,11 +79,12 @@
     </div>
 </div>
 
-<div id="welcome_prompt" class="ui active inverted page dimmer">
+<div id="welcome_prompt" class="ui inverted active page dimmer">
     <div class="content ui segment">
         <div class="ui label blue top right attached">Remaining time to start: <span>0</span> seconds</div>
         <h1>Welcome!</h1>
-        <p><strong>Setting:</strong> You will see a multiple boards with Pentomino pieces on them of which one is highlighted with a red box
+        <p><strong>Setting:</strong> You will see a multiple boards with Pentomino pieces on them of which one is
+            highlighted with a red box
             around it. Here for example the cyan piece.</p>
         <div class="ui tiny spaced bordered rounded image">
             <img src="{{ url_for('descrimage_bp.static', filename='highlight.png') }}"
@@ -73,14 +94,14 @@
         <p><strong>Task:</strong> Your task is to come up with a good instruction so that the person on the other side
             selects the highlighted piece. You can only insert one instruction per board! The other person cannot see
             the highlighting, but you will see what they selected for a few seconds in a green box.</p>
-        <p><i>Tip: You can use the return key to send.</i> </p>
+        <p><i>Tip: You can use the return key to send.</i></p>
         <div class="ui large bordered rounded image">
             <img src="{{ url_for('descrimage_bp.static', filename='task.png') }}"
                  alt="Image: The instruction text field">
         </div>
         <p></p>
         <p><strong>Bonus:</strong> For each correct selection you get a bonus payment after the experiment is completed.
-        For a wrong selection you do not get points.</p>
+            For a wrong selection you do not get points.</p>
         <div class="ui medium bordered rounded image">
             <img src="{{ url_for('descrimage_bp.static', filename='bonus.png') }}"
                  alt="Image: The bonus score">
@@ -92,56 +113,71 @@
 </div>
 
 <body>
-<div id="content" class="ui centered container">
+<div id="content" class="ui centered grid container">
 
-    <div class="row" style="margin-top: 10px; margin-bottom: -25px; width: 600px">
-        <div id="progress" class="ui progress" data-total={{ n_states }}> <!-- this is coming form the server -->
-            <div class="bar">
-                <div class="progress centered"></div>
+    <div class="row" style="margin-top: 10px; margin-bottom: -50px">
+        <div class="column">
+            <div id="progress" class="ui progress" data-total={{ n_states }}> <!-- this is coming form the server -->
+                <div class="bar">
+                    <div class="progress centered"></div>
+                </div>
+                <!--<div class="label">Progress</div>-->
             </div>
-            <!--<div class="label">Progress</div>-->
         </div>
     </div>
 
-    <div class="row" style="width: 600px">
-        <div class="ui horizontal segments">
-            <div class="ui segment">
-                <span class="ui text">Bonus:</span>
-                <span id="score" class="ui circular label">0</span>
-                <span class="ui text">out of {{ n_states }} correct</span>
-            </div>
-            <div id="positive_feedback" class="ui segment">
-                <div class="ui circular green label">+1</div>
-                <span class="ui green text">Congrats! Your follower picked the target piece.</span>
-            </div>
-            <div id="negative_feedback" class="ui segment">
-                <div class="ui circular yellow label">+0</div>
-                <span class="ui yellow text">Sorry, the follower could not pick the target piece.</span>
+    <div class="row" style="margin-bottom: -30px;">
+        <div class="column">
+            <div class="ui horizontal segments">
+                <div class="ui segment">
+                    <span class="ui text">Bonus:</span>
+                    <span id="score" class="ui circular label">0</span>
+                    <span class="ui text">out of {{ n_states }} correct</span>
+                </div>
+                <div id="positive_feedback" class="ui segment">
+                    <div class="ui circular green label">+1</div>
+                    <span class="ui green text">Congrats! Your follower picked the target piece.</span>
+                </div>
+                <div id="negative_feedback" class="ui segment">
+                    <div class="ui circular yellow label">+0</div>
+                    <span class="ui yellow text">Sorry, the follower could not pick the target piece.</span>
+                </div>
             </div>
         </div>
     </div>
-    <div class="row">
+    <div class="row" style="margin-bottom: -20px;">
+        <div class="column">
+            <div id="test_timeout_start" class="ui basic grey button">Test Start Timeout</div>
+            <div id="test_timeout_write" class="ui basic grey button">Test Write Timeout</div>
+            <div id="test_success" class="ui basic grey button">Test success</div>
+        </div>
+    </div>
+    <div class="row" style="margin-bottom: -10px;">
         <!-- The "viewport" id and three stacked canvases of the same size are needed to
             properly render using the LayerView class -->
-        <div id="viewport" style="height: 510px; width: 510px; margin-bottom: 10px; margin-left: 45px;">
-            <canvas id="background" width="510" height="510"></canvas>
-            <canvas id="objects" width="510" height="510"></canvas>
-            <canvas id="gripper" width="510" height="510"></canvas>
+        <div class="column">
+            <div id="viewport" style="height: 510px; width: 510px;">
+                <canvas id="background" width="510" height="510"></canvas>
+                <canvas id="objects" width="510" height="510"></canvas>
+                <canvas id="gripper" width="510" height="510"></canvas>
+            </div>
         </div>
     </div>
     <div class="row">
-        <div class="ui action input" id="description_button_panel" style="width: 600px;  margin-bottom: 10px;">
-            <input id="description" type="text" placeholder="Your instruction: Take the ...">
-            <div id="description_button" class="ui primary button">Send</div>
-            <div id="help_button" class="ui secondary button">Help</div>
-        </div>
-        <!-- Here we show what the user typed -->
-        <div class="ui segment" id="description_text_panel">
-            <span class="ui info text">You said:</span>
-            <span id="description_text">Instruction</span>
-        </div>
-        <div class="ui segment" id="description_text_warning">
-            <span class="ui error text">Please type an instruction before sending it.</span>
+        <div class="column">
+            <div class="ui action input" id="description_button_panel" style="width: 600px;  margin-bottom: 10px;">
+                <input id="description" type="text" placeholder="Your instruction: Take the ...">
+                <div id="description_button" class="ui primary button">Send</div>
+                <div id="help_button" class="ui secondary button">Help</div>
+            </div>
+            <!-- Here we show what the user typed -->
+            <div class="ui segment" id="description_text_panel">
+                <span class="ui info text">You said:</span>
+                <span id="description_text">Instruction</span>
+            </div>
+            <div class="ui segment" id="description_text_warning">
+                <span class="ui error text">Please type an instruction before sending it.</span>
+            </div>
         </div>
     </div>
 </div>
