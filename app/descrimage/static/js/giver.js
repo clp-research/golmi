@@ -220,14 +220,14 @@ $(document).ready(function () {
         }
     });
     $("#help_button").click(() => {
-        $("#help_popup").css("display", "flex");
+        $("#help_prompt").addClass("active");
 
         // halt timers
         clearTimeout(typingTimer1);
         clearTimeout(typingTimer2);
     });
-    $("#help_popup").click(() => {
-        $("#help_popup").css("display", "none");
+    $("#close_helpOK").click(() => {
+        $("#help_prompt").removeClass("active");
         
         // restart timers
         typingTimer1 = setTimeout(simpleAlert, alertTimer);
