@@ -51,12 +51,12 @@
         </div>
     </div>
     <div class="row" style="margin-bottom: 10px; width: 510px">
-        <div class="ui segment" id="description_text_panel">
+        <div class="ui blurring segment" id="description_text_panel">
             <div class="ui top attached label">Instruction</div>
             <p></p>
             <span class="ui text" id="description_text">Text</span>
             <div id="awaiting_text_panel" class="ui active inverted dimmer">
-                <div class="ui elastic slow loader"></div>
+                <div class="content">Here will appear your next instruction</div>
             </div>
         </div>
     </div>
@@ -73,7 +73,7 @@
             <canvas id="objects" width="510" height="510"></canvas>
             <canvas id="gripper" width="510" height="510"></canvas>
             <div id="blocking_board_panel" class="ui active inverted dimmer">
-                <div class="ui elastic slow text loader">Please wait for the next instruction</div>
+                <div class="content"><p>You can click in this area, </br> when the instruction has arrived</p></div>
             </div>
         </div>
     </div>
