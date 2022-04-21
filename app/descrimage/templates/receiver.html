@@ -25,58 +25,88 @@
 </script>
 
 <body>
-<div id="content" class="ui centered container">
-    <div class="row" style="margin-top: 10px; margin-bottom: -25px; width: 510px">
-        <div id="progress" class="ui progress" data-total={{ n_states }}> <!-- this is coming form the server -->
-            <div class="bar">
-                <div class="progress centered"></div>
-            </div>
-            <!--<div class="label">Progress</div>-->
-        </div>
-    </div>
-    <div class="row" style="width: 510px">
-        <div class="ui horizontal segments">
-            <div class="ui segment">
-                <span class="ui text">Giver's Score:</span>
-                <span id="score" class="ui circular label">0</span>
-            </div>
-            <div id="positive_feedback" class="ui segment">
-                <div class="ui circular green label">+1</div>
-                <span class="ui green text">Congrats! That was correct.</span>
-            </div>
-            <div id="negative_feedback" class="ui segment">
-                <div  class="ui circular yellow label">+0</div>
-                <span class="ui yellow text">Sorry, that was the wrong piece.</span>
+<div id="content" class="ui centered grid container">
+    <div class="row" style="margin-top: 10px; margin-bottom: -50px;">
+        <div class="ui column">
+            <div id="progress" class="ui progress" data-total={{ n_states }}> <!-- this is coming form the server -->
+                <div class="bar">
+                    <div class="progress centered"></div>
+                </div>
+                <!--<div class="label">Progress</div>-->
             </div>
         </div>
     </div>
-    <div class="row" style="margin-bottom: 10px; width: 510px">
-        <div class="ui blurring segment" id="description_text_panel">
-            <div class="ui top attached label">Instruction</div>
-            <p></p>
-            <span class="ui text" id="description_text">Text</span>
-            <div id="awaiting_text_panel" class="ui active inverted dimmer">
-                <div class="content">Here will appear your next instruction</div>
+    <div class="row" style="margin-bottom: -30px;">
+        <div class="ui column">
+            <div class="ui horizontal segments">
+                <div class="ui segment">
+                    <span class="ui text">Giver's Score:</span>
+                    <span id="score" class="ui circular label">0</span>
+                </div>
+                <div id="positive_feedback" class="ui segment">
+                    <div class="ui circular green label">+1</div>
+                    <span class="ui green text">Congrats! That was correct.</span>
+                </div>
+                <div id="negative_feedback" class="ui segment">
+                    <div class="ui circular yellow label">+0</div>
+                    <span class="ui yellow text">Sorry, that was the wrong piece.</span>
+                </div>
             </div>
         </div>
     </div>
-    <div>
-        <button id="warning" type="button">Warning</button>
-        <button id="abort" type="button">Abort</button>
-        <button id="test_description" class="ui yellow basic button">Test Description</button>
+    <div class="row" style="margin-bottom: -20px;">
+        <div class="ui column">
+            <div class="ui blurring segment" id="description_text_panel">
+                <div class="ui top attached label">Instruction</div>
+                <p></p>
+                <span class="ui text" id="description_text">Text</span>
+                <div id="awaiting_text_panel" class="ui active inverted dimmer">
+                    <div class="content">Here will appear your next instruction</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row" style="margin-bottom: -30px;">
+        <div class="ui column">
+            <div id="warning" class="ui basic yellow button">Warn the instruction giver</div>
+            <div id="abort" class="ui basic red button">Abort the experiment</div>
+            <div id="test_description" class="ui grey basic button">Test Description</div>
+        </div>
     </div>
     <div class="row">
         <!-- The "viewport" id and three stacked canvases of the same size are needed to
             properly render using the LayerView class -->
-        <div id="viewport" style="height: 510px; width: 510px; margin-top: 10px;">
-            <canvas id="background" width="510" height="510"></canvas>
-            <canvas id="objects" width="510" height="510"></canvas>
-            <canvas id="gripper" width="510" height="510"></canvas>
-            <div id="blocking_board_panel" class="ui active inverted dimmer">
-                <div class="content"><p>You can click in this area, </br> when the instruction has arrived</p></div>
+        <div class="ui column">
+            <div id="viewport" style="height: 510px; width: 510px; margin-top: 10px;">
+                <canvas id="background" width="510" height="510"></canvas>
+                <canvas id="objects" width="510" height="510"></canvas>
+                <canvas id="gripper" width="510" height="510"></canvas>
+                <div id="blocking_board_panel" class="ui active inverted dimmer">
+                    <div class="content"><p>You can click in this area, </br> when the instruction has arrived</p></div>
+                </div>
+                <div class="ui right rail">
+                    <div class="ui segment">
+                        <p><strong>Task:</strong> There are 16 boards with Pentomino pieces. You have to click on the
+                            piece described by an instruction giver. When you are correct, then the instruction giver
+                            will get a bonus point.</p>
+                        <p><strong>Unsure what to click?</strong> If the instruction is ambiguous, then simply make an
+                            educated guess. </p>
+                        <p><strong>Warning button:</strong> Use the warning button, when the
+                            instruction giver seems not to do the task e.g. when the instruction is rubbish like
+                            <i>"asdfghjk"</i> or totally unrelated as <i>"it seems sunny outside"</i> or any other
+                            unrelated text. The next state will appear after a warning and the giver receives no point.
+                        </p>
+                        <p><strong>Abort button:</strong> Use the abort button, when (a) the
+                            instruction giver uses offensive language or (b) if you think the instruction giver does not
+                            respond to your warnings.
+                        </p>
+
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+</div>
 </div>
 <!-- You MUST include jQuery before Fomantic -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"
