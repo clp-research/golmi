@@ -54,7 +54,8 @@ def receiver(token):
     room_manager.add_room(token, get_default_config())
     states = __load_states(token)
     state_to_load = states[0]
-    room_manager.get_model_of_room(token).set_state(state_to_load)
+    __set_state(token, state_to_load)
+
     return render_template(
         "receiver.html", token=token, n_states=len(states), this_state=0
     )
@@ -75,10 +76,6 @@ def send_description(data):
     log_file_path = __prepare_log_file(token)
     with open(log_file_path, "r") as infile:
         data = json.load(infile)
-
-    # add this description to the ist
-    if state_id not in data["states"]:
-        data["states"][state_id] = {"description": list(), "selected_obj": None}
 
     data["states"][state_id]["description"].append(description)
 
@@ -104,12 +101,17 @@ def warning(data):
     with open(log_file_path, "r") as infile:
         data = json.load(infile)
 
-    data["score"] = -1
+    states = __load_states(token)
+    state_id = str(states[state_index]["state_id"])
+    data["states"][state_id]["outcome"] = 2
+
+    with open(log_file_path, "w") as ofile:
+        json.dump(data, ofile)
 
     # notify instruction giver he is not doing the task
+    # and automatically load the next state
     socketio.emit("warning", room=token)
-
-    __next_state(state_index, token, to_add=-1)
+    __next_state(state_index, token, to_add=0)
 
 
 @socketio.on("test_person_connected")
@@ -120,13 +122,6 @@ def test_person_connected(token):
 @socketio.on("timeout")
 def test_person_connected(token):
     socketio.emit("timeout", room=token)
-
-
-@socketio.on("load_state_index")
-def load_state_index(index, token):
-    states = __load_states(token)
-    state = states[index]
-    room_manager.get_model_of_room(token).set_state(state)
 
 
 @socketio.on("descrimage_mouseclick")
@@ -174,8 +169,6 @@ def on_mouseclick(event):
         # log selected object
         selected_key = set(gripped.keys()).pop()
         gripped_id_n = gripped[selected_key]["id_n"]
-        if state_id not in data["states"]:
-            data["states"][state_id] = dict()
         data["states"][state_id]["selected_obj"] = int(gripped_id_n)
 
         # log score
@@ -194,13 +187,20 @@ def on_mouseclick(event):
 
 
 @socketio.on("abort")
-def abort(token):
+def abort(data):
+    token = data["token"]
+    state_index = data["state"]
+
     # log aborting of this session
     log_file_path = __prepare_log_file(token)
     with open(log_file_path, "r") as infile:
         data = json.load(infile)
 
     data["abort"] = True
+
+    states = __load_states(token)
+    state_id = str(states[state_index]["state_id"])
+    data["states"][state_id]["outcome"] = 3
 
     with open(log_file_path, "w") as ofile:
         json.dump(data, ofile)
@@ -210,7 +210,7 @@ def abort(token):
     data = {
         "message": "Sorry, but the experiment has been aborted.",
         "message_color": "orange",
-        "token": final_token
+        "token": final_token,
     }
     socketio.emit("finish", data, room=token)
 
@@ -225,11 +225,11 @@ def __next_state(this_state: int, token: int, to_add: int):
     """
     states_in_token = __load_states(token)
 
-    #
+    # load next state and increase progress bar by 1
     if this_state < len(states_in_token) - 1:
         states = __load_states(token)
         state = states[this_state + 1]
-        room_manager.get_model_of_room(token).set_state(state)
+        __set_state(token, state)
         socketio.emit(
             "next_state",
             {"next_state": this_state + 1, "score_delta": to_add},
@@ -250,7 +250,7 @@ def __next_state(this_state: int, token: int, to_add: int):
         data = {
             "message": "Thanks for your participation!",
             "message_color": "green",
-            "token": final_token
+            "token": final_token,
         }
         socketio.emit("finish", data, room=token)
 
@@ -357,3 +357,34 @@ def __load_states(token):
         state["targets"][target["id_n"]] = target
         states.append(state)
     return states
+
+
+def __set_state(token, state):
+    """
+    loads the given state and make sure
+    that a log dictionary for this state
+    is included in the log file
+
+    an empty dictionary to log all informations about a state contains:
+        description: a list with description(s) from IG
+        selected_obj: the id_n of the object selected from the IR (none/null if nothing is selected)
+        outcome: based on interactions between users:
+            0: 0 points (IR selected the wrong object)
+            1: 1 point (IR selected the correct object)
+            2: warn (IR warned the IG)
+            3: abort (IR aborted the experiment at this state)
+    """
+
+    empty_log = {"description": list(), "selected_obj": None, "outcome": None}
+
+    state_id = state["state_id"]
+    log_file_path = __prepare_log_file(token)
+    with open(log_file_path, "r") as infile:
+        data = json.load(infile)
+
+    data["states"][state_id] = empty_log
+
+    with open(log_file_path, "w") as ofile:
+        json.dump(data, ofile)
+
+    room_manager.get_model_of_room(token).set_state(state)

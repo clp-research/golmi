@@ -153,7 +153,8 @@ $(document).ready(function () {
     }
 
     function abort() {
-        socket.emit("abort", token)
+        let state_index = $("#progress").progress("get value");
+        socket.emit("abort", {"token": token, "state": state_index})
         stop();
     }
 
