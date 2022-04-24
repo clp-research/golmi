@@ -267,9 +267,7 @@ def __create_token(token, token_len=10):
     # TODO: change name of function to avoid confusion.
     # suggestion: score_token
 
-    # TODO: change path and name of tokens.json?
-
-    token_file = Path("app/descrimage/tokens.json")
+    token_file = Path(f"{__get_collect_dir()}/logs/unique_tokens.json")
     if not token_file.exists():
         with open(token_file, "w") as ofile:
             json.dump({}, ofile)
@@ -288,24 +286,26 @@ def __create_token(token, token_len=10):
 
     # create random token and make sure it's not given yet
     with open(token_file, "r") as infile:
-        used_tokens = json.load(infile)
+        unique_tokens = json.load(infile)
 
     alphabet = string.ascii_letters + string.digits
 
     while True:
         giver_token = "".join(secrets.choice(alphabet) for _ in range(token_len))
-        if giver_token not in used_tokens:
+        if giver_token not in unique_tokens:
             break
 
-    used_tokens[giver_token] = {
+    unique_tokens[giver_token] = {
         "batch_id": token,
         "score": score,
         "aborted": aborted,
-        "timestamp": timestamp,
+        "timestamp_token_creation": timestamp,
+        "pay": False,
+        "user_id": None,
     }
 
     with open(token_file, "w") as ofile:
-        json.dump(used_tokens, ofile)
+        json.dump(unique_tokens, ofile)
 
     return giver_token
 
@@ -320,14 +320,6 @@ def __prepare_log_file(token):
     if the log file does not exists yet, this function
     will create an empty one
     """
-    # TODO: Problem: if the same token is used more than once
-    # the logging function will update the same log file
-    # this is problematic because score and descriptions will
-    # be modified.
-    # Options:
-    #     1- make sure a token is only ever used once
-    #     2- rename log file using the unique token for the receiver
-
     # todo make this path configurable
     log_dir = Path(f"{__get_collect_dir()}/logs")
     log_dir.mkdir(exist_ok=True)
@@ -337,7 +329,9 @@ def __prepare_log_file(token):
     if not logfile.exists():
         print("Create log file at", logfile)
         with open(logfile, "w") as f:
-            json.dump({"score": 0, "abort": False, "states": dict()}, f)
+            json.dump(
+                {"score": 0, "abort": False, "states": dict(), "batch_id": token}, f
+            )
     return logfile
 
 
