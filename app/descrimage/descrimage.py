@@ -144,6 +144,7 @@ def on_mouseclick(event):
     gripped = grippers["mouse"]["gripped"]
 
     if gripped is not None:
+        timestamp = datetime.now().isoformat()
         socketio.sleep(1)
         # user selected an item, go to next state
         target = model.state.to_dict()["targets"]
@@ -151,11 +152,6 @@ def on_mouseclick(event):
         # add gripped property to target dict
         for target_idn in target.keys():
             target[target_idn]["gripped"] = True
-
-        if target == gripped:
-            to_add = 1
-        else:
-            to_add = 0
 
         this_state = int(event["this_state"])
         states_in_token = __load_states(token)
@@ -170,9 +166,16 @@ def on_mouseclick(event):
         selected_key = set(gripped.keys()).pop()
         gripped_id_n = gripped[selected_key]["id_n"]
         data["states"][state_id]["selected_obj"] = int(gripped_id_n)
+        data["states"][state_id]["timestamp_end"] = timestamp
 
-        # log score
+        if target == gripped:
+            to_add = 1
+        else:
+            to_add = 0
+
+        # log score and outcome of state
         data["score"] += to_add
+        data["states"][state_id]["outcome"] = to_add
 
         with open(log_file_path, "w") as ofile:
             json.dump(data, ofile)
@@ -369,7 +372,13 @@ def __set_state(token, state):
             3: abort (IR aborted the experiment at this state)
     """
 
-    empty_log = {"description": list(), "selected_obj": None, "outcome": None}
+    empty_log = {
+        "description": list(),
+        "selected_obj": None,
+        "outcome": None,
+        "timestamp_start": datetime.now().isoformat(),
+        "timestamp_end": None,
+    }
 
     state_id = state["state_id"]
     log_file_path = __prepare_log_file(token)
