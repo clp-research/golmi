@@ -212,7 +212,7 @@ def abort(data):
         "message_color": "orange",
         "token": final_token,
     }
-    socketio.emit("finish", data, room=token)
+    __end_experiment(data, token)
 
 
 def __next_state(this_state: int, token: int, to_add: int):
@@ -252,7 +252,7 @@ def __next_state(this_state: int, token: int, to_add: int):
             "message_color": "green",
             "token": final_token,
         }
-        socketio.emit("finish", data, room=token)
+        __end_experiment(data, token)
 
 
 def __create_token(token, token_len=10):
@@ -388,3 +388,28 @@ def __set_state(token, state):
         json.dump(data, ofile)
 
     room_manager.get_model_of_room(token).set_state(state)
+
+
+def __end_experiment(data, token):
+    """
+    end an experiment by sending the users a message
+    and saving the log file to avoid further changes
+
+    data: {
+        "message": the message the IG will see,
+        "message_color": color of message,
+        "token": the score token for the IG receive payment
+    }
+
+    token: the batch_id of this experiment
+    """
+    unique_token = data["token"]
+    log_file_path = __prepare_log_file(token)
+
+    # prepare name for final log file
+    filename = str(log_file_path).replace(".log.json", "")
+    final_log_path = Path(f"{filename}.{unique_token}.log.json")
+
+    # rename current log file to unique name
+    log_file_path.rename(final_log_path)
+    socketio.emit("finish", data, room=token)
