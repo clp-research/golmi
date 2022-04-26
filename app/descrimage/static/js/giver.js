@@ -230,8 +230,9 @@ $(document).ready(function () {
     }
 
     function timeOut() {
-        socket.emit("timeout", token)
-        stop();
+        let state_index = $("#progress").progress("get value");
+        socket.emit("timeout", {"token": token, "state": state_index})
+        //stop();
         //alert("You've been disconnected, you can close the window");
     }
 
@@ -257,11 +258,13 @@ $(document).ready(function () {
         // halt timers
         clearTimeout(typingTimer1);
         clearTimeout(typingTimer2);
+        typingTimer2 = setTimeout(timeOut, 5 * 60 * 1000);
     });
     $("#close_helpOK").click(() => {
         $("#help_prompt").removeClass("active");
 
         // restart timers
+        clearTimeout(typingTimer2);
         typingTimer1 = setTimeout(simpleAlert, alertTimer);
         typingTimer2 = setTimeout(timeOut, disconnectTimer);
 

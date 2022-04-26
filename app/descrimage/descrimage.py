@@ -120,7 +120,36 @@ def test_person_connected(token):
 
 
 @socketio.on("timeout")
-def test_person_connected(token):
+def timeout(data):
+    token = data["token"]
+    state_index = data["state"]
+
+    # log timeout (outcome = 4 in state)
+    log_file_path = __prepare_log_file(token)
+    with open(log_file_path, "r") as infile:
+        data = json.load(infile)
+
+    states = __load_states(token)
+    state_id = str(states[state_index]["state_id"])
+
+    # log timeout
+    data["states"][state_id]["outcome"] = 4
+    data["timeout"] = True
+
+    with open(log_file_path, "w") as ofile:
+        json.dump(data, ofile)
+
+    # end experiment
+    final_token = __create_token(token)
+    __end_experiment(
+        {
+            "message": "your connection timed out",
+            "message_color": "orange",
+            "token": final_token,
+        },
+        token,
+    )
+
     socketio.emit("timeout", room=token)
 
 
@@ -333,7 +362,14 @@ def __prepare_log_file(token):
         print("Create log file at", logfile)
         with open(logfile, "w") as f:
             json.dump(
-                {"score": 0, "abort": False, "states": dict(), "batch_id": token}, f
+                {
+                    "score": 0,
+                    "abort": False,
+                    "timeout": False,
+                    "states": dict(),
+                    "batch_id": token,
+                },
+                f,
             )
     return logfile
 
@@ -370,6 +406,7 @@ def __set_state(token, state):
             1: 1 point (IR selected the correct object)
             2: warn (IR warned the IG)
             3: abort (IR aborted the experiment at this state)
+            4: IG timed out
     """
 
     empty_log = {
