@@ -96,7 +96,7 @@ $(document).ready(function () {
     }
 
     $("#test_timeout_start").click(() => {
-        end_experiment(null, "Sorry, but you took too long to start the experiment", "red")
+        end_experiment(null, "Sorry, but you took too long to start the experiment. You can close the window now.", "red")
     })
     $("#test_timeout_write").click(() => {
         end_experiment("test_token", "Sorry, but you took too long to continue the experiment", "yellow")
@@ -165,17 +165,27 @@ $(document).ready(function () {
     $(document).ready(function () {
         set_description_panel(false, false)
 
-        // timeout at start needed?
-        let start_timeout;
-        start_timeout = setTimeout(function () {
+        // start timeout
+        let timeoutInMilliseconds = 100000
+        let start_timeout = setTimeout(function () {
             on_start_timeout()
-            timeOut();
-        }, 60000);
+        }, timeoutInMilliseconds);
+
+        // start countdown
+        let remainingTimeInSeconds = ~~(timeoutInMilliseconds / 1000);
+        $("#welcome_countdown").text(remainingTimeInSeconds)
+        let start_countdown = setInterval(function () {
+            if (remainingTimeInSeconds > 0) {
+                remainingTimeInSeconds = remainingTimeInSeconds - 1
+                $("#welcome_countdown").text(remainingTimeInSeconds)
+            }
+        }, 1000)
 
         $("#start_popupOK").click(function () {
             set_description_panel(true, false)
             $("#welcome_prompt").removeClass("active")
             clearTimeout(start_timeout);
+            clearInterval(start_countdown)
             start(token);
             socket.emit("test_person_connected", token);
         });
@@ -212,6 +222,11 @@ $(document).ready(function () {
             displayTime: 0,
             message: "You're taking too long, move on (click to dismiss)"
         });
+    }
+
+    function on_start_timeout() {
+        $("#welcome_prompt").removeClass("active")
+        end_experiment(null, "Sorry, but you took too long to start the experiment. You can close the window now.", "red")
     }
 
     function timeOut() {
