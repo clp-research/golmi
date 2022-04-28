@@ -85,25 +85,21 @@
             <span class="ui black text" id="welcome_countdown">0</span> seconds
         </div>
         <h1>Welcome!</h1>
-        <p><strong>Setting:</strong> You will see a multiple boards with Pentomino pieces on them of which one is
-            highlighted with a red box
-            around it. Here for example the cyan piece.</p>
+        <h1>You are now connected to: <p style="color:red;">Alex</p></h1>
+        <p><strong>Task:</strong> Your task is to describe the highlighted Pentomino pieces to your partner connected.</p>
+        <p>Here for example the cyan piece.</p>
         <div class="ui tiny spaced bordered rounded image">
             <img src="{{ url_for('descrimage_bp.static', filename='highlight.png') }}"
                  alt="Image: An example of a highlighted piece">
         </div>
         <p></p>
-        <p><strong>Task:</strong> Your task is to come up with a good instruction so that the person on the other side
-            selects the highlighted piece. You can only insert one instruction per board! The other person cannot see
-            the highlighting, but you will see what they selected for a few seconds in a green box.</p>
-        <p><i>Tip: You can use the return key to send.</i></p>
+        <p>If the person you are connected to finds the piece you described you get <strong>bonus payment</strong>. You will see what they selected for a few seconds in a green box.</p>
         <div class="ui large bordered rounded image">
             <img src="{{ url_for('descrimage_bp.static', filename='task.png') }}"
                  alt="Image: The instruction text field">
         </div>
         <p></p>
-        <p><strong>Bonus:</strong> For each correct selection you get a bonus payment after the experiment is completed.
-            For a wrong selection you do not get points.</p>
+        <p><strong>Bonus:</strong> For a wrong selection you do not get points. <strong>You get higher payment for every correct piece</strong>.</p>
         <div class="ui medium bordered rounded image">
             <img src="{{ url_for('descrimage_bp.static', filename='bonus.png') }}"
                  alt="Image: The bonus score">
@@ -138,11 +134,11 @@
                 </div>
                 <div id="positive_feedback" class="ui segment">
                     <div class="ui circular green label">+1</div>
-                    <span class="ui green text">Congrats! Your follower picked the target piece.</span>
+                    <span class="ui green text">Congrats! Your partner picked the target piece.</span>
                 </div>
                 <div id="negative_feedback" class="ui segment">
                     <div class="ui circular yellow label">+0</div>
-                    <span class="ui yellow text">Sorry, the follower could not pick the target piece.</span>
+                    <span class="ui yellow text">Sorry, your partner could not pick the target piece.</span>
                 </div>
             </div>
         </div>
@@ -168,7 +164,7 @@
     <div class="row">
         <div class="column">
             <div class="ui action input" id="description_button_panel" style="width: 600px;  margin-bottom: 10px;">
-                <input id="description" type="text" placeholder="Your instruction: Take the ...">
+                <input id="description" type="text" placeholder="desribe the piece to your partner">
                 <div id="description_button" class="ui primary button">Send</div>
                 <div id="help_button" class="ui secondary button">Help</div>
             </div>
