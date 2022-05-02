@@ -88,7 +88,7 @@ $(document).ready(function () {
 
 			// white rectangle for background
 			ctx.fillRect(0,0, this.canvasWidth, this.canvasHeight);
-
+			/**
 			// horizontal lines
 			for (let row = 0; row <= this.rows; row++) {
 				ctx.moveTo(0, row*this.blockSize);
@@ -101,6 +101,7 @@ $(document).ready(function () {
 			}
 			// draw to the screen
 			ctx.stroke();
+			 **/
 		}
 
 		/**
