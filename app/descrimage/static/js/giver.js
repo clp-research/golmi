@@ -48,10 +48,7 @@ $(document).ready(function () {
     });
 
     socket.on("warning", () => {
-        // CREATE POPUP
-        alert("Your description is bad and you should feel bad");
-        old_score = parseInt(document.getElementById("score").value);
-        document.getElementById("score").value = old_score - 1;
+        $("#warning_prompt").addClass("active")
     });
 
     socket.on("next_state", (data) => {
@@ -268,6 +265,9 @@ $(document).ready(function () {
         typingTimer1 = setTimeout(simpleAlert, alertTimer);
         typingTimer2 = setTimeout(timeOut, disconnectTimer);
 
+    });
+    $("#close_warnOK").click(() => {
+        $("#warning_prompt").removeClass("active");
     });
 
     $("#description_text_panel").hide()

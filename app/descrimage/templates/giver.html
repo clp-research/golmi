@@ -24,6 +24,18 @@
 </script>
 
 
+<div id="warning_prompt" class="ui inverted page dimmer">
+    <div class="content ui segment">
+        <h1 style="color:red;">Caution</h1>
+        <p><strong>It seems that you are not doing the task!</strong></p>
+        <p></p>
+        <p>Your task is to come up with a good instruction so that the person on the other side
+            selects the highlighted piece. </p>
+        <p>You can only insert one instruction per board! </p>
+        <button id="close_warnOK" class="ui primary button">OK</button>
+    </div>
+</div>
+
 <div id="end_prompt" class="ui page dimmer">
     <div class="content ui segment">
         <p><span class="ui huge black text">Experiment Ended</span></p>
@@ -86,20 +98,23 @@
         </div>
         <h1>Welcome!</h1>
         <h1>You are now connected to: <p style="color:red;">Alex</p></h1>
-        <p><strong>Task:</strong> Your task is to describe the highlighted Pentomino pieces to your partner connected.</p>
+        <p><strong>Task:</strong> Your task is to describe the highlighted Pentomino pieces to your partner connected.
+        </p>
         <p>Here for example the cyan piece.</p>
         <div class="ui tiny spaced bordered rounded image">
             <img src="{{ url_for('descrimage_bp.static', filename='highlight.png') }}"
                  alt="Image: An example of a highlighted piece">
         </div>
         <p></p>
-        <p>If the person you are connected to finds the piece you described you get <strong>bonus payment</strong>. You will see what they selected for a few seconds in a green box.</p>
+        <p>If the person you are connected to finds the piece you described you get <strong>bonus payment</strong>. You
+            will see what they selected for a few seconds in a green box.</p>
         <div class="ui large bordered rounded image">
             <img src="{{ url_for('descrimage_bp.static', filename='task.png') }}"
                  alt="Image: The instruction text field">
         </div>
         <p></p>
-        <p><strong>Bonus:</strong> For a wrong selection you do not get points. <strong>You get higher payment for every correct piece</strong>.</p>
+        <p><strong>Bonus:</strong> For a wrong selection you do not get points. <strong>You get higher payment for every
+            correct piece</strong>.</p>
         <div class="ui medium bordered rounded image">
             <img src="{{ url_for('descrimage_bp.static', filename='bonus.png') }}"
                  alt="Image: The bonus score">
