@@ -25,4 +25,5 @@ parser.add_argument(
 if __name__ == "__main__":
     args = parser.parse_args()
     register_experiments.register_app(app)
+    print("Started at", args.host, args.port)
     socketio.run(app, host=args.host, port=args.port)
