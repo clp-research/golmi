@@ -243,6 +243,7 @@ $(document).ready(function () {
 
     function on_start_timeout() {
         $("#welcome_prompt").removeClass("active")
+        socket.emit("timeout", {"token": token, "state": 0});
         end_experiment(null, "Sorry, but you took too long to start the experiment. You can close the window now.", "red")
     }
 
