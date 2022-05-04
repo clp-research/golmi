@@ -58,11 +58,6 @@ $(document).ready(function () {
         console.log(`Joined room ${data.room_id} as client ${data.client_id}`);
     })
 
-    socket.on("timeout", () => {
-        alert("Your partner disconnected. The experiment is over")
-        stop();
-    })
-
     socket.on("disconnect", () => {
         console.log("Disconnected from model server");
         // demo of the logView: send the logged data to the server
@@ -115,15 +110,24 @@ $(document).ready(function () {
         $score.text(old_score + score_received);
     });
 
-    socket.on("finish", (dada) => {
-        alert("We are done here, you can close the window");
-        stop();
+    socket.on("finish", (data) => {
+        end_experiment(data["message_IR"], data["message_color"])
     });
 
     // for debugging: log all events
     socket.onAny((eventName, ...args) => {
         console.log(eventName, args);
     });
+
+    function end_experiment(message, text_color) {
+        console.log(message)
+        // we are done, show a message and the token
+        $('#end_prompt').addClass("active");
+        $("#end_prompt_message").addClass(text_color).text(message);
+        $("#end_prompt_token_box").hide();
+        $("#content").hide();
+        stop();
+    }
 
     // --- stop and start drawing --- //
     function start(token) {
@@ -155,7 +159,7 @@ $(document).ready(function () {
     function abort() {
         let state_index = $("#progress").progress("get value");
         socket.emit("abort", {"token": token, "state": state_index})
-        stop();
+
     }
 
     function audio_notification() {

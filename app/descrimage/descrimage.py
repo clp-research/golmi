@@ -146,6 +146,7 @@ def timeout(data):
             "message": "your connection timed out",
             "message_color": "orange",
             "token": final_token,
+            "message_IR": "Your partner timed out",
         },
         token,
     )
@@ -243,6 +244,7 @@ def abort(data):
         "message": "Sorry, but the experiment has been aborted.",
         "message_color": "orange",
         "token": final_token,
+        "message_IR": "The experiment was aborted",
     }
     __end_experiment(data, token)
 
@@ -283,6 +285,7 @@ def __next_state(this_state: int, token: int, to_add: int):
             "message": "Thanks for your participation!",
             "message_color": "green",
             "token": final_token,
+            "message_IR": "The experiment was succesfully completed",
         }
         __end_experiment(data, token)
 
@@ -439,6 +442,7 @@ def __end_experiment(data, token):
         "message": the message the IG will see,
         "message_color": color of message,
         "token": the score token for the IG receive payment
+        "message_IR": the message for the IR
     }
 
     token: the batch_id of this experiment

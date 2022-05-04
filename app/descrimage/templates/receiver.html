@@ -24,6 +24,26 @@
     var notification_file = "{{ url_for('descrimage_bp.static', filename='notification.mp3') }}"
 </script>
 
+
+<div id="end_prompt" class="ui page dimmer">
+    <div class="content ui segment">
+        <p><span class="ui huge black text">Experiment Ended</span></p>
+        <p><span class="ui large text" id="end_prompt_message"></span></p>
+        <div id="end_prompt_token_box">
+            <p><span class="ui medium black text">Do not forget to copy-paste the following code to the AMT interface.
+            </span>
+            </p>
+            <p><span class="ui medium black text">
+                Otherwise, we cannot perform the payment. Then you can close this window.</span>
+            </p>
+            <div class="ui grey inverted segment">
+                <span class="ui huge text" id="end_prompt_token"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <body>
 <div id="content" class="ui centered grid container">
     <div class="row" style="margin-top: 10px; margin-bottom: -50px;">
