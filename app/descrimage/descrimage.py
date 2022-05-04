@@ -50,9 +50,9 @@ def giver_page(token):
 
 
 def receiver(token):
+    states = __load_states(token)
     __prepare_log_file(token)
     room_manager.add_room(token, get_default_config())
-    states = __load_states(token)
     state_to_load = states[0]
     __set_state(token, state_to_load)
 
