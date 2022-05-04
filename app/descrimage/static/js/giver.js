@@ -71,7 +71,11 @@ $(document).ready(function () {
     });
 
     socket.on("finish", (data) => {
-        end_experiment(data["token"], data["message"], data["message_color"])
+        end_experiment(data["message"], data["message_color"])
+    });
+
+    socket.on("token_IG", (data) => {
+        tokenIG = data;
     });
 
     // for debugging: log all events
@@ -79,13 +83,14 @@ $(document).ready(function () {
         console.log(eventName, args);
     });
 
-    function end_experiment(token, message, text_color) {
+    function end_experiment(message, text_color) {
+
         // we are done, show a message and the token
         $('#end_prompt').addClass("active");
         $("#end_prompt_message").addClass(text_color).text(message)
-        if (token !== null) {
+        if (tokenIG !== null) {
             $("#end_prompt_token_box").show()
-            $('#end_prompt_token').text(token);
+            $('#end_prompt_token').text(tokenIG);
         } else {
             $("#end_prompt_token_box").hide()
         }

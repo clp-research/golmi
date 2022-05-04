@@ -43,22 +43,33 @@ def receiver_page(token):
 @cross_origin
 @descrimage_bp.route("/g/<token>", methods=["GET"])
 def giver_page(token):
-    states = __load_states(token)
-    return render_template(
-        "giver.html", token=token, n_states=len(states), this_state=0
-    )
+    connected_users = room_manager.room_to_clients.get(token)
+    if connected_users is None or len(connected_users) < 2:
+        states = __load_states(token)
+        return render_template(
+            "giver.html", token=token, n_states=len(states), this_state=0
+        )
+
+    else:
+        # TODO: create an empty page
+        return "This room is already full"
 
 
 def receiver(token):
-    states = __load_states(token)
-    __prepare_log_file(token)
-    room_manager.add_room(token, get_default_config())
-    state_to_load = states[0]
-    __set_state(token, state_to_load)
+    connected_users = room_manager.room_to_clients.get(token)
+    if connected_users is None or len(connected_users) < 2:
+        states = __load_states(token)
+        __prepare_log_file(token)
+        room_manager.add_room(token, get_default_config())
+        state_to_load = states[0]
+        __set_state(token, state_to_load)
 
-    return render_template(
-        "receiver.html", token=token, n_states=len(states), this_state=0
-    )
+        return render_template(
+            "receiver.html", token=token, n_states=len(states), this_state=0
+        )
+
+    else:
+        return "This room is already full"
 
 
 # SOCKETIO EVENTS
@@ -73,7 +84,7 @@ def send_description(data):
     state_id = str(states_in_token[state_index]["state_id"])
 
     # open log of this batch
-    log_file_path = __prepare_log_file(token)
+    log_file_path = __get_log_file(token)
     with open(log_file_path, "r") as infile:
         data = json.load(infile)
 
@@ -97,7 +108,7 @@ def warning(data):
     state_index = int(data["state"])
 
     # load log file
-    log_file_path = __prepare_log_file(token)
+    log_file_path = __get_log_file(token)
     with open(log_file_path, "r") as infile:
         data = json.load(infile)
 
@@ -118,6 +129,14 @@ def warning(data):
 def test_person_connected(token):
     socketio.emit("incoming connection", room=token)
 
+    # send IG his token
+    logfile = __get_log_file(token)
+    with open(logfile) as infile:
+        data = json.load(infile)
+
+    final_token = data["final_token"]
+    socketio.emit("token_IG", final_token, room=token)
+
 
 @socketio.on("timeout")
 def timeout(data):
@@ -125,7 +144,7 @@ def timeout(data):
     state_index = data["state"]
 
     # log timeout (outcome = 4 in state)
-    log_file_path = __prepare_log_file(token)
+    log_file_path = __get_log_file(token)
     with open(log_file_path, "r") as infile:
         data = json.load(infile)
 
@@ -139,13 +158,10 @@ def timeout(data):
     with open(log_file_path, "w") as ofile:
         json.dump(data, ofile)
 
-    # end experiment
-    final_token = __create_token(token)
     __end_experiment(
         {
             "message": "your connection timed out",
             "message_color": "orange",
-            "token": final_token,
             "message_IR": "Your partner timed out",
         },
         token,
@@ -188,7 +204,7 @@ def on_mouseclick(event):
         state_id = str(states_in_token[this_state]["state_id"])
 
         # load log file
-        log_file_path = __prepare_log_file(token)
+        log_file_path = __get_log_file(token)
         with open(log_file_path, "r") as infile:
             data = json.load(infile)
 
@@ -225,7 +241,7 @@ def abort(data):
     state_index = data["state"]
 
     # log aborting of this session
-    log_file_path = __prepare_log_file(token)
+    log_file_path = __get_log_file(token)
     with open(log_file_path, "r") as infile:
         data = json.load(infile)
 
@@ -238,12 +254,9 @@ def abort(data):
     with open(log_file_path, "w") as ofile:
         json.dump(data, ofile)
 
-    final_token = __create_token(token)
-
     data = {
         "message": "Sorry, but the experiment has been aborted.",
         "message_color": "orange",
-        "token": final_token,
         "message_IR": "The experiment was aborted",
     }
     __end_experiment(data, token)
@@ -279,12 +292,9 @@ def __next_state(this_state: int, token: int, to_add: int):
             room=token,
         )
 
-        # calculate token
-        final_token = __create_token(token)
         data = {
             "message": "Thanks for your participation!",
             "message_color": "green",
-            "token": final_token,
             "message_IR": "The experiment was succesfully completed",
         }
         __end_experiment(data, token)
@@ -307,14 +317,6 @@ def __create_token(token, token_len=10):
         with open(token_file, "w") as ofile:
             json.dump({}, ofile)
 
-    # read score and if aborted from log file
-    log_file_path = __prepare_log_file(token)
-    with open(log_file_path, "r") as infile:
-        data = json.load(infile)
-
-    aborted = data["abort"]
-    score = data["score"]
-
     # get timestamp in iso format (can be parsed with
     # datetime.fromisoformat())
     timestamp = datetime.now().isoformat()
@@ -332,8 +334,8 @@ def __create_token(token, token_len=10):
 
     unique_tokens[giver_token] = {
         "batch_id": token,
-        "score": score,
-        "aborted": aborted,
+        "score": 0,
+        "aborted": False,
         "timestamp_token_creation": timestamp,
         "pay": False,
         "user_id": None,
@@ -349,21 +351,26 @@ def __translate(x, y, granularity):
     return x // granularity, y // granularity
 
 
+def __get_log_file(token):
+    log_dir = Path(f"{__get_collect_dir()}/logs")
+    log_dir.mkdir(exist_ok=True)
+    logfile = Path(f"{log_dir}/{token}.log.json")
+    return logfile
+
+
 def __prepare_log_file(token):
     """
     returns the path of the log file
     if the log file does not exists yet, this function
     will create an empty one
     """
-    # todo make this path configurable
-    log_dir = Path(f"{__get_collect_dir()}/logs")
-    log_dir.mkdir(exist_ok=True)
+    final_token = __create_token(token)
 
     # create an empty log file
-    logfile = Path(f"{log_dir}/{token}.log.json")
+    logfile = __get_log_file(token)
     if not logfile.exists():
         print("Create log file at", logfile)
-        with open(logfile, "w") as f:
+        with open(logfile, "w") as ofile:
             json.dump(
                 {
                     "score": 0,
@@ -371,8 +378,9 @@ def __prepare_log_file(token):
                     "timeout": False,
                     "states": dict(),
                     "batch_id": token,
+                    "final_token": final_token,
                 },
-                f,
+                ofile,
             )
     return logfile
 
@@ -411,7 +419,6 @@ def __set_state(token, state):
             3: abort (IR aborted the experiment at this state)
             4: IG timed out
     """
-
     empty_log = {
         "description": list(),
         "selected_obj": None,
@@ -421,7 +428,7 @@ def __set_state(token, state):
     }
 
     state_id = state["state_id"]
-    log_file_path = __prepare_log_file(token)
+    log_file_path = __get_log_file(token)
     with open(log_file_path, "r") as infile:
         data = json.load(infile)
 
@@ -441,18 +448,30 @@ def __end_experiment(data, token):
     data: {
         "message": the message the IG will see,
         "message_color": color of message,
-        "token": the score token for the IG receive payment
         "message_IR": the message for the IR
     }
 
     token: the batch_id of this experiment
     """
-    unique_token = data["token"]
-    log_file_path = __prepare_log_file(token)
+    log_file_path = __get_log_file(token)
+    with open(log_file_path) as infile:
+        current_log = json.load(infile)
+
+    # copy information from current log file to unique_tokens.json
+    token_file = Path(f"{__get_collect_dir()}/logs/unique_tokens.json")
+    with open(token_file, "r") as infile:
+        unique_tokens = json.load(infile)
+
+    this_final_token = current_log["final_token"]
+    unique_tokens[this_final_token]["score"] = current_log["score"]
+    unique_tokens[this_final_token]["abort"] = current_log["abort"]
+
+    with open(token_file, "w") as infile:
+        json.dump(unique_tokens, infile)
 
     # prepare name for final log file
     filename = str(log_file_path).replace(".log.json", "")
-    final_log_path = Path(f"{filename}.{unique_token}.log.json")
+    final_log_path = Path(f"{filename}.{this_final_token}.log.json")
 
     # rename current log file to unique name
     log_file_path.rename(final_log_path)
