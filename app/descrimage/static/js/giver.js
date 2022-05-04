@@ -43,8 +43,10 @@ $(document).ready(function () {
     socket.on("disconnect", () => {
         console.log("Disconnected from model server");
         // demo of the logView: send the logged data to the server
+        clearAllTimers();
         logView.addTopLevelData("test", true);
         logView.sendData("/pentomino/save_log");
+        
     });
 
     socket.on("warning", () => {
@@ -87,8 +89,6 @@ $(document).ready(function () {
         } else {
             $("#end_prompt_token_box").hide()
         }
-        clearTimeout(typingTimer1);
-        clearTimeout(typingTimer2);
         stop();
     }
 
@@ -118,6 +118,7 @@ $(document).ready(function () {
         controller.detachModel(socket);
         // manually disconnect
         socket.disconnect();
+        clearAllTimers();
     }
 
     function set_description_panel(activate, show_written_text) {
@@ -188,6 +189,11 @@ $(document).ready(function () {
         });
     });
 
+    window.onoffline = event => {
+        end_experiment("PLACEHOLDER", "Your connection is unstable", "orange")
+        stop()
+     }
+
     // Tiping Timer
     //  - 30 sec: a simple warning
     //  - 60 sec: timeout; user will be disconnected 
@@ -198,17 +204,31 @@ $(document).ready(function () {
     var $description = $('#description');
 
     $description.on('keyup', function () {
-        clearTimeout(typingTimer1);
-        clearTimeout(typingTimer2);
+        clearTipingTimers();
         typingTimer1 = setTimeout(simpleAlert, alertTimer);
         typingTimer2 = setTimeout(timeOut, disconnectTimer);
     });
 
     //on keydown, clear the countdowns
     $description.on('keydown', function () {
+        clearTipingTimers();
+    });
+
+
+    function clearTipingTimers() {
         clearTimeout(typingTimer1);
         clearTimeout(typingTimer2);
-    });
+    }
+
+    function clearTimeoutTimers() {
+        clearTimeout(alertTimer);
+        clearTimeout(disconnectTimer);
+    }
+
+    function clearAllTimers() {
+        clearTipingTimers();
+        clearTimeoutTimers();
+    }
 
     // functions on timeouts
     function simpleAlert() {
@@ -253,8 +273,7 @@ $(document).ready(function () {
         $("#help_prompt").addClass("active");
 
         // halt timers
-        clearTimeout(typingTimer1);
-        clearTimeout(typingTimer2);
+        clearTipingTimers();
         typingTimer2 = setTimeout(timeOut, 5 * 60 * 1000);
     });
     $("#close_helpOK").click(() => {
