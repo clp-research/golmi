@@ -336,7 +336,7 @@ def __create_token(token, token_len=10):
         "batch_id": token,
         "score": 0,
         "aborted": False,
-        "timestamp_token_creation": timestamp,
+        "timestamp_begin": timestamp,
         "pay": False,
         "user_id": None,
     }
@@ -465,6 +465,7 @@ def __end_experiment(data, token):
     this_final_token = current_log["final_token"]
     unique_tokens[this_final_token]["score"] = current_log["score"]
     unique_tokens[this_final_token]["abort"] = current_log["abort"]
+    unique_tokens[this_final_token]["timestamp_end"] = datetime.now().isoformat()
 
     with open(token_file, "w") as infile:
         json.dump(unique_tokens, infile)
