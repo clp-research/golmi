@@ -335,7 +335,7 @@ def __create_token(token, token_len=10):
     unique_tokens[giver_token] = {
         "batch_id": token,
         "score": 0,
-        "aborted": False,
+        "abort": False,
         "timestamp_begin": timestamp,
         "pay": False,
         "user_id": None,
