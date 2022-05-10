@@ -100,10 +100,11 @@ $(document).ready(function () {
          * Draw the (static) objects.
          */
         drawObjs() {
+            let ctx = this.objCanvas.getContext("2d");
+            ctx.beginPath();
             // draw each object
-            for (const obj of Object.values(this.objs)) {
+            for (const obj of Object.values(this.objs))	{
                 // skip any gripped object here
-                let blockMatrix = obj.block_matrix;
 
                 // we use the "gripped" here to indicate the "target piece"
                 let objHighlight = false
@@ -111,8 +112,9 @@ $(document).ready(function () {
                     objHighlight = "red"
                 }
 
-                // call drawing helper functions with additional infos (gripped, color)
-                let ctx = this.objCanvas.getContext("2d");
+                let blockMatrix = obj.block_matrix;
+
+                // call drawing helper functions with additional infos
                 let params = {
                     x: obj.x,
                     y: obj.y,
@@ -137,40 +139,30 @@ $(document).ready(function () {
 
         _drawBlockObj(ctx, bMatrix, params) {
             // Draw blocks
-            for (let row = 0; row < bMatrix.length; row++) {
-                bMatrix[row].forEach((block, col) => {
+            for (let r=0; r<bMatrix.length;r++) {
+                bMatrix[r].forEach((block, c) =>  {
                     if (block) { // draw if matrix field contains a 1
-                        let x = params.x + col;
-                        let y = params.y + row;
+                        let x = params.x + c;
+                        let y = params.y + r;
                         this._drawBlock(ctx, x, y, params.color);
                         // draw object borders
-                        // top
-                        if (row === 0 || !(bMatrix[row - 1][col])) {
-                            this._drawBorder(ctx, x, y, x + 1, y, params.highlight);
+                        if (this._isUpperBorder(bMatrix, c, r)) {
+                            this._drawUpperBorder(ctx, x, y, params.highlight);
                         }
-                        // right
-                        if (col === (bMatrix[row].length - 1) || !(bMatrix[row][col + 1])) {
-                            this._drawBorder(ctx, x + 1, y, x + 1, y + 1, params.highlight);
+                        if (this._isLowerBorder(bMatrix, c, r)) {
+                            this._drawLowerBorder(ctx, x, y, params.highlight);
                         }
-                        // bottom
-                        if (row === (bMatrix.length - 1) || !(bMatrix[row + 1][col])) {
-                            this._drawBorder(ctx, x, y + 1, x + 1, y + 1, params.highlight);
+                        if (this._isLeftBorder(bMatrix, c, r)) {
+                            this._drawLeftBorder(ctx, x, y, params.highlight);
                         }
-                        // left
-                        if (col === 0 || !(bMatrix[row][col - 1])) {
-                            this._drawBorder(ctx, x, y, x, y + 1, params.highlight);
+                        if (this._isRightBorder(bMatrix, c, r)) {
+                            this._drawRightBorder(ctx, x, y, params.highlight);
                         }
                     }
                 });
             }
-            /*
-            if (params.highlight) {
-                this._drawBoundingBox(ctx, params.x, params.y, "red", 5)
-            } else {
-                this._drawBoundingBox(ctx, params.x, params.y, "black", 3)
-            }
-             */
         }
+
 
         _drawBoundingBox(ctx, x, y, lineColor = "grey", lineWidth = 1) {
             ctx.strokeStyle = lineColor;
@@ -184,41 +176,78 @@ $(document).ready(function () {
             ctx.stroke(); // draw the returning line
         }
 
-        _drawBlock(ctx, x, y, color, lineColor = "grey", lineWidth = 1) {
+        _drawBlock(ctx, x, y, color, lineColor="grey", lineWidth=1) {
             // --- config ---
             ctx.fillStyle = color;
-            ctx.strokeStyle = lineColor;
-            ctx.lineWidth = lineWidth;
-
-            ctx.beginPath();
-            ctx.moveTo(this._toPxl(x), this._toPxl(y));
-            ctx.lineTo(this._toPxl(x + 1), this._toPxl(y)); // top right
-            ctx.lineTo(this._toPxl(x + 1), this._toPxl(y + 1)); // bottom right
-            ctx.lineTo(this._toPxl(x), this._toPxl(y + 1)); // bottom left
-            ctx.closePath(); // return to starting point
-            ctx.stroke(); // draw the returning line
-            ctx.fill(); // add color
+            let px = this._toPxl(x);
+            let py = this._toPxl(y);
+            let w = Math.abs(px - this._toPxl(x+1));
+            let h =  Math.abs(py - this._toPxl(y+1));
+            ctx.fillRect(px, py, w, h);
         }
 
-        _drawBorder(ctx, x1, y1, x2, y2, borderColor = "black", borderWidth = 2, highlight = false) {
+        _drawUpperBorder(
+            ctx, x, y, highlight=false, borderColor="black", borderWidth=2) {
+            this._drawBorder(ctx, x, y, x+1, y, highlight, borderColor, borderWidth);
+        }
+
+        _drawLowerBorder(
+            ctx, x, y, highlight=false, borderColor="black", borderWidth=2) {
+            this._drawBorder(ctx, x, y+1, x+1, y+1, highlight, borderColor, borderWidth);
+        }
+
+        _drawLeftBorder(
+            ctx, x, y, highlight=false, borderColor="black", borderWidth=2) {
+            this._drawBorder(ctx, x, y, x, y+1, highlight, borderColor, borderWidth);
+        }
+
+        _drawRightBorder(
+            ctx, x, y, highlight=false, borderColor="black", borderWidth=2) {
+            this._drawBorder(ctx, x+1, y, x+1, y+1, highlight, borderColor, borderWidth);
+        }
+
+        _drawBorder(ctx, x1, y1, x2, y2, highlight=false, borderColor="black",
+            borderWidth=2) {
             // --- config ---
-            // TODO: fix highlights
-            // shadowBlur is set to 0 if highlight is false, effectively making it invisible
-            ctx.strokeStyle = borderColor;
+            // for no highlight, shadowBlur is set to 0 (= invisible)
+            ctx.shadowBlur = highlight ? 5 : 0;
+            ctx.shadowColor = highlight;
+            ctx.lineStyle = borderColor;
             ctx.lineWidth = borderWidth;
-            if (highlight) {
-                ctx.strokeStyle = "red";
-                ctx.lineWidth = 5;
-            }
 
             ctx.beginPath();
             ctx.moveTo(this._toPxl(x1), this._toPxl(y1));
             ctx.lineTo(this._toPxl(x2), this._toPxl(y2));
             ctx.stroke();
+            ctx.shadowBlur = 0;
         }
 
         _toPxl(coord) {
             return coord * this.blockSize;
+        }
+
+        _isUpperBorder(blockMatrix, column, row) {
+            // true if 'row' is the top row OR there is no block above
+            return row == 0 || blockMatrix[row-1][column] == 0;
+        }
+
+        _isLowerBorder(blockMatrix, column, row) {
+            // true if 'row' is the bottom row OR there is no block below
+            return row == (blockMatrix.length-1) ||
+                blockMatrix[row+1][column] == 0;
+        }
+
+        _isLeftBorder(blockMatrix, column, row) {
+            // true if 'column' is the leftmost column OR there is no block
+            // to the left
+            return column == 0 || blockMatrix[row][column-1] == 0;
+        }
+
+        _isRightBorder(blockMatrix, column, row) {
+            // true if 'column' is the rightmost column OR there is no block
+            // to the right
+            return column == (blockMatrix[row].length-1) ||
+                blockMatrix[row][column+1] == 0;
         }
 
     }; // class LayerView end
