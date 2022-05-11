@@ -43,7 +43,7 @@ $(document).ready(function () {
     socket.on("disconnect", () => {
         console.log("Disconnected from model server");
         // demo of the logView: send the logged data to the server
-        clearAllTimers();
+        clearTipingTimers();
         logView.addTopLevelData("test", true);
         logView.sendData("/pentomino/save_log");
         
@@ -123,7 +123,7 @@ $(document).ready(function () {
         controller.detachModel(socket);
         // manually disconnect
         socket.disconnect();
-        clearAllTimers();
+        clearTipingTimers();
     }
 
     function set_description_panel(activate, show_written_text) {
@@ -164,6 +164,15 @@ $(document).ready(function () {
         }
     }
 
+    // Tiping Timer
+    //  - 30 sec: a simple warning
+    //  - 60 sec: timeout; user will be disconnected 
+    var typingTimer1;
+    var typingTimer2;
+    var alertTimer = 30 * 1000;
+    var disconnectTimer = 60 * 1000;
+    var $description = $('#description');
+
     document.getElementById("score").value = 0;
     $(document).ready(function () {
         set_description_panel(false, false)
@@ -191,22 +200,15 @@ $(document).ready(function () {
             clearInterval(start_countdown)
             start(token);
             socket.emit("test_person_connected", token);
+            typingTimer1 = setTimeout(simpleAlert, alertTimer);
+            typingTimer2 = setTimeout(timeOut, disconnectTimer);
         });
     });
 
     window.onoffline = event => {
         end_experiment("PLACEHOLDER", "Your connection is unstable", "orange")
         stop()
-     }
-
-    // Tiping Timer
-    //  - 30 sec: a simple warning
-    //  - 60 sec: timeout; user will be disconnected 
-    var typingTimer1;
-    var typingTimer2;
-    var alertTimer = 30 * 1000;
-    var disconnectTimer = 60 * 1000;
-    var $description = $('#description');
+    }
 
     $description.on('keyup', function () {
         clearTipingTimers();
@@ -223,16 +225,6 @@ $(document).ready(function () {
     function clearTipingTimers() {
         clearTimeout(typingTimer1);
         clearTimeout(typingTimer2);
-    }
-
-    function clearTimeoutTimers() {
-        clearTimeout(alertTimer);
-        clearTimeout(disconnectTimer);
-    }
-
-    function clearAllTimers() {
-        clearTipingTimers();
-        clearTimeoutTimers();
     }
 
     // functions on timeouts

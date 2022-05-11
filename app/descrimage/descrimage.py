@@ -160,7 +160,7 @@ def timeout(data):
 
     __end_experiment(
         {
-            "message": "your connection timed out",
+            "message": "Thank you for your participation, but unfortunately you timed out.",
             "message_color": "orange",
             "message_IR": "Your partner timed out",
         },
