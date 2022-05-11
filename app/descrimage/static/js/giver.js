@@ -235,7 +235,7 @@ $(document).ready(function () {
         $('body').toast({
             class: 'error',
             displayTime: 0,
-            message: "You're taking too long, move on (click to dismiss)"
+            message: "Please type and send your description (click to dismiss)"
         });
     }
 
