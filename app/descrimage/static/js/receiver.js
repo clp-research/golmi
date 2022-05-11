@@ -66,6 +66,7 @@ $(document).ready(function () {
     });
 
     function on_description(data) {
+        clearInterval(GiverTimer);
         console.log(data)
         $("#description_text").text(data);
         $("#awaiting_text_panel").hide()
@@ -86,7 +87,16 @@ $(document).ready(function () {
             class: 'success',
             message: "A user connected to this room"
         });
+        GiverTimer = setInterval(updateTimer, 1000);
     });
+
+    var GiverTimer;
+
+    function updateTimer() {
+        let $IGtimer = $("#IG_timer");
+        let old_timer = parseInt($IGtimer.text());
+        $IGtimer.text(old_timer + 1);
+    }
 
     socket.on("next_state", (data) => {
         $('body').toast({
@@ -108,6 +118,10 @@ $(document).ready(function () {
         let $score = $("#score");
         let old_score = parseInt($score.text());
         $score.text(old_score + score_received);
+        // reset timer
+        let $IGtimer = $("#IG_timer");
+        $IGtimer.text(0);
+        GiverTimer = setInterval(updateTimer, 1000);
     });
 
     socket.on("finish", (data) => {
