@@ -67,7 +67,8 @@ $(document).ready(function () {
         let $score = $("#score");
         let old_score = parseInt($score.text());
         $score.text(old_score + score_received);
-        set_description_panel(true, false)
+        set_description_panel(true, false);
+        startTipingTimers();
     });
 
     socket.on("finish", (data) => {
@@ -160,6 +161,7 @@ $(document).ready(function () {
             $("#description_text_warning").hide()
             $("#positive_feedback").hide()
             $("#negative_feedback").hide()
+            clearTipingTimers();
             socket.emit("descrimage_description", {"description": description, "token": token, "state": state_index});
             set_description_panel(false, true)
         }
@@ -201,8 +203,7 @@ $(document).ready(function () {
             clearInterval(start_countdown)
             start(token);
             socket.emit("test_person_connected", token);
-            typingTimer1 = setTimeout(simpleAlert, alertTimer);
-            typingTimer2 = setTimeout(timeOut, disconnectTimer);
+            startTipingTimers()
         });
     });
 
@@ -213,8 +214,7 @@ $(document).ready(function () {
 
     $description.on('keyup', function () {
         clearTipingTimers();
-        typingTimer1 = setTimeout(simpleAlert, alertTimer);
-        typingTimer2 = setTimeout(timeOut, disconnectTimer);
+        startTipingTimers();
     });
 
     //on keydown, clear the countdowns
@@ -226,6 +226,11 @@ $(document).ready(function () {
     function clearTipingTimers() {
         clearTimeout(typingTimer1);
         clearTimeout(typingTimer2);
+    }
+
+    function startTipingTimers() {
+        typingTimer1 = setTimeout(simpleAlert, alertTimer);
+        typingTimer2 = setTimeout(timeOut, disconnectTimer);
     }
 
     // functions on timeouts
@@ -248,8 +253,6 @@ $(document).ready(function () {
     function timeOut() {
         let state_index = $("#progress").progress("get value");
         socket.emit("timeout", {"token": token, "state": state_index})
-        //stop();
-        //alert("You've been disconnected, you can close the window");
     }
 
     function audio_notification() {
