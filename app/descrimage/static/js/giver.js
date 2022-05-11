@@ -94,6 +94,7 @@ $(document).ready(function () {
         } else {
             $("#end_prompt_token_box").hide()
         }
+        $("#content").hide();
         stop();
     }
 
