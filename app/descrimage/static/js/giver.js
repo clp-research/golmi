@@ -115,6 +115,7 @@ $(document).ready(function () {
         controller.resetKeys()
         controller.attachModel(socket);
         // join a GOLMI room with the name "test_room_id"
+        var joined = true;
         socket.emit("join", {"room_id": token});
     }
 
@@ -166,6 +167,8 @@ $(document).ready(function () {
             set_description_panel(false, true)
         }
     }
+    // save if the user ever joined the room
+    var joined = false;
 
     // Tiping Timer
     //  - 30 sec: a simple warning
@@ -208,8 +211,10 @@ $(document).ready(function () {
     });
 
     window.onoffline = event => {
-        end_experiment("PLACEHOLDER", "Your connection is unstable", "orange")
-        stop()
+        if (joined){
+            end_experiment("Your connection is unstable", "orange")
+            stop()
+        }
     }
 
     $description.on('keyup', function () {

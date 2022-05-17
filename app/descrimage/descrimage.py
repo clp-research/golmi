@@ -5,7 +5,7 @@ import secrets
 import string
 
 from flask_cors import cross_origin
-from flask import render_template, Blueprint
+from flask import render_template, Blueprint, request
 
 from app import DEFAULT_CONFIG_FILE
 from app.app import app, socketio, room_manager, get_default_config
@@ -138,6 +138,20 @@ def test_person_connected(token):
     socketio.emit("token_IG", final_token, room=token)
 
 
+@socketio.on("disconnect")
+def client_disconnect():
+    # remove the client from all rooms and close empty rooms
+    room_id = room_manager.get_room_of_client(request.sid)
+    if room_id is not None:
+        room_manager.remove_client(request.sid)
+        
+        data = {
+            "message": "Unfortunately there was a problem with the connection",
+            "message_color": "orange",
+            "message_IR": "Unfortunately there was a problem with the connection",
+        }
+        __end_experiment(data, room_id)
+
 @socketio.on("timeout")
 def timeout(data):
     token = data["token"]
@@ -172,7 +186,6 @@ def timeout(data):
 
 @socketio.on("descrimage_mouseclick")
 def on_mouseclick(event):
-    print("CLICK")
     # looks like we need a "mouse"-gripper b.c. everything expects a gripper instance
     token = event["token"]
     model = room_manager.get_model_of_room(token)
@@ -453,27 +466,31 @@ def __end_experiment(data, token):
 
     token: the batch_id of this experiment
     """
-    log_file_path = __get_log_file(token)
-    with open(log_file_path) as infile:
-        current_log = json.load(infile)
+    try:
+        log_file_path = __get_log_file(token)
+        with open(log_file_path) as infile:
+            current_log = json.load(infile)
 
-    # copy information from current log file to unique_tokens.json
-    token_file = Path(f"{__get_collect_dir()}/logs/unique_tokens.json")
-    with open(token_file, "r") as infile:
-        unique_tokens = json.load(infile)
+        # copy information from current log file to unique_tokens.json
+        token_file = Path(f"{__get_collect_dir()}/logs/unique_tokens.json")
+        with open(token_file, "r") as infile:
+            unique_tokens = json.load(infile)
 
-    this_final_token = current_log["final_token"]
-    unique_tokens[this_final_token]["score"] = current_log["score"]
-    unique_tokens[this_final_token]["abort"] = current_log["abort"]
-    unique_tokens[this_final_token]["timestamp_end"] = datetime.now().isoformat()
+        this_final_token = current_log["final_token"]
+        unique_tokens[this_final_token]["score"] = current_log["score"]
+        unique_tokens[this_final_token]["abort"] = current_log["abort"]
+        unique_tokens[this_final_token]["timestamp_end"] = datetime.now().isoformat()
 
-    with open(token_file, "w") as infile:
-        json.dump(unique_tokens, infile)
+        with open(token_file, "w") as infile:
+            json.dump(unique_tokens, infile)
 
-    # prepare name for final log file
-    filename = str(log_file_path).replace(".log.json", "")
-    final_log_path = Path(f"{filename}.{this_final_token}.log.json")
+        # prepare name for final log file
+        filename = str(log_file_path).replace(".log.json", "")
+        final_log_path = Path(f"{filename}.{this_final_token}.log.json")
 
-    # rename current log file to unique name
-    log_file_path.rename(final_log_path)
+        # rename current log file to unique name
+        log_file_path.rename(final_log_path)
+    except FileNotFoundError:
+        print("Final log file was already created")
+
     socketio.emit("finish", data, room=token)

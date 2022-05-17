@@ -31,7 +31,7 @@ class RoomManager:
         """
         new_model = Model(Config.from_dict(config), self.socket, room_id)
         self.room_to_model[room_id] = new_model
-        self.room_to_clients[room_id] = list()
+        self.room_to_clients[room_id] = set()
 
     def remove_room(self, room_id):
         """
@@ -72,8 +72,8 @@ class RoomManager:
         If the given room exists, add the client to it.
         """
         # make sure the room exists
-        if isinstance(self.room_to_clients.get(room_id), list):
-            self.room_to_clients[room_id].append(client_id)
+        if isinstance(self.room_to_clients.get(room_id), set):
+            self.room_to_clients[room_id].add(client_id)
             # join the socketio room
             join_room(room_id, sid=client_id)
             # inform everyone in the room
@@ -102,7 +102,7 @@ class RoomManager:
         @param delete_empty_room    remove rooms containing only the client
         """
         # remove client from internal room list
-        if isinstance(self.room_to_clients.get(room_id), list) and \
+        if isinstance(self.room_to_clients.get(room_id), set) and \
                 client_id in self.room_to_clients[room_id]:
             self.room_to_clients[room_id].remove(client_id)
         # leave socket room
@@ -111,3 +111,8 @@ class RoomManager:
         # optional: delete a room with no clients left
         if delete_empty_room and len(self.room_to_clients[room_id]) == 0:
             self.remove_room(room_id)
+
+    def get_room_of_client(self, client_id):
+        for room_id, room in self.room_to_clients.items():
+            if client_id in room:
+                return room_id

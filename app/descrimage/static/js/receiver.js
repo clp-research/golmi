@@ -133,6 +133,11 @@ $(document).ready(function () {
         console.log(eventName, args);
     });
 
+    window.onoffline = event => {
+        end_experiment("Your connection is unstable", "orange")
+        stop()
+    }
+
     function end_experiment(message, text_color) {
         console.log(message)
         // we are done, show a message and the token
