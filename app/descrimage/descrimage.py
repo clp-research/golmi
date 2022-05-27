@@ -40,6 +40,15 @@ def receiver_page(token):
     return receiver(token)
 
 
+def __get_display_mode(page_name):
+    if app.config["UI_DEBUG"]:
+        if page_name.startswith("giver"):
+            return "block"
+        else:
+            return "inline-block"
+    return "none"
+
+
 @cross_origin
 @descrimage_bp.route("/g/<token>", methods=["GET"])
 def giver_page(token):
@@ -47,7 +56,8 @@ def giver_page(token):
     if connected_users is None or len(connected_users) < 2:
         states = __load_states(token)
         return render_template(
-            "giver.html", token=token, n_states=len(states), this_state=0
+            "giver.html", token=token, n_states=len(states), this_state=0,
+            display_mode=__get_display_mode("giver.html")
         )
 
     else:
@@ -65,7 +75,8 @@ def receiver(token):
         __set_state(token, state_to_load)
 
         return render_template(
-            "receiver.html", token=token, n_states=len(states), this_state=0
+            "receiver.html", token=token, n_states=len(states), this_state=0,
+            display_mode=__get_display_mode("receiver.html")
         )
 
     else:
@@ -144,13 +155,14 @@ def client_disconnect():
     room_id = room_manager.get_room_of_client(request.sid)
     if room_id is not None:
         room_manager.remove_client(request.sid)
-        
+
         data = {
             "message": "Unfortunately there was a problem with the connection",
             "message_color": "orange",
             "message_IR": "Unfortunately there was a problem with the connection",
         }
         __end_experiment(data, room_id)
+
 
 @socketio.on("timeout")
 def timeout(data):

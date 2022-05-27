@@ -29,6 +29,10 @@ parser.add_argument(
     help="Path to the directory containing the states for the data collection."
 )
 
+parser.add_argument(
+    "--debug", action="store_true", help="If True, show test buttons."
+)
+
 if __name__ == "__main__":
     args = parser.parse_args()
     collect_dir = args.collect_dir
@@ -36,4 +40,5 @@ if __name__ == "__main__":
         raise Exception(f"Cannot find collect_dir at {collect_dir}")
     register_experiments.register_app(app)
     app.config["COLLECT_DIR"] = collect_dir
+    app.config["UI_DEBUG"] = args.debug
     socketio.run(app, host=args.host, port=args.port)
