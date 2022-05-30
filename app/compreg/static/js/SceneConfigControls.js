@@ -83,14 +83,26 @@ $(document).ready(function () {
             // Piece Configuration
             $("#select_num_distractors")
                 .slider({
-                    min: 3, max: 9,
-                    start: 4, step: 1,
+                    min: 3, max: 39,
+                    start: 6, step: 3,
+                    labelDistance: 50,
                     onChange: function (value, text, $selectedItem) {
                         console.log("select_num_distractors: " + value)
                         scene_config.distractors.num_distractors = value
                     }
                 })
 
+            // Piece Configuration
+            $("#select_pieces_per_pos")
+                .slider({
+                    min: 1, max: 10,
+                    start: 2, step: 1,
+                    labelDistance: 50,
+                    onChange: function (value, text, $selectedItem) {
+                        console.log("select_pieces_per_pos: " + value)
+                        scene_config.distractors.pieces_per_pos = value
+                    }
+                })
             // Varieties Configuration
             $("#toggle_rotations").checkbox({
                 value: true,

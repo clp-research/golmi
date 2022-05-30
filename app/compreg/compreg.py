@@ -85,7 +85,8 @@ def on_new_comp_scene(event):
     pieces = PieceConfig.create_all()
     # The preference order is FIX as in KF BA work
     pia = PentoIncrementalAlgorithm([PropertyNames.COLOR, PropertyNames.SHAPE, PropertyNames.REL_POSITION])
-    sampler = UtteranceTypeOrientedDistractorSetSampler(pieces=pieces, target_piece=target)
+    sampler = UtteranceTypeOrientedDistractorSetSampler(pieces=pieces, target_piece=target,
+                                                        pieces_per_pos=distractors_config["pieces_per_pos"])
     distractors = sampler.create_distractor_configs_csp(unique_props=unique_props,
                                                         num_distractors=distractors_config["num_distractors"])
     instruction, _, _ = pia.generate(distractors, target)

@@ -714,7 +714,8 @@ class RestrictivePieceConfigSetSampler:
 
 class UtteranceTypeOrientedDistractorSetSampler:
 
-    def __init__(self, pieces: List[PieceConfig], target_piece: PieceConfig, n_retries=100):
+    def __init__(self, pieces: List[PieceConfig], target_piece: PieceConfig, pieces_per_pos=2, n_retries=100):
+        self.pieces_per_pos = pieces_per_pos
         self.n_retries = n_retries
         # remove the target from the piece set
         self.pieces = list(pieces)
@@ -806,7 +807,7 @@ class UtteranceTypeOrientedDistractorSetSampler:
                                         if piece.rel_position != self.target_piece.rel_position]
                 disallowed_positions.append(self.target_piece.rel_position)
 
-            sampler = RestrictivePieceConfigSetSampler(possible_distractors)
+            sampler = RestrictivePieceConfigSetSampler(possible_distractors, self.pieces_per_pos)
             return sampler.sample_with_position_restriction(num_distractors, disallow_pos=disallowed_positions)
 
         if len(unique_props) == 2:
@@ -815,7 +816,7 @@ class UtteranceTypeOrientedDistractorSetSampler:
                         Some(color), Some(shape), Any(pos)
             """
             if PropertyNames.COLOR in unique_props and PropertyNames.SHAPE in unique_props:
-                sampler = RestrictivePieceConfigSetSampler(self.pieces)
+                sampler = RestrictivePieceConfigSetSampler(self.pieces, self.pieces_per_pos)
                 return sampler.sample_some_with_prop1_and_prop2(self.target_piece,
                                                                 PropertyNames.COLOR,
                                                                 PropertyNames.SHAPE,
@@ -826,7 +827,7 @@ class UtteranceTypeOrientedDistractorSetSampler:
             """
             if PropertyNames.COLOR in unique_props and PropertyNames.REL_POSITION in unique_props:
                 possible_distractors = self.pieces_by_value[self.target_piece.shape]
-                sampler = RestrictivePieceConfigSetSampler(possible_distractors)
+                sampler = RestrictivePieceConfigSetSampler(possible_distractors, self.pieces_per_pos)
                 return sampler.sample_some_with_prop1_and_position(self.target_piece,
                                                                    PropertyNames.COLOR,
                                                                    n_pieces=num_distractors)
@@ -836,7 +837,7 @@ class UtteranceTypeOrientedDistractorSetSampler:
             """
             if PropertyNames.SHAPE in unique_props and PropertyNames.REL_POSITION in unique_props:
                 possible_distractors = self.pieces_by_value[self.target_piece.color]
-                sampler = RestrictivePieceConfigSetSampler(possible_distractors)
+                sampler = RestrictivePieceConfigSetSampler(possible_distractors, self.pieces_per_pos)
                 return sampler.sample_some_with_prop1_and_position(self.target_piece,
                                                                    PropertyNames.SHAPE,
                                                                    n_pieces=num_distractors)
@@ -848,7 +849,7 @@ class UtteranceTypeOrientedDistractorSetSampler:
                         1 x Share(color), 1 Diff(shape), Diff(pos), 
                      others Any(color), Any(shape), Any(pos)
             """
-            sampler = RestrictivePieceConfigSetSampler(self.pieces)
+            sampler = RestrictivePieceConfigSetSampler(self.pieces, self.pieces_per_pos)
             return sampler.sample_special(self.target_piece, n_pieces=num_distractors)
 
 

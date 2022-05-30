@@ -33,7 +33,8 @@ $(document).ready(function () {
             unique_properties: [default_target_values.unique_prop],
         },
         distractors: {
-            num_distractors: 4
+            num_distractors: 4,
+            pieces_per_pos: 2
         },
         varieties: {
             num_colors: 0, // all
