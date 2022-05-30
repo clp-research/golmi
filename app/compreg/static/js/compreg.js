@@ -26,6 +26,10 @@ $(document).ready(function () {
         unique_prop: "color"
     }
     const sceneConfig = {
+        board: {
+            width: 30,
+            height: 30
+        },
         target_piece: {
             color: default_target_values.color,
             shape: default_target_values.shape,

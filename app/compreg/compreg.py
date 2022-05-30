@@ -56,8 +56,13 @@ def on_new_comp_scene(event):
 
     distractors_config = scene_config["distractors"]
     varieties_config = scene_config["varieties"]
+    board_config = scene_config["board"]
 
     model = room_manager.get_models_of_client(request.sid)[0]
+    model.config.width = board_config["width"]
+    model.config.height = board_config["height"]
+    model.set_config(model.config)
+
     target_piece_color_selected = scene_config["target_piece"]["color"]
     target_piece_shape_selected = scene_config["target_piece"]["shape"]
     piece_rel_position_selected = scene_config["target_piece"]["rel_position"]
@@ -90,9 +95,9 @@ def on_new_comp_scene(event):
     distractors = sampler.create_distractor_configs_csp(unique_props=unique_props,
                                                         num_distractors=distractors_config["num_distractors"])
     instruction, _, _ = pia.generate(distractors, target)
-    board = Board.create_compositional_from_configs(board_width=model.config.width, board_height=model.config.height,
+    board = Board.create_compositional_from_configs(board_width=board_config["width"],
+                                                    board_height=board_config["height"],
                                                     piece_config=target, distractor_set=distractors)
-
     # uff this is ugly
     state = State()
     state.objs = dict([(piece.piece_id, piece.piece_obj) for piece in board.pieces])

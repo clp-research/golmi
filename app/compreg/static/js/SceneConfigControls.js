@@ -103,6 +103,18 @@ $(document).ready(function () {
                         scene_config.distractors.pieces_per_pos = value
                     }
                 })
+            // Scene Configuration
+            $("#select_board_size")
+                .slider({
+                    min: 30, max: 100,
+                    start: 30, step: 10,
+                    labelDistance: 50,
+                    onChange: function (value, text, $selectedItem) {
+                        console.log("select_board_size: " + value)
+                        scene_config.board.width = value
+                        scene_config.board.height = value
+                    }
+                })
             // Varieties Configuration
             $("#toggle_rotations").checkbox({
                 value: true,
