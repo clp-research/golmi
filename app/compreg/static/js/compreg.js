@@ -27,8 +27,8 @@ $(document).ready(function () {
     }
     const sceneConfig = {
         board: {
-            width: 30,
-            height: 30
+            width: 40,
+            height: 40
         },
         target_piece: {
             color: default_target_values.color,
@@ -37,8 +37,8 @@ $(document).ready(function () {
             unique_properties: [default_target_values.unique_prop],
         },
         distractors: {
-            num_distractors: 4,
-            pieces_per_pos: 2
+            num_distractors: 49,
+            pieces_per_pos: 10
         },
         varieties: {
             num_colors: 0, // all

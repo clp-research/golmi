@@ -903,9 +903,20 @@ class Board:
         for piece_config in piece_configs:
             self.add_piece_from_config(piece_config, max_attempts)
 
+    def add_piece(self, piece: Piece, max_attempts=100):
+        for attempt in range(max_attempts):  # re-create with potentially different coords
+            if self.grid.is_legal_position(piece.piece_obj.occupied(), piece.piece_id):
+                self.grid.add_obj(piece.piece_obj)
+                self.pieces.append(piece)
+                self.pieces_by_id[piece.piece_id] = piece
+                return True
+        print(f"Max attempts reached, cannot add piece {piece}")
+        return False
+
     def add_piece_from_config(self, piece_config: PieceConfig, max_attempts=100):
         for attempt in range(max_attempts):  # re-create with potentially different coords
             piece = Piece.from_config(len(self.pieces), piece_config, self.board_width, self.board_height)
+
             if self.grid.is_legal_position(piece.piece_obj.occupied(), piece.piece_id):
                 self.grid.add_obj(piece.piece_obj)
                 self.pieces.append(piece)
@@ -921,9 +932,15 @@ class Board:
         # TODO this is just a quick and dirty hack
         possible_rotations = list(Rotations)
         piece_config[PropertyNames.ROTATION] = random.choice(possible_rotations)
+        target = Piece.from_config(0, piece_config, board_width, board_height)
+
+        # uncomment if you want to fix the piece position
+        #target.piece_obj.x = 14
+        #target.piece_obj.y = 14
+
         for d in distractor_set:
             d[PropertyNames.ROTATION] = random.choice(possible_rotations)
-        board.add_piece_from_config(piece_config)
+        board.add_piece(target)
         board.add_pieces_from_configs(distractor_set.pieces)
         return board
 
