@@ -84,7 +84,7 @@ $(document).ready(function () {
             $("#select_num_distractors")
                 .slider({
                     min: 3, max: 49,
-                    start: 6, step: 1,
+                    start: 49, step: 1,
                     labelDistance: 200,
                     onChange: function (value, text, $selectedItem) {
                         console.log("select_num_distractors: " + value)
@@ -96,7 +96,7 @@ $(document).ready(function () {
             $("#select_pieces_per_pos")
                 .slider({
                     min: 1, max: 10,
-                    start: 2, step: 1,
+                    start: 10, step: 1,
                     labelDistance: 50,
                     onChange: function (value, text, $selectedItem) {
                         console.log("select_pieces_per_pos: " + value)
@@ -107,7 +107,7 @@ $(document).ready(function () {
             $("#select_board_size")
                 .slider({
                     min: 30, max: 100,
-                    start: 30, step: 10,
+                    start: 40, step: 10,
                     labelDistance: 50,
                     onChange: function (value, text, $selectedItem) {
                         console.log("select_board_size: " + value)
