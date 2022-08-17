@@ -83,9 +83,9 @@ $(document).ready(function () {
             // Piece Configuration
             $("#select_num_distractors")
                 .slider({
-                    min: 3, max: 39,
-                    start: 6, step: 3,
-                    labelDistance: 50,
+                    min: 3, max: 49,
+                    start: 6, step: 1,
+                    labelDistance: 200,
                     onChange: function (value, text, $selectedItem) {
                         console.log("select_num_distractors: " + value)
                         scene_config.distractors.num_distractors = value
