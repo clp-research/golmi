@@ -7,6 +7,7 @@ $(document).ready(function () {
             this.bgCanvas = bgCanvas;
             this.objCanvas = objCanvas;
             this.rel_position_granularity = 3
+            this.showGrid = false;
             this.clear();
         }
 
@@ -55,7 +56,7 @@ $(document).ready(function () {
         /**
          * Draws a grid black on white as the background.
          */
-        drawBg(drawGrid) {
+        drawBg() {
             // set updates
             let ctx = this.bgCanvas.getContext("2d");
 
@@ -63,7 +64,7 @@ $(document).ready(function () {
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 
-            if (drawGrid) {
+            if (this.showGrid) {
                 ctx.strokeStyle = "#f3f0f0";
                 ctx.lineWidth = 1;
 
@@ -91,9 +92,9 @@ $(document).ready(function () {
          * In contrast to drawBg(), this function assumes the background has been drawn in the past
          * and the old drawing needs to be removed first.
          */
-        redrawBg(drawGrid) {
+        redrawBg() {
             this.clearBg();
-            this.drawBg(drawGrid);
+            this.drawBg();
         }
 
         /**

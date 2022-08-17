@@ -87,11 +87,13 @@ $(document).ready(function () {
         if (el.hasClass("active")) {
             el.removeClass("active")
             el.text("Show Grid")
-            layerView.redrawBg(false)
+            layerView.showGrid = false
+            layerView.redrawBg()
         } else {
             el.addClass("active")
             el.text("Hide Grid")
-            layerView.redrawBg(true)
+            layerView.showGrid = true
+            layerView.redrawBg()
         }
     });
 
