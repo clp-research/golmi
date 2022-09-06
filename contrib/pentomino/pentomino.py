@@ -12,7 +12,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import colors as plt_colors
 
-from .state import State
+from model.state import State
 
 
 class ShapesMatrix(Enum):
