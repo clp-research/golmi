@@ -1,7 +1,7 @@
 import random
 from typing import List, Set
 
-from contrib.pentomino.symbolic.types import PropertyNames, PieceConfig, PieceConfigGroup
+from contrib.pentomino.symbolic.types import PropertyNames, SymbolicPiece, SymbolicPieceGroup
 
 
 class PentoIncrementalAlgorithm:
@@ -18,7 +18,7 @@ class PentoIncrementalAlgorithm:
         if start_tokens:
             self.start_tokens = start_tokens
 
-    def generate(self, pcl: PieceConfigGroup, selection: PieceConfig, is_selection_in_pieces=False,
+    def generate(self, pcl: SymbolicPieceGroup, selection: SymbolicPiece, is_selection_in_pieces=False,
                  return_expression=True):
         """
             pieces: a list of pieces (incl. the selection)
@@ -63,7 +63,7 @@ class PentoIncrementalAlgorithm:
             return f"{start_token} the {ref_exp}"
         return f"{start_token} one of the {ref_exp}"
 
-    def _exclude(self, property_name: PropertyNames, selection_property_value, distractors: Set[PieceConfig]):
+    def _exclude(self, property_name: PropertyNames, selection_property_value, distractors: Set[SymbolicPiece]):
         """
          * Helper function for IA.
          * Params:

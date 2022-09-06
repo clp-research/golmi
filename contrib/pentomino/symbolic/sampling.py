@@ -2,21 +2,21 @@ import random
 from collections import defaultdict
 from typing import List, Dict, Set
 
-from contrib.pentomino.symbolic.types import PieceConfig, Colors, Shapes, RelPositions, PropertyNames, PieceConfigGroup, \
+from contrib.pentomino.symbolic.types import SymbolicPiece, Colors, Shapes, RelPositions, PropertyNames, SymbolicPieceGroup, \
     Rotations
 
 
 class RestrictivePieceConfigGroupSampler:
 
-    def __init__(self, pieces: List[PieceConfig], pieces_per_pos: int = 2):
+    def __init__(self, pieces: List[SymbolicPiece], pieces_per_pos: int = 2):
         """
 
         :param pieces: without the target_piece
         """
         self.pieces_per_pos = pieces_per_pos
-        self.pieces_by_color: Dict[Colors, List[PieceConfig]] = PieceConfig.group_by_color(pieces)
-        self.pieces_by_shape: Dict[Shapes, List[PieceConfig]] = PieceConfig.group_by_shape(pieces)
-        self.pieces_by_pos: Dict[RelPositions, List[PieceConfig]] = PieceConfig.group_by_pos(pieces)
+        self.pieces_by_color: Dict[Colors, List[SymbolicPiece]] = SymbolicPiece.group_by_color(pieces)
+        self.pieces_by_shape: Dict[Shapes, List[SymbolicPiece]] = SymbolicPiece.group_by_shape(pieces)
+        self.pieces_by_pos: Dict[RelPositions, List[SymbolicPiece]] = SymbolicPiece.group_by_pos(pieces)
         self.meta = {
             PropertyNames.COLOR: self.pieces_by_color,
             PropertyNames.SHAPE: self.pieces_by_shape,
@@ -41,7 +41,7 @@ class RestrictivePieceConfigGroupSampler:
                 if pos in allowed_positions:
                     allowed_positions.remove(pos)
 
-    def sample_special(self, target_piece: PieceConfig, n_pieces: int):
+    def sample_special(self, target_piece: SymbolicPiece, n_pieces: int):
         """
         color,shape,position:
                     1 x Share(color), 1 Share(shape), Diff(pos)
@@ -77,7 +77,7 @@ class RestrictivePieceConfigGroupSampler:
         piece_set.append(piece)
 
         if n_pieces <= 2:  # we are already finished (this is only (shape,position) though)
-            return PieceConfigGroup(piece_set)
+            return SymbolicPieceGroup(piece_set)
 
         # remove already, if we have reached the limit at a pos
         self.__check_and_reduce(allowed_positions, pos_counts)
@@ -92,9 +92,9 @@ class RestrictivePieceConfigGroupSampler:
             piece_set.append(piece)
             pos_counts[piece.rel_position] += 1
             self.__check_and_reduce(allowed_positions, pos_counts)
-        return PieceConfigGroup(piece_set)
+        return SymbolicPieceGroup(piece_set)
 
-    def sample_some_with_prop1_and_position(self, target_piece: PieceConfig, prop1: PropertyNames, n_pieces: int):
+    def sample_some_with_prop1_and_position(self, target_piece: SymbolicPiece, prop1: PropertyNames, n_pieces: int):
         # hierarchical sampling:
         # 1. sample position (so we can block certain positions if drawn already twice)
         # 2. sample piece on position
@@ -110,7 +110,7 @@ class RestrictivePieceConfigGroupSampler:
         # others with same prop, but different position
         possible_pieces = self.meta[prop1][target_piece[prop1]]
         possible_pieces = [p for p in possible_pieces if p.rel_position != target_piece.rel_position]
-        possible_pieces_by_pos = PieceConfig.group_by_pos(possible_pieces)
+        possible_pieces_by_pos = SymbolicPiece.group_by_pos(possible_pieces)
 
         # positions are defined by the other possible pieces that do not share the target piece position
         allowed_positions = [p.rel_position for p in possible_pieces]
@@ -122,9 +122,9 @@ class RestrictivePieceConfigGroupSampler:
             piece_set.append(piece)
             pos_counts[piece.rel_position] += 1
             self.__check_and_reduce(allowed_positions, pos_counts)
-        return PieceConfigGroup(piece_set)
+        return SymbolicPieceGroup(piece_set)
 
-    def __get_same_but_diff(self, target_piece: PieceConfig,
+    def __get_same_but_diff(self, target_piece: SymbolicPiece,
                             same_prop: PropertyNames, diff_prop: PropertyNames, pos):
         possible_pieces = self.meta[same_prop][target_piece[same_prop]]
         possible_pieces = [p for p in possible_pieces if p[diff_prop] != target_piece[diff_prop]]
@@ -137,7 +137,7 @@ class RestrictivePieceConfigGroupSampler:
             print(self.meta[same_prop][target_piece[same_prop]])
         return possible_pieces
 
-    def sample_some_with_prop1_and_prop2(self, target_piece: PieceConfig, prop1: PropertyNames, prop2: PropertyNames,
+    def sample_some_with_prop1_and_prop2(self, target_piece: SymbolicPiece, prop1: PropertyNames, prop2: PropertyNames,
                                          n_pieces: int):
         # hierarchical sampling:
         # 1. sample position (so we can block certain positions if drawn already twice)
@@ -163,7 +163,7 @@ class RestrictivePieceConfigGroupSampler:
             piece_set.append(piece)
             pos_counts[piece.rel_position] += 1
             self.__check_and_reduce(allowed_positions, pos_counts)
-        return PieceConfigGroup(piece_set)
+        return SymbolicPieceGroup(piece_set)
 
     def sample_with_position_restriction(self, n_pieces: int, disallow_pos: List[RelPositions] = None):
         # hierarchical sampling:
@@ -185,12 +185,12 @@ class RestrictivePieceConfigGroupSampler:
             piece_set.append(piece)
             pos_counts[piece.rel_position] += 1
             self.__check_and_reduce(allowed_positions, pos_counts)
-        return PieceConfigGroup(piece_set)
+        return SymbolicPieceGroup(piece_set)
 
 
 class UtteranceTypeOrientedDistractorSetSampler:
 
-    def __init__(self, pieces: List[PieceConfig], target_piece: PieceConfig, n_retries=100):
+    def __init__(self, pieces: List[SymbolicPiece], target_piece: SymbolicPiece, n_retries=100):
         self.n_retries = n_retries
         # remove the target from the piece set
         self.pieces = list(pieces)

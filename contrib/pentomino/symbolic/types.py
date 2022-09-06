@@ -312,7 +312,7 @@ class PropertyNames(Enum):
         return None
 
 
-class PieceConfig:
+class SymbolicPiece:
     """ Symbolic piece representation consisting of a tuple of discrete colors, shapes and positions"""
 
     def __init__(self, color: Colors = None, shape: Shapes = None, rel_position: RelPositions = None,
@@ -364,12 +364,12 @@ class PieceConfig:
         return self.__key() < other.__key()
 
     def __eq__(self, other):
-        if isinstance(other, PieceConfig):
+        if isinstance(other, SymbolicPiece):
             return self.__key() == other.__key()
         raise ValueError(f"Other is not {self.__class__} but {other.__class__}")
 
     def copy(self):
-        return PieceConfig(self.color, self.shape, self.rel_position)
+        return SymbolicPiece(self.color, self.shape, self.rel_position)
 
     def to_json(self):
         return self.color.to_json(), self.shape.to_json(), self.rel_position.to_json(), self.rotation.to_json()
@@ -408,10 +408,10 @@ class PieceConfig:
         return groups
 
 
-class PieceConfigGroup:
+class SymbolicPieceGroup:
     """ Multiple symbolic pieces represented together as a comparable entity (order does not matter)"""
 
-    def __init__(self, pieces: List[PieceConfig]):
+    def __init__(self, pieces: List[SymbolicPiece]):
         self.pieces = pieces  # allow duplicates and preserve order
 
     def __getitem__(self, item):
@@ -436,7 +436,7 @@ class PieceConfigGroup:
         return hash(self.__key())
 
     def __eq__(self, other):
-        if isinstance(other, PieceConfigGroup):
+        if isinstance(other, SymbolicPieceGroup):
             return self.__key() == other.__key()
         raise ValueError(f"Other is not {self.__class__} but {other.__class__}")
 
@@ -445,4 +445,4 @@ class PieceConfigGroup:
 
     @classmethod
     def from_json(cls, pieces: List):
-        return cls([PieceConfig.from_json(p) for p in pieces])
+        return cls([SymbolicPiece.from_json(p) for p in pieces])

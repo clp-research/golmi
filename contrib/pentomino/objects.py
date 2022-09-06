@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import colors as plt_colors
 
-from contrib.pentomino.symbolic.types import PieceConfig, Colors, Shapes, RelPositions, Rotations
+from contrib.pentomino.symbolic.types import SymbolicPiece, Colors, Shapes, RelPositions, Rotations
 from model.grid import GridConfig, Grid
 from model.obj import Obj
 from model.state import State
@@ -101,7 +101,7 @@ class ShapesMatrix(Enum):
 class Piece:
     """ A pentomino specific wrapper around GOLMi Obj """
 
-    def __init__(self, piece_id: int, piece_config: PieceConfig, piece_obj: Obj):
+    def __init__(self, piece_id: int, piece_config: SymbolicPiece, piece_obj: Obj):
         """ Todo: consider to loose the relation between piece_obj (realisation) and piece_config (symbol)"""
         self.piece_obj = piece_obj
         self.piece_config = piece_config
@@ -117,27 +117,27 @@ class Piece:
     def from_dict(cls, obj_dict, grid_config: GridConfig = None):
         piece_obj = Obj.from_dict(obj_dict["id_n"], obj_dict)
         piece_id = piece_obj.id_n
-        piece_config = None
+        piece_symbol = None
         if grid_config:  # we can only know the position, when we know the board size
-            piece_config = PieceConfig(Colors.from_tuple(piece_obj.color),
-                                       Shapes.from_json(piece_obj.type),
-                                       RelPositions.from_coords(piece_obj.x, piece_obj.y,
+            piece_symbol = SymbolicPiece(Colors.from_tuple(piece_obj.color),
+                                         Shapes.from_json(piece_obj.type),
+                                         RelPositions.from_coords(piece_obj.x, piece_obj.y,
                                                                 grid_config.width, grid_config.height),
-                                       Rotations.from_json(int(piece_obj.rotation)))
-        return cls(piece_id, piece_config, piece_obj)
+                                         Rotations.from_json(int(piece_obj.rotation)))
+        return cls(piece_id, piece_symbol, piece_obj)
 
     @classmethod
-    def from_config(cls, piece_id, piece_config, board_width, board_height):
-        x, y = piece_config.rel_position.to_random_coords(board_width, board_height)
-        shape_matrix = ShapesMatrix[piece_config.shape.value]
+    def from_symbol(cls, piece_id, piece_symbol, board_width, board_height):
+        x, y = piece_symbol.rel_position.to_random_coords(board_width, board_height)
+        shape_matrix = ShapesMatrix[piece_symbol.shape.value]
         piece_obj = Obj(piece_id,
-                        obj_type=piece_config.shape.value,
+                        obj_type=piece_symbol.shape.value,
                         x=x, y=y,
                         block_matrix=shape_matrix.value,
-                        color=piece_config.color.to_tuple())  # (name, hex, rgb)
-        if piece_config.rotation:
-            piece_obj.rotate(piece_config.rotation.value)
-        return cls(piece_id, piece_config, piece_obj)
+                        color=piece_symbol.color.to_tuple())  # (name, hex, rgb)
+        if piece_symbol.rotation:
+            piece_obj.rotate(piece_symbol.rotation.value)
+        return cls(piece_id, piece_symbol, piece_obj)
 
 
 class BoardPlotContext:
@@ -354,20 +354,20 @@ class Board:
         self.pieces.append(piece)
         self.pieces_by_id[piece.piece_id] = piece
 
-    def add_pieces_from_configs(self, piece_configs: List[PieceConfig], max_attempts=100):
+    def add_pieces_from_symbols(self, piece_configs: List[SymbolicPiece], max_attempts=100):
         all_success = True
         for piece_config in piece_configs:
-            if not self.add_piece_from_config(piece_config, max_attempts):
+            if not self.add_piece_from_symbol(piece_config, max_attempts):
                 all_success = False
         return all_success
 
-    def add_piece_from_config(self, piece_config: PieceConfig, max_attempts=100):
+    def add_piece_from_symbol(self, piece_symbol: SymbolicPiece, max_attempts=100):
         for attempt in range(max_attempts):  # re-create with potentially different coords
-            piece = Piece.from_config(len(self.pieces), piece_config, self.board_width, self.board_height)
+            piece = Piece.from_symbol(len(self.pieces), piece_symbol, self.board_width, self.board_height)
             if self.grid.is_legal_position(piece.piece_obj.occupied(), piece.piece_id):
                 self.add_piece(piece)
                 return True
-        print(f"Max attempts reached, cannot add piece {piece_config}")
+        print(f"Max attempts reached, cannot add piece from {piece_symbol}")
         return False
 
     def to_image_array(self, image_size, ctx: BoardPlotContext = None, verbose=False):
