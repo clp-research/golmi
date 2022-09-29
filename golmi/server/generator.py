@@ -9,11 +9,11 @@ random states to initialize a model based on 3 parameters:
 import random
 import math
 
-from model.grid import Grid
-from model.obj import Obj
-from model.state import State
-from model.gripper import Gripper
-from model.config import Config
+from golmi.server.grid import Grid
+from golmi.server.obj import Obj
+from golmi.server.state import State
+from golmi.server.gripper import Gripper
+from golmi.server.config import Config
 
 
 class Generator:

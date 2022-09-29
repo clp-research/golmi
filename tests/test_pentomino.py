@@ -1,10 +1,12 @@
 import unittest
-from contrib.pentomino.pentomino import PieceConfig, RelPositions, Colors, Shapes, \
-    PropertyNames, UtteranceTypeOrientedDistractorSetSampler, Board
+
+from golmi.contrib.pentomino.objects import Board
+from golmi.contrib.pentomino.symbolic.sampling import UtteranceTypeOrientedDistractorSetSampler
+from golmi.contrib.pentomino.symbolic.types import RelPositions, Colors, Shapes, PropertyNames, SymbolicPiece
 import itertools
 
-TARGET = PieceConfig(Colors.BLUE, Shapes.T, RelPositions.CENTER)
-ALL_PIECES = [PieceConfig(color, shape, pos)
+TARGET = SymbolicPiece(Colors.BLUE, Shapes.T, RelPositions.CENTER)
+ALL_PIECES = [SymbolicPiece(color, shape, pos)
               for (color, shape, pos) in itertools.product(list(Colors), list(Shapes), list(RelPositions))]
 
 

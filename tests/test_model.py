@@ -1,8 +1,8 @@
 from pathlib import Path
 import unittest
 
-from model.model import Model
-from model.config import Config
+from golmi.server.model import Model
+from golmi.server.config import Config
 from app.app import app, DEFAULT_CONFIG_FILE
 
 

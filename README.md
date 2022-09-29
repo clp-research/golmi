@@ -6,7 +6,14 @@
 *GOLMI* is a framework for creating abstract representations and interfaces to  *object manipulation* tasks.
 It is built on Flask and Flask-SocketIO. 
 
-#### Example Usages
+#### Example Usages as a rendering library
+
+Install golmi into your projects python environment. 
+
+1. Download or clone golmi (and unpack it)
+2. Go into the root folder and run `pip install .`
+
+#### Example Usages as a standalone server
 
 * building interactive (2D) interfaces for empirical studies involving e.g. the selection or moving around of objects
 * reinforcement learning, e.g. with an agent producing commands from the abstract representation or images

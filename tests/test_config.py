@@ -1,7 +1,5 @@
-import unittest
-
 import app.app
-from model.config import Config
+from golmi.server.config import Config
 from tests.test_socketio import SocketTest
 
 

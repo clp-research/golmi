@@ -1,6 +1,6 @@
 import unittest
 
-from model.obj import Obj
+from golmi.server.obj import Obj
 
 
 class Test(unittest.TestCase):

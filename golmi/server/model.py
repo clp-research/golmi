@@ -1,12 +1,12 @@
 import eventlet
 import math
 
-from model.generator import Generator
-from model.config import Config
-from model.grid import Grid
-from model.gripper import Gripper
-from model.state import State
-from model.mover import Mover
+from golmi.server.generator import Generator
+from golmi.server.config import Config
+from golmi.server.grid import Grid
+from golmi.server.gripper import Gripper
+from golmi.server.state import State
+from golmi.server.mover import Mover
 
 
 class Model:

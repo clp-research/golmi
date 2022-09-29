@@ -1,5 +1,5 @@
-from model.model import Model
-from model.config import Config
+from golmi.server.model import Model
+from golmi.server.config import Config
 from flask_socketio import emit, join_room, leave_room, close_room, rooms
 
 

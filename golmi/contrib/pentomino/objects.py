@@ -5,10 +5,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import colors as plt_colors
 
-from contrib.pentomino.symbolic.types import SymbolicPiece, Colors, Shapes, RelPositions, Rotations
-from model.grid import GridConfig, Grid
-from model.obj import Obj
-from model.state import State
+from golmi.contrib.pentomino.symbolic.types import SymbolicPiece, Colors, Shapes, RelPositions, Rotations
+from golmi.server.grid import GridConfig, Grid
+from golmi.server.obj import Obj
+from golmi.server.state import State
 
 
 class ShapesMatrix(Enum):

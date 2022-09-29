@@ -1,7 +1,7 @@
 import random
 from typing import List, Set
 
-from contrib.pentomino.symbolic.types import PropertyNames, SymbolicPiece, SymbolicPieceGroup
+from golmi.contrib.pentomino.symbolic.types import PropertyNames, SymbolicPiece, SymbolicPieceGroup
 
 
 class PentoIncrementalAlgorithm:

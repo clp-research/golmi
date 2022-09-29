@@ -2,7 +2,7 @@ import random
 from collections import defaultdict
 from typing import List, Dict, Set
 
-from contrib.pentomino.symbolic.types import SymbolicPiece, Colors, Shapes, RelPositions, PropertyNames, SymbolicPieceGroup, \
+from golmi.contrib.pentomino.symbolic.types import SymbolicPiece, Colors, Shapes, RelPositions, PropertyNames, SymbolicPieceGroup, \
     Rotations
 
 

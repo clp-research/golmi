@@ -1,7 +1,7 @@
 import unittest
 
-from model.obj import Obj
-from model.grid import Grid
+from golmi.server.obj import Obj
+from golmi.server.grid import Grid
 
 
 class Test(unittest.TestCase):

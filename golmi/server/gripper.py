@@ -1,4 +1,4 @@
-from model.obj import Obj
+from golmi.server.obj import Obj
 
 
 class Gripper(Obj):

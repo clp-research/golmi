@@ -4,7 +4,7 @@ The Mover module implements all movements
 All helpers function needed to make a movement
 are also implemented here.
 """
-from model.obj import Obj
+from golmi.server.obj import Obj
 
 
 class Mover:

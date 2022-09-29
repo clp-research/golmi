@@ -8,7 +8,7 @@ from flask_socketio import (
 )
 
 
-from model.room_manager import RoomManager
+from golmi.server.room_manager import RoomManager
 from app import DEFAULT_CONFIG_FILE
 
 # has to be passed by clients to connect
