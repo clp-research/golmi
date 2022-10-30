@@ -9,7 +9,7 @@ class Gripper(Obj):
         # For Gripper, it maps to None or the id of the Obj
         # instance that is currently gripped
         super().__init__(
-            id_n, "gripper", x, y, width, height, [[1]],
+            id_n, "gripper", x, y, [[1]],
             rotation=0, mirrored=False, color=color, gripped=gripped
         )
 
