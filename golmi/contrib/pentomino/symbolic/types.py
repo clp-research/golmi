@@ -1,7 +1,7 @@
 from collections import defaultdict
 from enum import Enum, IntEnum
 import random
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 
 class Shapes(Enum):
@@ -378,6 +378,11 @@ class SymbolicPiece:
     def from_json(cls, t: Tuple):
         return cls(Colors.from_json(t[0]), Shapes.from_json(t[1]), RelPositions.from_json(t[2]),
                    Rotations.from_json(t[3]))
+
+    @classmethod
+    def from_dict(cls, d: Dict):
+        return cls(Colors.from_json(d["color"]), Shapes.from_json(d["shape"]), RelPositions.from_json(d["rel_position"]),
+                   Rotations.from_json(d["rotation"]))
 
     @classmethod
     def from_random(cls, colors, shapes, rel_positions):
