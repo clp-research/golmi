@@ -166,6 +166,8 @@ class RestrictivePieceConfigGroupSampler:
         return SymbolicPieceGroup(piece_set)
 
     def sample_with_position_restriction(self, n_pieces: int, disallow_pos: List[RelPositions] = None):
+        if disallow_pos is None:
+            disallow_pos = list()
         # hierarchical sampling:
         # 1. sample position (so we can block certain positions if drawn already twice)
         # 2. sample piece on position
