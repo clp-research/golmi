@@ -33,6 +33,8 @@ $(document).ready(function () {
 
             // array holding the currently gripped objects
             this.grippedObjs = new Array();
+            this.draw_grid = false;
+            this.draw_obj_inner_borders = false;
 
             // Empty the canvas
             this.clear();
@@ -98,15 +100,17 @@ $(document).ready(function () {
             // white rectangle for background
             ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 
-            // horizontal lines
-            for (let row = 0; row <= this.rows; row++) {
-                ctx.moveTo(0, row * this.blockSize);
-                ctx.lineTo(this.canvasWidth, row * this.blockSize);
-            }
-            // vertical lines
-            for (let col = 0; col <= this.cols; col++) {
-                ctx.moveTo(col * this.blockSize, 0);
-                ctx.lineTo(col * this.blockSize, this.canvasHeight);
+            if (this.is_draw_grid) {
+                // horizontal lines
+                for (let row = 0; row <= this.rows; row++) {
+                    ctx.moveTo(0, row * this.blockSize);
+                    ctx.lineTo(this.canvasWidth, row * this.blockSize);
+                }
+                // vertical lines
+                for (let col = 0; col <= this.cols; col++) {
+                    ctx.moveTo(col * this.blockSize, 0);
+                    ctx.lineTo(col * this.blockSize, this.canvasHeight);
+                }
             }
             // draw to the screen
             ctx.stroke();
@@ -267,7 +271,9 @@ $(document).ready(function () {
             ctx.lineTo(this._toPxl(x+1), this._toPxl(y+1)); // bottom right
             ctx.lineTo(this._toPxl(x), this._toPxl(y+1)); // bottom left
             ctx.closePath(); // return to starting point
-            ctx.stroke(); // draw the returning line
+            if (this.draw_obj_inner_borders) {
+                ctx.stroke(); // draw the returning line
+            }
             ctx.fill(); // add color
         }
 
