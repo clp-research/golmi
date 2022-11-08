@@ -188,7 +188,7 @@ class RelPositions(Enum):
         # Uff, this is a bit harsh.
         # Pieces coords is their upper-left corner!
         # They are furthermore drawn on potentially 5x5 grids.
-        piece_grid_size = 5
+        piece_grid_size = 2
 
         # So when we sample (0,0) then the piece is in the upper left corner fully fit,
         # but when we sample something at the right or bottom, then pieces cannot be fully drawn anymore
