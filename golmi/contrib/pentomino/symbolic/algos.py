@@ -1,5 +1,5 @@
 import random
-from typing import List, Set
+from typing import List, Set, Union
 
 from golmi.contrib.pentomino.symbolic.types import PropertyNames, SymbolicPiece, SymbolicPieceGroup
 
@@ -18,13 +18,16 @@ class PentoIncrementalAlgorithm:
         if start_tokens:
             self.start_tokens = start_tokens
 
-    def generate(self, pcl: SymbolicPieceGroup, selection: SymbolicPiece, is_selection_in_pieces=False,
+    def generate(self, pcl: Union[SymbolicPieceGroup, List], selection: SymbolicPiece, is_selection_in_pieces=False,
                  return_expression=True):
         """
             pieces: a list of pieces (incl. the selection)
             selection: a selected pieces (within pieces)
         """
-        distractors = set(pcl.pieces)
+        if isinstance(pcl, SymbolicPieceGroup):
+            distractors = set(pcl.pieces)
+        else:
+            distractors = set(pcl)
         if is_selection_in_pieces:
             distractors.remove(selection)
         # property-value pairs are collected here
