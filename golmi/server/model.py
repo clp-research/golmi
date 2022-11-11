@@ -48,8 +48,8 @@ class Model:
         """
         return self.state.get_gripper_by_id(gr_id)
 
-    def get_gripped_obj(self, obj_id):
-        return self.state.get_gripped_obj(obj_id)
+    def get_gripped_obj(self, gr_id):
+        return self.state.get_gripped_obj(gr_id)
 
     def get_gripper_coords(self, gr_id):
         """
