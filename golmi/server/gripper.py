@@ -3,7 +3,7 @@ from golmi.server.obj import Obj
 
 class Gripper(Obj):
     def __init__(
-            self, id_n, x, y, gripped=None, width=1, height=1, color="blue"):
+            self, id_n, x, y, gripped=None, color="blue"):
         # note: "gripped" is polymorphic here.
         # For Obj, it is a Boolean signifying whether the object is gripped.
         # For Gripper, it maps to None or the id of the Obj
