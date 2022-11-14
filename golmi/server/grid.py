@@ -2,8 +2,11 @@ import itertools
 import json
 import math
 import os
+from typing import List
 
 import numpy as np
+
+from golmi.server.obj import Obj
 
 
 class Tile:
@@ -17,7 +20,7 @@ class Tile:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.objects = list()
+        self.objects: List[Obj] = list()
 
     def __repr__(self):
         if not self.objects:
@@ -105,6 +108,7 @@ class Grid:
     def __init__(self, width, height, step, prevent_overlap):
         self.width = width
         self.height = height
+        self.grid: List[List[Tile]] = [[]]
         # if move step is an integer, set step to 1 (smallest possible)
         if float(step).is_integer():
             self.step = 1
@@ -131,7 +135,7 @@ class Grid:
         """
         generate an empty grid
         """
-        self.grid = [
+        self.grid: List[List[Tile]] = [
             [Tile(j, i) for j in np.arange(0, self.width, self.step)]
             for i in np.arange(0, self.height, self.step)
         ]
