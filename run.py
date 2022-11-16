@@ -1,4 +1,6 @@
 import argparse
+import os
+
 from app import register_experiments
 from app.app import app, socketio
 
@@ -23,7 +25,14 @@ parser.add_argument(
 )
 
 if __name__ == "__main__":
-    args = parser.parse_args()
+    if {"GOLMI_HOST", "GOLMI_PORT"}.issubset(set(os.environ)):
+        host = os.environ["GOLMI_HOST"]
+        port = os.environ["GOLMI_PORT"]
+    else:
+        args = parser.parse_args()
+        host = args.host
+        port = args.port
+
     register_experiments.register_app(app)
-    print("Started at", args.host, args.port)
-    socketio.run(app, host=args.host, port=args.port)
+    print(f"Started at {host}:{port}")
+    socketio.run(app, host=host, port=port)
