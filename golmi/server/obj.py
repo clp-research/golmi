@@ -154,10 +154,13 @@ class Obj:
                 f"Object construction failed, key {mandatory_key} missing"
             )
         bm = None
+        apply_transformations = False
         if type_config:
             bm = type_config[source_dict["type"]]
+            apply_transformations = True
         if "block_matrix" in source_dict:
             bm = source_dict["block_matrix"]
+            apply_transformations = False
         if not bm:
             raise Exception("Either provide type_config or block_matrix")
         # create new object from the mandatory keys
@@ -169,13 +172,14 @@ class Obj:
             block_matrix=bm
         )
 
-        # process optional info
-        if "rotation" in source_dict and source_dict["rotation"] != 0:
-            new_obj.rotate(float(source_dict["rotation"]))
+        if apply_transformations is True:
+            # process optional info
+            if "rotation" in source_dict and source_dict["rotation"] != 0:
+                new_obj.rotate(float(source_dict["rotation"]))
 
-        # flip the object if "mirrored" is true in the dictionary
-        if "mirrored" in source_dict and source_dict["mirrored"]:
-            new_obj.flip()
+            # flip the object if "mirrored" is true in the dictionary
+            if "mirrored" in source_dict and source_dict["mirrored"]:
+                new_obj.flip()
 
         # apply color
         if "color" in source_dict:
