@@ -60,7 +60,7 @@ class PentoIncrementalAlgorithm:
         shape = properties[PropertyNames.SHAPE] if PropertyNames.SHAPE in properties else random.choice(
             self.general_types)
         color = properties[PropertyNames.COLOR] if PropertyNames.COLOR in properties else ""
-        pos = f"in the {properties[PropertyNames.REL_POSITION]}" if PropertyNames.REL_POSITION in properties else ""
+        pos = f"at the {properties[PropertyNames.REL_POSITION]}" if PropertyNames.REL_POSITION in properties else ""
         ref_exp = f"{color} {shape} {pos}".strip()  # strip whitespaces if s.t. is empty
         if is_discriminating:
             return f"{start_token} the {ref_exp}"
