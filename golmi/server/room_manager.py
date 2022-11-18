@@ -1,14 +1,15 @@
 from golmi.server.model import Model
 from golmi.server.config import Config
-from flask_socketio import emit, join_room, leave_room, close_room, rooms
+from flask_socketio import emit, join_room, leave_room, close_room, rooms, SocketIO
 
 
 class RoomManager:
     """
     Keeps track of and modifies rooms, the related models and joined users.
     """
-    def __init__(self, socket):
-        self.socket = socket
+
+    def __init__(self, sio: SocketIO = None):
+        self.sio = sio
         # list of clients in a room
         self.room_to_clients = dict()
         # room ids mapped to Model instances
@@ -29,7 +30,7 @@ class RoomManager:
         @param room_id identifier of the room for the new model instance
         @param config  model configuration as a dictionary
         """
-        new_model = Model(Config.from_dict(config), self.socket, room_id)
+        new_model = Model(Config.from_dict(config), self.sio, room_id)
         self.room_to_model[room_id] = new_model
         self.room_to_clients[room_id] = list()
 

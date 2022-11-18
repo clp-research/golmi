@@ -1,3 +1,5 @@
+from socket import SocketIO
+
 import eventlet
 import math
 
@@ -10,9 +12,9 @@ from golmi.server.mover import Mover
 
 
 class Model:
-    def __init__(self, config, socket, room):
-        self.socket = socket  # to communicate with subscribed views
-        self.room = room
+    def __init__(self, config, sio: SocketIO = None, room_id: int = None):
+        self.sio = sio  # to communicate with subscribed views
+        self.room_id = room_id
         self.state = State.empty_state(config)
         self.config = config
         self.mover = Mover()
@@ -23,7 +25,7 @@ class Model:
         self.running_loops = {action: dict() for action in self.config.actions}
 
     def __repr__(self):
-        return f"Model(room: {self.room})"
+        return f"Model(room: {self.room_id})"
 
     # --- getter --- #
 
@@ -77,7 +79,8 @@ class Model:
         @param event_name 	event type (str), e.g. "update_grippers"
         @param data 	serializable data to send to listeners
         """
-        self.socket.emit(event_name, data, room=self.room)
+        if self.sio is not None:
+            self.sio.emit(event_name, data, room=self.room_id)
 
     # --- Set up and configuration --- #
 
