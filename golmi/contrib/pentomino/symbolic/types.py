@@ -385,8 +385,10 @@ class SymbolicPiece:
                    Rotations.from_json(d["rotation"]))
 
     @classmethod
-    def from_random(cls, colors, shapes, rel_positions):
-        return cls(random.choice(colors), random.choice(shapes), random.choice(rel_positions))
+    def from_random(cls, colors, shapes, rel_positions, rotations=None):
+        if rotations is None:
+            return cls(random.choice(colors), random.choice(shapes), random.choice(rel_positions))
+        return cls(random.choice(colors), random.choice(shapes), random.choice(rel_positions), random.choice(rotations))
 
     @staticmethod
     def group_by_pos(pieces: List):
