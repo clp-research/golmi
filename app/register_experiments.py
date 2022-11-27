@@ -1,6 +1,7 @@
 from app import REGISTRY, Experiment
 from app.welcome import welcome
 from app.pentomino import pentomino
+from app.slurk import slurk
 
 
 def register_app(app):
@@ -8,6 +9,15 @@ def register_app(app):
     # all experiments appended to REGISTRY)
     REGISTRY.append(Experiment("Welcome", "/", welcome.welcome_bp))
     # The demo experiment (you can comment this out, if you dont need it)
+    REGISTRY.append(
+        Experiment(
+            "slurk",
+            "/slurk/",
+            slurk.slurk,
+            slurk.apply_config_to
+        )
+    )
+
     REGISTRY.append(
         Experiment(
             "Pentomino",

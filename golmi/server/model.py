@@ -152,14 +152,21 @@ class Model:
         self._notify_views("update_state", self.state.to_dict())
 
     # --- Gripper manipulation --- #
-    def add_gr(self, gr_id):
+    def add_gr(self, gr_id, x=None, y=None):
         """
         Add a new gripper to the internal state.
         The start position is the center. Notifies listeners.
         @param gr_id 	identifier for the new gripper
         """
-        start_x = self.get_width()/2
-        start_y = self.get_height()/2
+        if x is None:
+            start_x = self.get_width()/2
+        else:
+            start_x = x
+        if x is None:
+            start_y = self.get_height()/2
+        else:
+            start_y = y
+
         # if a new gripper was created, notify listeners
         if gr_id not in self.state.grippers:
             self.state.grippers[gr_id] = Gripper(gr_id, start_x, start_y)
