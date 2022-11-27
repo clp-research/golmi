@@ -32,11 +32,6 @@ def return_clicked_object(room_id, x, y, blocksize):
     model = room_manager.get_model_of_room(room_id)
     x, y = __translate(float(x), float(y), float(blocksize))
 
-    print(room_manager.room_to_model)
-    print(model)
-    print(model.state.grippers)
-
-
     if "mouse" in model.state.grippers:
         model.remove_gr("mouse")
         for obj in model.state.objs.values():
