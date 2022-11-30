@@ -45,17 +45,17 @@ class PentoIncrementalAlgorithm:
             # check if enough properties have been collected to rule out all distractors
             if not len(distractors):
                 if return_expression:
-                    return self._verbalize_properties(properties), properties, True
+                    return self.verbalize_properties(properties), properties, True
                 return properties, True
         # there might be a case where no properties have been found at all (all pieces are the same)
         # in that case we might want to mention all properties (instead of saying nothing)
         if len(properties) == 0:
             properties = dict([(pn, selection[pn]) for pn in list(PropertyNames)])
         if return_expression:
-            return self._verbalize_properties(properties, False), properties, False
+            return self.verbalize_properties(properties, False), properties, False
         return properties, False
 
-    def _verbalize_properties(self, properties, is_discriminating=True):
+    def verbalize_properties(self, properties, is_discriminating=True):
         start_token = random.choice(self.start_tokens)
         shape = properties[PropertyNames.SHAPE] if PropertyNames.SHAPE in properties else random.choice(
             self.general_types)
