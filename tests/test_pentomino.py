@@ -1,6 +1,5 @@
 import unittest
 
-from golmi.contrib.pentomino.objects import Board
 from golmi.contrib.pentomino.symbolic.sampling import UtteranceTypeOrientedDistractorSetSampler
 from golmi.contrib.pentomino.symbolic.types import RelPositions, Colors, Shapes, PropertyNames, SymbolicPiece
 import itertools
@@ -8,19 +7,6 @@ import itertools
 TARGET = SymbolicPiece(Colors.BLUE, Shapes.T, RelPositions.CENTER)
 ALL_PIECES = [SymbolicPiece(color, shape, pos)
               for (color, shape, pos) in itertools.product(list(Colors), list(Shapes), list(RelPositions))]
-
-
-class CompositionalBoardTestCase(unittest.TestCase):
-
-    def test_manual_compositional_board(self):
-        width, height = 40, 40
-        board = Board.create_compositional(width, height, TARGET,
-                                           unique_props={PropertyNames.COLOR},
-                                           num_distractors=4,
-                                           ambiguities={PropertyNames.REL_POSITION: 1})
-        for piece in board.pieces:
-            print(piece.piece_config)
-        print(board.grid)
 
 
 class RelPositionsTestCase(unittest.TestCase):

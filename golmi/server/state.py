@@ -1,114 +1,43 @@
 import json
 
-from typing import Dict
+from typing import Dict, List, TypeVar, Generic, Union
 
-from .obj import Obj
-from .gripper import Gripper
+from . import Jsonable
+from .obj import Obj, Objects
+from .gripper import Gripper, Grippers
 from .grid import Grid, GridConfig
 
+T = TypeVar('T', bound=Obj)
 
-class State:
-    def __init__(self, objs, grippers, targets, grid_config: GridConfig,
-                 state_id: int = None, global_id: int = None):
+
+class State(Generic[T], Jsonable):
+    def __init__(self, grid_config: GridConfig,
+                 objects: Objects = None,
+                 grippers: Grippers = None,
+                 targets: Objects = None,
+                 state_id: int = None,
+                 global_id: int = None):
         self.state_id = state_id
         self.global_id = global_id
-        self.objs: Dict[int, Obj] = objs
-        self.grippers = grippers
-        self.targets = targets
+
+        self.grippers = grippers if grippers else Grippers()
+        self.objects = objects if objects else Objects()
+        self.targets = targets if targets else Objects()
+
+        assert grid_config is not None, "grid_config must not be None"
         self.grid_config = grid_config
+
         self.object_grid = Grid.create_from_config(grid_config)
-        self.target_grid = Grid.create_from_config(grid_config)
-        self.plot_objects_targets()
-
-    def plot_objects_targets(self):
-        """
-        clear grids and replot all objects and targets
-        """
-        # clear grids
-        self.object_grid.clear_grid()
-        self.target_grid.clear_grid()
-
-        # plot objects
-        for obj in self.objs.values():
+        for obj in self.objects:
             self.object_grid.add_obj(obj)
 
-        # plot targets
-        for target in self.targets.values():
-            self.target_grid.add_obj(target)
+        self.target_grid = Grid.create_from_config(grid_config) if targets else None
+        if self.target_grid:
+            for target in self.targets:
+                self.target_grid.add_obj(target)
 
-    @classmethod
-    def empty_state(cls, config):
-        return cls(
-            dict(), dict(), dict(), config
-        )
-
-    def get_obj_dict(self):
-        """
-        @return Dictionary mapping object ids to object dictionaries
-        """
-        return {obj_id: obj.to_dict() for obj_id, obj in self.objs.items()}
-
-    def get_target_dict(self):
-        """
-        @return Dictionary mapping object ids to object dictionaries
-        """
-        return {obj_id: obj.to_dict() for obj_id, obj in self.targets.items()}
-
-    def get_object_ids(self):
-        return self.objs.keys()
-
-    def get_obj_by_id(self, obj_id):
-        if obj_id in self.objs:
-            return self.objs[obj_id]
-        else:
-            return None
-
-    def get_gripper_dict(self):
-        """
-        In contrast to get_obj_dict, each gripper dict has
-        the entry "gripped", which itself is None or a
-        dictionary mapping the gripped object to an object dictionary.
-        @return Dictionary mapping gripper ids to gripper dictionaries.
-        """
-        gr_dict = dict()
-        for gr_id, gr in self.grippers.items():
-            gr_dict[gr_id] = gr.to_dict()
-            # if some object is gripped, add all the info on that object too
-            if gr.gripped:
-                gr_dict[gr_id]["gripped"] = {
-                    gr.gripped: self.get_obj_by_id(gr.gripped).to_dict()
-                }
-            else:
-                gr_dict[gr_id]["gripped"] = None
-        return gr_dict
-
-    def get_gripper_ids(self):
-        return self.grippers.keys()
-
-    def get_gripper_by_id(self, gr_id):
-        if gr_id in self.grippers:
-            return self.grippers[gr_id]
-        else:
-            return None
-
-    def get_gripper_coords(self, gr_id):
-        """
-        @param gr_id 	gripper id
-        """
-        if gr_id in self.grippers:
-            return [self.grippers[gr_id].x, self.grippers[gr_id].y]
-        else:
-            return list()
-
-    def get_gripped_obj(self, gr_id):
-        """
-        @param gr_id 	gripper id
-        @return None or the id of the gripped object
-        """
-        if gr_id in self.grippers:
-            return self.grippers[gr_id].gripped
-        else:
-            return None
+    def to_json(self):
+        return self.to_state_dict(include_grid_config=True)
 
     def move_gr(self, gr_id, dx, dy):
         """
@@ -120,15 +49,17 @@ class State:
         self.grippers[gr_id].x += dx
         self.grippers[gr_id].y += dy
 
-    def move_obj(self, obj_id, dx, dy):
+    def move_obj(self, obj: Union[int, Obj], dx, dy):
         """
          Change an object's position by moving in direction (dx, dy).
-         @param obj_id 	object id
+         @param obj 	object or id
          @param dx 	x direction
          @param dy 	y direction
         """
-        self.get_obj_by_id(obj_id).x += dx
-        self.get_obj_by_id(obj_id).y += dy
+        if isinstance(obj, int):
+            obj = self.objects[obj]
+        obj.x += dx
+        obj.y += dy
 
     def rotate_obj(self, obj_id, d_angle):
         """
@@ -137,8 +68,7 @@ class State:
         @param d_angle	current angle is changed by d_angle
         """
         if d_angle != 0:
-            obj = self.get_obj_by_id(obj_id)
-            obj.rotate(d_angle)
+            self.objects[obj_id].rotate(d_angle)
 
     def flip_obj(self, obj_id):
         """
@@ -146,8 +76,7 @@ class State:
         @param obj_id 	object_id
         """
         # change 'mirrored' attribute
-        obj = self.get_obj_by_id(obj_id)
-        obj.flip()
+        self.objects[obj_id].flip()
 
     def grip(self, gr_id, obj_id):
         """
@@ -155,16 +84,18 @@ class State:
         @param gr_id 	id of the gripper that grips obj_id
         @param obj_id 	id of object to grip, must be in objects
          """
-        self.objs[obj_id].gripped = True
-        self.grippers[gr_id].gripped = obj_id
+        self.objects[obj_id].gripped = True
+        self.grippers[gr_id].gripped_obj = self.objects[obj_id]
 
     def ungrip(self, gr_id):
         """
         Detach the currently gripped object from the gripper.
         @param gr_id 	id of the gripper that ungrips
         """
-        self.objs[self.grippers[gr_id].gripped].gripped = False
-        self.grippers[gr_id].gripped = None
+        gripper = self.grippers[gr_id]
+        gripped_obj = self.objects[gripper.gripped]
+        gripped_obj.gripped = False
+        gripper.gripped_obj = None
 
     @classmethod
     def from_json(cls, filename, type_config, config):
@@ -176,11 +107,11 @@ class State:
         """
         with open(filename, mode="r") as file:
             json_data = json.loads(file.read())
-        return cls.from_dict(json_data, type_config, config)
+        return cls.from_state_dict(json_data, type_config, config)
 
     @classmethod
     # TODO: make sure pieces are on the board! (at least emit warning)
-    def from_dict(cls, source_dict, type_config=None, grid_config: GridConfig = None):
+    def from_state_dict(cls, source_dict, type_config=None, grid_config: GridConfig = None):
         """
         @param source_dict  Dict containing State constructor parameters.
                             The keys "objs" and "grippers" are mandatory.
@@ -207,15 +138,10 @@ class State:
 
         try:
             # construct objects
-            objs = dict()
-            for obj_name, obj_dict in source_dict["objs"].items():
-                # get identifier or use object key (use str for consistency)
-                id_n = obj_dict.get("id_n") or str(obj_name)
-
-                new_object = Obj.from_dict(
-                    id_n, obj_dict, type_config
-                )
-                objs[id_n] = new_object
+            objs: Dict[int, T] = dict()
+            for obj_id, obj_dict in source_dict["objs"].items():
+                new_object = T.create_object(obj_dict, type_config)
+                objs[new_object.id_n] = new_object
 
             # construct grippers
             grippers = dict()
@@ -233,15 +159,9 @@ class State:
             # construct targets
             targets = dict()
             if "targets" in source_dict:
-                for obj_name, obj_dict in source_dict["targets"].items():
-                    # get identifier or use object key
-                    # (use str for consistency)
-                    id_n = obj_dict.get("id_n") or str(obj_name)
-
-                    new_object = Obj.from_dict(
-                        id_n, obj_dict, type_config
-                    )
-                    targets[id_n] = new_object
+                for obj_id, obj_dict in source_dict["targets"].items():
+                    new_object = T.from_dict(obj_dict, type_config)
+                    targets[new_object.id_n] = new_object
 
         except KeyError:
             raise KeyError(
@@ -255,7 +175,7 @@ class State:
         global_id = None
         if "global_id" in source_dict:
             global_id = source_dict["global_id"]
-        return cls(objs, grippers, targets, gc, state_id, global_id)
+        return cls(gc, objs, grippers, targets, state_id, global_id)
 
     def remove_object(self, obj, object_is_target=False):
         """
@@ -264,30 +184,33 @@ class State:
         @param object_is_target if True the object is a target
         """
         if object_is_target:
-            dictionary = self.targets
-            grid = self.target_grid
+            self.targets.remove(obj)
+            self.target_grid.remove_obj(obj)
         else:
-            dictionary = self.objs
-            grid = self.object_grid
+            self.objects.remove(obj)
+            self.object_grid.remove_obj(obj)
 
-        del dictionary[obj.id_n]
-        grid.remove_obj(obj)
-
-    def add_object(self, obj, object_is_target=False):
+    def add_object(self, obj: T, object_is_target=False, check_position=False):
         """
         adds an object to the state dictionary and the grid
         @param obj  the object to add
         @param object_is_target if True the object is a target
+        @param check_position: if True raises Exception when already occupied coords
         """
+        if check_position and not self.is_legal_position(obj, object_is_target):
+            raise Exception("Warning: Piece position is already occupied")
+        # todo actually we also need to check if id already exists
         if object_is_target:
-            dictionary = self.targets
-            grid = self.target_grid
+            self.target_grid.add_obj(obj)
+            self.targets.add(obj)
         else:
-            dictionary = self.objs
-            grid = self.object_grid
+            self.object_grid.add_obj(obj)
+            self.objects.add(obj)
 
-        dictionary[obj.id_n] = obj
-        grid.add_obj(obj)
+    def is_legal_position(self, obj: T, object_is_target=False):
+        if object_is_target:
+            return self.target_grid.is_legal_position(obj.occupied(), obj.id_n)
+        return self.object_grid.is_legal_position(obj.occupied(), obj.id_n)
 
     def get_tile(self, x, y, obj_is_target=False):
         """
@@ -301,7 +224,7 @@ class State:
 
         return grid.get_single_tile({"x": x, "y": y})
 
-    def to_dict(self, include_grid_config=False):
+    def to_state_dict(self, include_grid_config=False):
         """
         Create a JSON-friendly representation of the current state
         @return dict containing current grippers and objects
@@ -310,9 +233,9 @@ class State:
         state_dict["state_id"] = self.state_id
         if self.global_id:
             state_dict["global_id"] = self.global_id
-        state_dict["grippers"] = self.get_gripper_dict()
-        state_dict["objs"] = self.get_obj_dict()
-        state_dict["targets"] = self.get_target_dict()
+        state_dict["grippers"] = self.grippers.to_json()
+        state_dict["objs"] = self.objects.to_json()
+        state_dict["targets"] = self.targets.to_json()
         if include_grid_config:
             state_dict["grid_config"] = self.object_grid.get_grid_config().to_dict()
         return state_dict
