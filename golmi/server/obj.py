@@ -1,7 +1,11 @@
+from typing import List, Dict
+
 import numpy as np
 
+from golmi.server import Jsonable
 
-class Obj:
+
+class Obj(Jsonable):
     def __init__(
             self, id_n, obj_type, x, y, block_matrix=[],
             rotation=0, mirrored=False, color="blue", gripped=False):
@@ -138,10 +142,9 @@ class Obj:
         return np.flip(matrix, axis=0).tolist()
 
     @classmethod
-    def from_dict(cls, id_n, source_dict, type_config=None):
+    def from_dict(cls, source_dict, type_config=None):
         """
         Construct a new Obj instance from a dictionary, e.g., parsed json.
-        @param id_n identifier for the object
         @param source_dict  dict containing object attributes, keys "type",
                             "x", "y", "width", "height" are mandatory
         @param type_config  dict mapping type names to block matrices
@@ -154,32 +157,28 @@ class Obj:
                 f"Object construction failed, key {mandatory_key} missing"
             )
         bm = None
-        apply_transformations = False
         if type_config:
             bm = type_config[source_dict["type"]]
-            apply_transformations = True
         if "block_matrix" in source_dict:
             bm = source_dict["block_matrix"]
-            apply_transformations = False
         if not bm:
             raise Exception("Either provide type_config or block_matrix")
         # create new object from the mandatory keys
         new_obj = cls(
-            id_n=id_n,
+            id_n=source_dict["id_n"],
             obj_type=source_dict["type"],
             x=float(source_dict["x"]),
             y=float(source_dict["y"]),
             block_matrix=bm
         )
 
-        if apply_transformations is True:
-            # process optional info
-            if "rotation" in source_dict and source_dict["rotation"] != 0:
-                new_obj.rotate(float(source_dict["rotation"]))
+        # process optional info
+        if "rotation" in source_dict and source_dict["rotation"] != 0:
+            new_obj.rotate(float(source_dict["rotation"]))
 
-            # flip the object if "mirrored" is true in the dictionary
-            if "mirrored" in source_dict and source_dict["mirrored"]:
-                new_obj.flip()
+        # flip the object if "mirrored" is true in the dictionary
+        if "mirrored" in source_dict and source_dict["mirrored"]:
+            new_obj.flip()
 
         # apply color
         if "color" in source_dict:
@@ -210,3 +209,38 @@ class Obj:
         if self.gripped:
             d["gripped"] = self.gripped
         return d
+
+    def to_json(self):
+        return self.to_dict()
+
+
+class Objects(Jsonable):
+    """ A collection of objects """
+
+    def __init__(self, objects: List[Obj] = None):
+        self.objects_by_id: Dict[int, Obj] = dict([(obj.id_n, obj) for obj in objects]) if objects else {}
+
+    def __getitem__(self, item):
+        return self.get_obj_by_id(item)
+
+    def __len__(self):
+        return len(self.objects_by_id)
+
+    def __iter__(self):
+        return self.objects_by_id.values().__iter__()
+
+    def add(self, obj: Obj):
+        self.objects_by_id[obj.id_n] = obj
+        return obj
+
+    def remove(self, obj: Obj):
+        del self.objects_by_id[obj.id_n]
+        return obj
+
+    def get_obj_by_id(self, obj_id):
+        if obj_id in self.objects_by_id:
+            return self.objects_by_id[obj_id]
+        return None
+
+    def to_json(self):
+        return {obj_id: obj.to_json() for obj_id, obj in self.objects_by_id.items()}

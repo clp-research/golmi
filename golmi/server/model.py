@@ -3,19 +3,19 @@ from socket import SocketIO
 import eventlet
 import math
 
+from golmi.server import Jsonable
 from golmi.server.generator import Generator
 from golmi.server.config import Config
-from golmi.server.grid import Grid
 from golmi.server.gripper import Gripper
 from golmi.server.state import State
 from golmi.server.mover import Mover
 
 
 class Model:
-    def __init__(self, config, sio: SocketIO = None, room_id: int = None):
+    def __init__(self, config: Config, sio: SocketIO = None, room_id: int = None):
         self.sio = sio  # to communicate with subscribed views
         self.room_id = room_id
-        self.state = State.empty_state(config)
+        self.state = State(config)
         self.config = config
         self.mover = Mover()
 
@@ -29,35 +29,23 @@ class Model:
 
     # --- getter --- #
 
-    def get_obj_dict(self):
-        return self.state.get_obj_dict()
-
-    def get_object_ids(self):
-        return self.state.get_object_ids()
-
     def get_obj_by_id(self, obj_id):
-        return self.state.get_obj_by_id(obj_id)
-
-    def get_gripper_dict(self):
-        return self.state.get_gripper_dict()
-
-    def get_gripper_ids(self):
-        return self.state.get_gripper_ids()
+        return self.state.objects[obj_id]
 
     def get_gripper_by_id(self, gr_id):
         """
         @return Gripper instance or None if id is not registered
         """
-        return self.state.get_gripper_by_id(gr_id)
+        return self.state.grippers[gr_id]
 
     def get_gripped_obj(self, gr_id):
-        return self.state.get_gripped_obj(gr_id)
+        return self.state.grippers.get_gripped_obj_for(gr_id)
 
     def get_gripper_coords(self, gr_id):
         """
         @return list: [x-coordinate, y-coordinate]
         """
-        return self.state.get_gripper_coords(gr_id)
+        return self.state.grippers.get_coords_for(gr_id)
 
     def get_config(self):
         return self.config.to_dict()
@@ -73,14 +61,14 @@ class Model:
 
     # --- Communicating with views --- #
 
-    def _notify_views(self, event_name, data):
+    def _notify_views(self, event_name: str, jsonable: Jsonable):
         """
         Notify all listening views of model events (usually data updates)
         @param event_name 	event type (str), e.g. "update_grippers"
-        @param data 	serializable data to send to listeners
+        @param jsonable 	serializable data to send to listeners
         """
         if self.sio is not None:
-            self.sio.emit(event_name, data, room=self.room_id)
+            self.sio.emit(event_name, jsonable.to_json(), room=self.room_id)
 
     # --- Set up and configuration --- #
 
@@ -91,7 +79,7 @@ class Model:
 
         # generate state and grids
         new_state = generator.generate_random_state(
-             n_objs, n_grippers, obj_area, target_area, random_gr_position)
+            n_objs, n_grippers, obj_area, target_area, random_gr_position)
 
         self.set_state(new_state)
 
@@ -106,19 +94,17 @@ class Model:
                 state, self.get_type_config(), self.config
             )
         elif isinstance(state, dict):
-            self.state = State.from_dict(
+            self.state = State.from_state_dict(
                 state, self.get_type_config(), self.config
             )
         elif isinstance(state, State):
             self.state = state
-            # replot objects and targets, just to be sure
-            self.state.plot_objects_targets()
         else:
             raise TypeError("Parameter state must be a json file name, "
                             "dict, or State instance.")
 
         # update views
-        self._notify_views("update_state", self.state.to_dict())
+        self._notify_views("update_state", self.state)
 
     def set_config(self, config):
         """
@@ -138,21 +124,17 @@ class Model:
             raise TypeError("Parameter config must be a json file name, "
                             "dict, or Config instance")
 
-        # create grids
-        self.object_grid = Grid.create_from_config(self.config)
-        self.target_grid = Grid.create_from_config(self.config)
-
         # in case the available actions changed, reset the looped actions
         self.reset_loops()
-        self._notify_views("update_config", self.config.to_dict())
+        self._notify_views("update_config", self.config)
 
     def reset(self):
         """
         Reset the current state.
         """
-        self.state = State.empty_state(self.config)
+        self.state = State(self.config)
         self.reset_loops()
-        self._notify_views("update_state", self.state.to_dict())
+        self._notify_views("update_state", self.state)
 
     # --- Gripper manipulation --- #
     def add_gr(self, gr_id, start_x: int = None, start_y: int = None):
@@ -164,13 +146,13 @@ class Model:
         @param start_y  starting y coord
         """
         if start_x is None:
-            start_x = self.get_width()/2
+            start_x = self.get_width() / 2
         if start_y is None:
-            start_y = self.get_height()/2
+            start_y = self.get_height() / 2
         # if a new gripper was created, notify listeners
         if gr_id not in self.state.grippers:
-            self.state.grippers[gr_id] = Gripper(gr_id, start_x, start_y)
-            self._notify_views("update_grippers", self.get_gripper_dict())
+            self.state.grippers.add(Gripper(gr_id, start_x, start_y))
+            self._notify_views("update_grippers", self.state.grippers)
 
     def remove_gr(self, gr_id):
         """
@@ -178,8 +160,8 @@ class Model:
         @param gr_id 	identifier of the gripper to remove
         """
         if gr_id in self.state.grippers:
-            self.state.grippers.pop(gr_id)
-            self._notify_views("update_grippers", self.get_gripper_dict())
+            self.state.grippers.remove(gr_id)
+            self._notify_views("update_grippers", self.state.grippers)
 
     def start_gripping(self, gr_id):
         """
@@ -198,7 +180,7 @@ class Model:
         """
         self.stop_loop("grip", gr_id)
 
-    def can_ungrip(self, obj_id):
+    def can_ungrip(self, obj):
         """
         This function decides wether a block can be ungripped
         if snap_to_grid is on and the object lies between
@@ -208,8 +190,6 @@ class Model:
         # without snap to grid a gripper can always ungrip
         if self.config.snap_to_grid is False:
             return True
-
-        obj = self.state.get_obj_by_id(obj_id)
 
         # integer positions are always plotted on the grid
         if float(obj.x).is_integer() and float(obj.y).is_integer():
@@ -259,8 +239,8 @@ class Model:
                 # state takes care of detaching object and gripper
                 self.state.ungrip(gr_id)
                 # notify view of object and gripper change
-                self._notify_views("update_objs", self.get_obj_dict())
-                self._notify_views("update_grippers", self.get_gripper_dict())
+                self._notify_views("update_objs", self.state.objects)
+                self._notify_views("update_grippers", self.state.grippers)
         else:
             # Check if gripper hovers over some object
             new_gripped = self._get_grippable(gr_id)
@@ -269,8 +249,8 @@ class Model:
                 self.state.grip(gr_id, new_gripped)
 
                 # notify view of object and gripper change
-                self._notify_views("update_objs", self.get_obj_dict())
-                self._notify_views("update_grippers", self.get_gripper_dict())
+                self._notify_views("update_objs", self.state.objects)
+                self._notify_views("update_grippers", self.state.grippers)
 
     def start_moving(self, gr_id, x_steps, y_steps):
         """
@@ -415,7 +395,7 @@ class Model:
         if gripper in self.running_loops[action_type] and isinstance(
                 self.running_loops[action_type][gripper],
                 eventlet.greenthread.GreenThread
-                ):
+        ):
             self.running_loops[action_type][gripper].kill()
             self.running_loops[action_type][gripper] = None
 

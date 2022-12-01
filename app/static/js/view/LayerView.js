@@ -157,11 +157,16 @@ $(document).ready(function () {
 
                 let blockMatrix = obj.block_matrix;
 
+                let obj_color = obj.color
+                if (Array.isArray(obj_color)) { // color.name, color.hex, color.rgb
+                    obj_color = obj_color[1] // take color.hex
+                }
+
                 // call drawing helper functions with additional infos
                 let params = {
                     x: obj.x,
                     y: obj.y,
-                    color: obj.color
+                    color: obj_color
                 }
                 this._drawBlockObj(ctx, blockMatrix, params);
             }

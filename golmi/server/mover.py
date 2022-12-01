@@ -14,7 +14,7 @@ class Mover:
         if the movement type is not move this function
         will always return True as dx and dy will be zero
         """
-        gripper_x, gripper_y = state.get_gripper_coords(gr_id)
+        gripper_x, gripper_y = state.grippers.get_coords_for(gr_id)
         new_gr_pos = {
             "x": (gripper_x + dx),
             "y": (gripper_y + dy)
@@ -112,7 +112,7 @@ class Mover:
         move a gripper and the gripped object
         """
         state.move_gr(gr_id, dx, dy)
-        state.move_obj(state.get_gripped_obj(gr_id), dx, dy)
+        state.move_obj(state.grippers.get_gripped_obj_for(gr_id), dx, dy)
 
     def _rotate(self, gr_obj_id, d_angle, state):
         """
@@ -166,11 +166,8 @@ class Mover:
 
         if gripper_can_move:
             # check if gripper has an object
-            gr_obj_id = state.get_gripped_obj(gr_id)
-            if gr_obj_id:
-                # obtain gripped object
-                gr_obj = state.get_obj_by_id(gr_obj_id)
-
+            gr_obj = state.grippers.get_gripped_obj_for(gr_id)
+            if gr_obj:
                 # obtain direction and rotation step
                 # if nor present they will be initialized to None
                 direction = kwargs.get("direction")
@@ -203,10 +200,10 @@ class Mover:
                         self._move(gr_id, dx, dy, state)
 
                     elif movement_type == "flip":
-                        self._flip(gr_obj_id, state)
+                        self._flip(gr_obj.id_n, state)
 
                     elif movement_type == "rotate":
-                        self._rotate(gr_obj_id, d_angle, state)
+                        self._rotate(gr_obj.id_n, d_angle, state)
 
                     # add element to grid
                     state.object_grid.add_obj(gr_obj)
@@ -222,5 +219,5 @@ class Mover:
             # send update to views
             model._notify_views(
                 "update_grippers",
-                model.get_gripper_dict()
+                model.state.grippers
             )
