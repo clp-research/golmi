@@ -32,6 +32,20 @@ class Obj(Jsonable):
     def get_center_y(self):
         return self.y + (self.height / 2)
 
+    def get_centroid(self):
+        shape = np.array(self.block_matrix)
+        mx = shape.mean(axis=0)
+        if np.argmax(mx) == np.argmin(mx):  # special case for all ones
+            center_x = int(self.get_center_x())
+        else:
+            center_x = self.x + np.argmax(mx)
+        my = shape.mean(axis=1)
+        if np.argmax(my) == np.argmin(my):  # special case for all ones
+            center_y = int(self.get_center_y())
+        else:
+            center_y = self.y + np.argmax(my)
+        return center_x, center_y
+
     def get_left_edge(self):
         return self.x
 
