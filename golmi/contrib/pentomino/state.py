@@ -204,13 +204,14 @@ class Board(State[Piece]):
                 all_success = False
         return all_success
 
-    def add_piece_from_symbol(self, piece_symbol: SymbolicPiece, max_attempts=100):
+    def add_piece_from_symbol(self, piece_symbol: SymbolicPiece, max_attempts=100, verbose=False):
         for attempt in range(max_attempts):  # re-create with potentially different coords
             piece = Piece.from_symbol(len(self.objects), piece_symbol, self.object_grid.width, self.object_grid.height)
             if self.is_legal_position(piece):
                 self.add_piece(piece)
                 return True
-        print(f"Max attempts reached, cannot add piece from {piece_symbol}")
+        if verbose:
+            print(f"Max attempts reached, cannot add piece from {piece_symbol}")
         return False
 
     def to_image_array(self, image_size, ctx: BoardPlotContext = None, verbose=False):
