@@ -57,10 +57,15 @@ class PentoIncrementalAlgorithm:
 
     def verbalize_properties(self, properties, is_discriminating=True):
         start_token = random.choice(self.start_tokens)
-        shape = properties[PropertyNames.SHAPE] if PropertyNames.SHAPE in properties else random.choice(
-            self.general_types)
-        color = properties[PropertyNames.COLOR] if PropertyNames.COLOR in properties else ""
-        pos = f"at the {properties[PropertyNames.REL_POSITION]}" if PropertyNames.REL_POSITION in properties else ""
+        shape = properties[PropertyNames.SHAPE] \
+            if PropertyNames.SHAPE in properties and PropertyNames.SHAPE in self.preference_order \
+            else random.choice(self.general_types)
+        color = properties[PropertyNames.COLOR] \
+            if PropertyNames.COLOR in properties and PropertyNames.COLOR in self.preference_order \
+            else ""
+        pos = f"at the {properties[PropertyNames.REL_POSITION]}" \
+            if PropertyNames.REL_POSITION in properties and PropertyNames.REL_POSITION in self.preference_order \
+            else ""
         ref_exp = f"{color} {shape} {pos}".strip()  # strip whitespaces if s.t. is empty
         if is_discriminating:
             return f"{start_token} the {ref_exp}"
