@@ -221,3 +221,4 @@ class Mover:
                 "update_grippers",
                 model.state.grippers
             )
+        return gripper_can_move
