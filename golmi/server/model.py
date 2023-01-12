@@ -51,10 +51,10 @@ class Model:
         return self.config.to_dict()
 
     def get_width(self):
-        return self.config.width
+        return self.state.grid_config.width
 
     def get_height(self):
-        return self.config.height
+        return self.state.grid_config.height
 
     def get_type_config(self):
         return self.config.type_config
@@ -209,7 +209,7 @@ class Model:
                         occupied,
                         obj,
                         self.state,
-                        self.config):
+                        self.config.lock_on_target):
                     # move object
 
                     # 1 - remove obj from state

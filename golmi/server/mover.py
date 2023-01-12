@@ -22,7 +22,7 @@ class Mover:
 
         return state.object_grid.gripper_on_grid(new_gr_pos)
 
-    def _get_new_coordinates(self, config, gr_obj, **kwargs):
+    def _get_new_coordinates(self, rotation_step, gr_obj, **kwargs):
         """
         based on the type of movement this function will
         return the new coordinates after the movement
@@ -39,7 +39,7 @@ class Mover:
 
         elif kwargs["type"] == "rotate":
             if kwargs.get("rotation_step") is None:
-                step_size = config.rotation_step
+                step_size = rotation_step
 
             direction = kwargs["direction"]
             # determine the turning angle
@@ -90,7 +90,7 @@ class Mover:
                 if target_obj.color == obj.color:
                     return True
 
-    def _is_legal_move(self, new_coordinates, gr_obj, state, config):
+    def _is_legal_move(self, new_coordinates, gr_obj, state, lock_on_target):
         """
         check if the movement is allowed
         """
@@ -100,7 +100,7 @@ class Mover:
         )
 
         # check if object is on a target
-        if config.lock_on_target is True:
+        if lock_on_target is True:
             on_target = self._obj_on_target(gr_obj)
         else:
             on_target = False
@@ -147,7 +147,7 @@ class Mover:
             - flip:     does not require extra arguments
         """
         # extract config and state from model
-        config = model.config
+        config = model.config # this should be like PhysicsConfig
         state = model.state
 
         # gripper only moves if we have a move type movement
@@ -156,7 +156,7 @@ class Mover:
 
         # calculate the distance if the movement is a move
         if movement_type == "move":
-            step_size = config.move_step
+            step_size = state.grid_config.move_step
             # make dx and dy multiples of step_size
             dx = round(kwargs["x_steps"]) * step_size
             dy = round(kwargs["y_steps"]) * step_size
@@ -175,7 +175,7 @@ class Mover:
 
                 # obtain coordinates after movement
                 movement_result = self._get_new_coordinates(
-                    config,
+                    config.rotation_step,
                     gr_obj,
                     type=movement_type,
                     dx=dx,
@@ -187,7 +187,7 @@ class Mover:
 
                 # check if coordinates are legal
                 good_move = self._is_legal_move(
-                    new_coordinates, gr_obj, state, config
+                    new_coordinates, gr_obj, state, config.lock_on_target
                 )
 
                 # apply movement
