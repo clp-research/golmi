@@ -134,7 +134,7 @@ class Piece(Obj):
         x, y = piece_symbol.rel_position.to_random_coords(board_width, board_height)
         shape_matrix = ShapesMatrix[piece_symbol.shape.value]
         obj_dict = dict(id_n=piece_id,
-                        obj_type=piece_symbol.shape.value,
+                        type=piece_symbol.shape.value,
                         x=x, y=y,
                         block_matrix=shape_matrix.value,
                         color=piece_symbol.color.to_tuple())  # (name, hex, rgb)
