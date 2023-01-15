@@ -194,8 +194,14 @@ class Board(State[Piece]):
     def get_piece(self, piece_id: int) -> Piece:
         return self.objects[piece_id]
 
-    def add_piece(self, piece: Piece, check_position=False):
-        self.add_object(piece, check_position=check_position)
+    def add_piece(self, piece: Piece, max_attempts=100, verbose=False):
+        for attempt in range(max_attempts):  # re-create with potentially different coords
+            if self.is_legal_position(piece):
+                self.add_object(piece, check_position=False)
+                return True
+        if verbose:
+            print(f"Max attempts reached, cannot add piece from {piece.piece_config}")
+        return False
 
     def add_pieces_from_symbols(self, piece_configs: List[SymbolicPiece], max_attempts=100):
         all_success = True
@@ -208,7 +214,7 @@ class Board(State[Piece]):
         for attempt in range(max_attempts):  # re-create with potentially different coords
             piece = Piece.from_symbol(len(self.objects), piece_symbol, self.object_grid.width, self.object_grid.height)
             if self.is_legal_position(piece):
-                self.add_piece(piece)
+                self.add_object(piece, check_position=False)
                 return True
         if verbose:
             print(f"Max attempts reached, cannot add piece from {piece_symbol}")
