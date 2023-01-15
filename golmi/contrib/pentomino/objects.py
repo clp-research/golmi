@@ -105,6 +105,18 @@ class Piece(Obj):
     def __str__(self):
         return f"{self.id_n}, {repr(self.piece_config)}"
 
+    def to_json(self):
+        return {
+            "piece_symbol": self.piece_config.to_json() if self.piece_config is not None else None,
+            "piece_obj": self.to_dict()
+        }
+
+    @classmethod
+    def from_json(cls, data):
+        piece_symbol = data["piece_symbol"]
+        piece_config = SymbolicPiece.from_json(piece_symbol) if piece_symbol is not None else None
+        return cls(piece_config, obj_kwargs=data["piece_obj"])
+
     @classmethod
     def from_dict(cls, obj_dict, grid_config: GridConfig = None):
         piece_obj = Obj.from_dict(obj_dict)  # todo: this seems just like a workaround
