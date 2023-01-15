@@ -7,10 +7,10 @@ from golmi.server import Jsonable
 
 class Obj(Jsonable):
     def __init__(
-            self, id_n, obj_type, x, y, block_matrix=[],
-            rotation=0, mirrored=False, color="blue", gripped=False):
+            self, id_n: int, type: str, x: int, y: int, block_matrix=[],
+            rotation: int = 0, mirrored: bool = False, color="blue", gripped=False):
         self.id_n = id_n
-        self.type = obj_type
+        self.type = type
         self.x = x
         self.y = y
         if not len(block_matrix) > 0:
@@ -180,7 +180,7 @@ class Obj(Jsonable):
         # create new object from the mandatory keys
         new_obj = cls(
             id_n=source_dict["id_n"],
-            obj_type=source_dict["type"],
+            type=source_dict["type"],
             x=float(source_dict["x"]),
             y=float(source_dict["y"]),
             block_matrix=bm
