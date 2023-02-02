@@ -35,7 +35,7 @@ def __translate(x, y, granularity):
 
 @cross_origin
 @slurk.route("/<room_id>/<x>/<y>/<blocksize>", methods=["GET"])
-def return_clicked_object(room_id, x, y, blocksize):
+def get_clicked_object(room_id, x, y, blocksize):
     model = room_manager.get_model_of_room(room_id)
     x, y = __translate(float(x), float(y), float(blocksize))
 
@@ -49,6 +49,19 @@ def return_clicked_object(room_id, x, y, blocksize):
 
     grippers = model.get_gripper_dict()
     gripped = grippers["mouse"]["gripped"]
+
+    if gripped is not None:
+        return gripped
+
+    return dict()
+
+
+@cross_origin
+@slurk.route("/<room_id>/gripped/<gripper>", methods=["GET"])
+def get_gripped_object(room_id, gripper):
+    model = room_manager.get_model_of_room(room_id)
+    grippers = model.get_gripper_dict()
+    gripped = grippers[gripper]["gripped"]
 
     if gripped is not None:
         return gripped
