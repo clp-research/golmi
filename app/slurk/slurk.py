@@ -15,8 +15,15 @@ slurk = Blueprint(
     'slurk',
     __name__,
     template_folder='templates',
-    static_folder='static'
+    static_folder='static',
+    url_prefix="/slurk"
 )
+
+
+@cross_origin
+@slurk.route("/", methods=["GET"])
+def slurk_home():
+    return "added functionalities for the integration with the slurk project"
 
 
 def __translate(x, y, granularity):
@@ -42,8 +49,6 @@ def return_clicked_object(room_id, x, y, blocksize):
 
     grippers = model.get_gripper_dict()
     gripped = grippers["mouse"]["gripped"]
-
-    model.remove_gr("mouse")
 
     if gripped is not None:
         return gripped
