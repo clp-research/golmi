@@ -36,7 +36,7 @@ class Gripper(Obj):
         )
 
         # process optional info
-        if "gripped" in source_dict:
+        if source_dict.get("gripped") is not None:
             # cast object name to str too
             gripped_id = list(source_dict["gripped"].keys())[0]
             # gripped_id = str(source_dict["gripped"])

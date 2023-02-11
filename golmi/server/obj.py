@@ -155,12 +155,15 @@ class Obj:
             )
         bm = None
         apply_transformations = False
-        if type_config:
-            bm = type_config[source_dict["type"]]
-            apply_transformations = True
+
         if "block_matrix" in source_dict:
             bm = source_dict["block_matrix"]
             apply_transformations = False
+        else:
+            # only use type config is block matrix is not defined
+            bm = type_config[source_dict["type"]]
+            apply_transformations = True
+        
         if not bm:
             raise Exception("Either provide type_config or block_matrix")
         # create new object from the mandatory keys
