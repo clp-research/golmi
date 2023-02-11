@@ -306,7 +306,7 @@ class Board:
 
     def __init__(self, grid_config: GridConfig, board_id=None):
         self.board_id = board_id
-        self.pieces = []
+        self.pieces: List[Piece] = []
         self.pieces_by_id = {}
         self.grid = Grid.create_from_config(grid_config)
         self.board_width = grid_config.width

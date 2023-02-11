@@ -1,5 +1,5 @@
 import random
-from typing import List, Set
+from typing import List, Set, Union
 
 from golmi.contrib.pentomino.symbolic.types import PropertyNames, SymbolicPiece, SymbolicPieceGroup
 
@@ -18,13 +18,16 @@ class PentoIncrementalAlgorithm:
         if start_tokens:
             self.start_tokens = start_tokens
 
-    def generate(self, pcl: SymbolicPieceGroup, selection: SymbolicPiece, is_selection_in_pieces=False,
+    def generate(self, pcl: Union[SymbolicPieceGroup, List], selection: SymbolicPiece, is_selection_in_pieces=False,
                  return_expression=True):
         """
             pieces: a list of pieces (incl. the selection)
             selection: a selected pieces (within pieces)
         """
-        distractors = set(pcl.pieces)
+        if isinstance(pcl, SymbolicPieceGroup):
+            distractors = set(pcl.pieces)
+        else:
+            distractors = set(pcl)
         if is_selection_in_pieces:
             distractors.remove(selection)
         # property-value pairs are collected here
@@ -42,22 +45,22 @@ class PentoIncrementalAlgorithm:
             # check if enough properties have been collected to rule out all distractors
             if not len(distractors):
                 if return_expression:
-                    return self._verbalize_properties(properties), properties, True
+                    return self.verbalize_properties(properties), properties, True
                 return properties, True
         # there might be a case where no properties have been found at all (all pieces are the same)
         # in that case we might want to mention all properties (instead of saying nothing)
         if len(properties) == 0:
             properties = dict([(pn, selection[pn]) for pn in list(PropertyNames)])
         if return_expression:
-            return self._verbalize_properties(properties, False), properties, False
+            return self.verbalize_properties(properties, False), properties, False
         return properties, False
 
-    def _verbalize_properties(self, properties, is_discriminating=True):
+    def verbalize_properties(self, properties, is_discriminating=True):
         start_token = random.choice(self.start_tokens)
         shape = properties[PropertyNames.SHAPE] if PropertyNames.SHAPE in properties else random.choice(
             self.general_types)
         color = properties[PropertyNames.COLOR] if PropertyNames.COLOR in properties else ""
-        pos = f"in the {properties[PropertyNames.REL_POSITION]}" if PropertyNames.REL_POSITION in properties else ""
+        pos = f"at the {properties[PropertyNames.REL_POSITION]}" if PropertyNames.REL_POSITION in properties else ""
         ref_exp = f"{color} {shape} {pos}".strip()  # strip whitespaces if s.t. is empty
         if is_discriminating:
             return f"{start_token} the {ref_exp}"

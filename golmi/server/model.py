@@ -1,3 +1,5 @@
+from socket import SocketIO
+
 import eventlet
 import math
 
@@ -10,9 +12,9 @@ from golmi.server.mover import Mover
 
 
 class Model:
-    def __init__(self, config, socket, room):
-        self.socket = socket  # to communicate with subscribed views
-        self.room = room
+    def __init__(self, config, sio: SocketIO = None, room_id: int = None):
+        self.sio = sio  # to communicate with subscribed views
+        self.room_id = room_id
         self.state = State.empty_state(config)
         self.config = config
         self.mover = Mover()
@@ -23,7 +25,7 @@ class Model:
         self.running_loops = {action: dict() for action in self.config.actions}
 
     def __repr__(self):
-        return f"Model(room: {self.room})"
+        return f"Model(room: {self.room_id})"
 
     # --- getter --- #
 
@@ -48,8 +50,8 @@ class Model:
         """
         return self.state.get_gripper_by_id(gr_id)
 
-    def get_gripped_obj(self, obj_id):
-        return self.state.get_gripped_obj(obj_id)
+    def get_gripped_obj(self, gr_id):
+        return self.state.get_gripped_obj(gr_id)
 
     def get_gripper_coords(self, gr_id):
         """
@@ -77,7 +79,8 @@ class Model:
         @param event_name 	event type (str), e.g. "update_grippers"
         @param data 	serializable data to send to listeners
         """
-        self.socket.emit(event_name, data, room=self.room)
+        if self.sio is not None:
+            self.sio.emit(event_name, data, room=self.room_id)
 
     # --- Set up and configuration --- #
 
@@ -152,21 +155,18 @@ class Model:
         self._notify_views("update_state", self.state.to_dict())
 
     # --- Gripper manipulation --- #
-    def add_gr(self, gr_id, x=None, y=None):
+    def add_gr(self, gr_id, start_x: int = None, start_y: int = None):
         """
         Add a new gripper to the internal state.
         The start position is the center. Notifies listeners.
         @param gr_id 	identifier for the new gripper
+        @param start_x  starting x coord
+        @param start_y  starting y coord
         """
-        if x is None:
+        if start_x is None:
             start_x = self.get_width()/2
-        else:
-            start_x = x
-        if x is None:
+        if start_y is None:
             start_y = self.get_height()/2
-        else:
-            start_y = y
-
         # if a new gripper was created, notify listeners
         if gr_id not in self.state.grippers:
             self.state.grippers[gr_id] = Gripper(gr_id, start_x, start_y)

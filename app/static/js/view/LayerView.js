@@ -100,7 +100,7 @@ $(document).ready(function () {
             // white rectangle for background
             ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 
-            if (this.is_draw_grid) {
+            if (this.draw_grid) {
                 // horizontal lines
                 for (let row = 0; row <= this.rows; row++) {
                     ctx.moveTo(0, row * this.blockSize);
@@ -203,22 +203,22 @@ $(document).ready(function () {
                 }
 
                 // modify style depending on whether an object is gripped
-                let grSize = gripper.gripped ? 0.2 : 0.5;
+                let grSize = gripper.gripped ? 0.1 : 0.3;
 
                 // draw the gripper itself
                 // --- config ---
-                ctx.lineStyle = "red";
+                ctx.strokeStyle = "#000000";
                 ctx.lineWidth = 2;
-                // draw. The gripper is a simple cross
+                // draw. The gripper as a simple cross
+                // Note: coordinates are at a tiles upper-left corner!
+                // We draw a gripper from that corner to the bottom-right
                 ctx.beginPath();
-                ctx.moveTo(this._toPxl(gripper.x-grSize),
-                           this._toPxl(gripper.y-grSize));
-                ctx.lineTo(this._toPxl(gripper.x+grSize),
-                           this._toPxl(gripper.y+grSize));
-                ctx.moveTo(this._toPxl(gripper.x-grSize),
-                           this._toPxl(gripper.y+grSize));
-                ctx.lineTo(this._toPxl(gripper.x+grSize),
-                           this._toPxl(gripper.y-grSize));
+                // top-left to bottom-right
+                ctx.moveTo(this._toPxl(gripper.x - grSize), this._toPxl(gripper.y - grSize));
+                ctx.lineTo(this._toPxl(gripper.x + 1 + grSize), this._toPxl(gripper.y + 1 + grSize));
+                // bottom-left to top-right
+                ctx.moveTo(this._toPxl(gripper.x - grSize), this._toPxl(gripper.y + 1 + grSize));
+                ctx.lineTo(this._toPxl(gripper.x + 1 + grSize), this._toPxl(gripper.y - grSize));
                 ctx.stroke();
             }
         }

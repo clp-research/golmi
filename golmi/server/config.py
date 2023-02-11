@@ -5,15 +5,14 @@ Class to store settings such as board width, allowable actions, etc.
 import json
 from os.path import isfile
 
+from golmi.server.grid import GridConfig
 
-class Config:
-    def __init__(self, type_config, width=20, height=20,
-                 snap_to_grid=False, prevent_overlap=True,
-                 actions=["move", "rotate", "flip", "grip"],
-                 move_step=0.5, rotation_step=90, action_interval=0.1,
-                 verbose=False, lock_on_target=False,
-                 colors=["#ff0000", "#ffa500", "#ffff00", "#008000",
-                         "#0000ff", "#800080", "#8b4513", "#808080"]):
+
+class Config(GridConfig):
+    def __init__(self, type_config, width=20, height=20, snap_to_grid=False, prevent_overlap=True,
+                 actions=["move", "rotate", "flip", "grip"], move_step=0.5, rotation_step=90, action_interval=0.1,
+                 verbose=False, lock_on_target=False, colors=["#ff0000", "#ffa500", "#ffff00", "#008000",
+                                                              "#0000ff", "#800080", "#8b4513", "#808080"]):
         """
         Constructor.
         @param type_config	    Json file name or dictionary mapping types
@@ -47,6 +46,7 @@ class Config:
                                 "#808080"]
         """
         # make sure type_config can be parseds
+        super().__init__(width, height, move_step, prevent_overlap)
         if isinstance(type_config, str):
             self.type_config = Config.types_from_json(type_config)
         elif isinstance(type_config, dict):
@@ -61,12 +61,8 @@ class Config:
                 "Please select a step size that satisfies the following "
                 "condition: (1/(step size % 1)) must be an integer"
             )
-        self.width = width
-        self.height = height
         self.snap_to_grid = snap_to_grid
-        self.prevent_overlap = prevent_overlap
         self.actions = actions
-        self.move_step = move_step
         self.rotation_step = rotation_step
         self.action_interval = action_interval
         self.verbose = verbose
