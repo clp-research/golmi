@@ -1,5 +1,5 @@
 from flask_cors import cross_origin
-from flask import render_template, Blueprint
+from flask import render_template, Blueprint, jsonify
 
 from app.app import app, socketio, room_manager
 
@@ -74,3 +74,16 @@ def get_gripped_object(room_id, gripper):
 def get_state(room_id):
     model = room_manager.get_model_of_room(room_id)
     return model.state.to_dict()
+
+
+@cross_origin
+@slurk.route("/<room_id>/array_state", methods=["GET"])
+def get_array_state(room_id):
+    model = room_manager.get_model_of_room(room_id)
+    obj_grid = model.state.object_grid
+    target_grid = model.state.target_grid
+
+    return jsonify({
+        "objects": obj_grid.to_list(),
+        "targets": target_grid.to_list()
+    })

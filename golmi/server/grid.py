@@ -22,6 +22,9 @@ class Tile:
         self.y = y
         self.objects: List[Obj] = list()
 
+    def to_list(self):
+        return [obj.to_dict() for obj in self.objects]
+
     def __repr__(self):
         if not self.objects:
             return " "
@@ -130,6 +133,9 @@ class Grid:
             config.move_step,
             config.prevent_overlap
         )
+    
+    def to_list(self):
+        return [[tile.to_list() for tile in row] for row in self.grid]
 
     def clear_grid(self):
         """
