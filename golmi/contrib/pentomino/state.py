@@ -1,6 +1,7 @@
 from typing import List, Dict, Tuple
 
 import numpy as np
+import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import colors as plt_colors
 
@@ -220,7 +221,7 @@ class Board(State[Piece]):
             print(f"Max attempts reached, cannot add piece from {piece_symbol}")
         return False
 
-    def to_image_array(self, image_size, ctx: BoardPlotContext = None, verbose=False):
+    def to_image_array(self, image_size, ctx: BoardPlotContext = None, verbose=False, force_headless=False):
         """ convert a state to an RGB numpy array """
         if verbose:
             print("Get Matrix")
@@ -229,9 +230,14 @@ class Board(State[Piece]):
             print("Create Figure")
         if ctx:
             return ctx.draw_board(np_board, obj_colors, bounds)
+        if force_headless:
+            backend = matplotlib.get_backend()
+            matplotlib.use('Agg')  # headless
         ctx = BoardPlotContext(image_size)
         image = ctx.draw_board(np_board, obj_colors, bounds)
         ctx.close()
+        if force_headless:
+            matplotlib.use(backend, force=True)  # switch back
         return image
 
     def __get_matrix(self) -> (np.array, List, Dict, List):
@@ -251,7 +257,7 @@ class Board(State[Piece]):
         val = 1
         # plot objects
         val += 1
-        for i, obj in enumerate([p.piece_obj for p in self.objects]):
+        for i, obj in enumerate([piece for piece in self.objects]):
             val += i
             bounds.append(val + 0.5)
             obj_colors.append(obj.color)
@@ -282,7 +288,7 @@ class Board(State[Piece]):
         """
         x_factor = image_width / self.object_grid.width
         y_factor = image_height / self.object_grid.height
-        obj = piece.piece_obj
+        obj = piece
         min_y = len(obj.block_matrix)
         min_x = len(obj.block_matrix[0])
         max_y = 0
