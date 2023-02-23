@@ -210,7 +210,7 @@ class State:
             objs = dict()
             for obj_name, obj_dict in source_dict["objs"].items():
                 # get identifier or use object key (use str for consistency)
-                id_n = obj_dict.get("id_n") or str(obj_name)
+                id_n = str(obj_dict.get("id_n")) or str(obj_name)
 
                 new_object = Obj.from_dict(
                     id_n, obj_dict, type_config

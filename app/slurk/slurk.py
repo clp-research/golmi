@@ -51,20 +51,19 @@ def get_clicked_object(room_id, x, y, blocksize):
     gripped = grippers["mouse"]["gripped"]
 
     if gripped is not None:
-        return gripped
+        return jsonify(gripped)
 
     return dict()
 
 
 @cross_origin
-@slurk.route("/<room_id>/gripped/<gripper>", methods=["GET"])
-def get_gripped_object(room_id, gripper):
+@slurk.route("/<room_id>/gripped", methods=["GET"])
+def get_gripped_object(room_id):
     model = room_manager.get_model_of_room(room_id)
-    grippers = model.get_gripper_dict()
-    gripped = grippers[gripper]["gripped"]
 
-    if gripped is not None:
-        return gripped
+    for idn, obj in model.get_obj_dict().items():
+        if obj.get("gripped") is True:
+            return jsonify({idn: obj})
 
     return dict()
 
@@ -73,7 +72,8 @@ def get_gripped_object(room_id, gripper):
 @slurk.route("/<room_id>/state", methods=["GET"])
 def get_state(room_id):
     model = room_manager.get_model_of_room(room_id)
-    return model.state.to_dict()
+    print(model.state.to_dict())
+    return jsonify(model.state.to_dict())
 
 
 @cross_origin
