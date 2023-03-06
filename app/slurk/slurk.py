@@ -88,7 +88,6 @@ def get_gripped_object(room_id):
 @slurk.route("/<room_id>/state", methods=["GET"])
 def get_state(room_id):
     model = room_manager.get_model_of_room(room_id)
-    print(model.state.to_dict())
     return jsonify(model.state.to_dict())
 
 
