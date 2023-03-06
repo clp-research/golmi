@@ -34,8 +34,8 @@ def __translate(x, y, granularity):
 
 
 @cross_origin
-@slurk.route("/<room_id>/<x>/<y>/<blocksize>", methods=["GET"])
-def get_clicked_object(room_id, x, y, blocksize):
+@slurk.route("/grip/<room_id>/<x>/<y>/<blocksize>", methods=["GET"])
+def grip_object(room_id, x, y, blocksize):
     model = room_manager.get_model_of_room(room_id)
     x, y = __translate(float(x), float(y), float(blocksize))
 
@@ -52,6 +52,22 @@ def get_clicked_object(room_id, x, y, blocksize):
 
     if gripped is not None:
         return jsonify(gripped)
+
+    return dict()
+
+
+@cross_origin
+@slurk.route("/<room_id>/<x>/<y>/<blocksize>", methods=["GET"])
+def get_clicked_object(room_id, x, y, blocksize):
+    model = room_manager.get_model_of_room(room_id)
+    x, y = __translate(float(x), float(y), float(blocksize))
+
+    tile = model.state.get_tile(x, y)
+    if tile.objects:
+        obj = tile.objects[-1].to_dict()
+        return jsonify({
+            str(obj["id_n"]): obj
+        })
 
     return dict()
 
