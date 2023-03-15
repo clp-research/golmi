@@ -22,9 +22,6 @@ class Tile:
         self.y = y
         self.objects: List[Obj] = list()
 
-    def to_list(self):
-        return [obj.to_dict() for obj in self.objects]
-
     def __repr__(self):
         if not self.objects:
             return " "
@@ -32,6 +29,9 @@ class Tile:
 
     def __str__(self):
         return self.__repr__()
+
+    def to_list(self):
+        return [obj.to_dict() for obj in self.objects]
 
 
 class Converter:
@@ -136,6 +136,23 @@ class Grid:
     
     def to_list(self):
         return [[tile.to_list() for tile in row] for row in self.grid]
+
+    def from_list(self, list_grid):
+        objects = dict()
+        for i, row in enumerate(list_grid):
+            for j, tile in enumerate(row):
+                this_tile = Tile(i, j)
+
+                for obj in tile:
+                    this_obj = Obj.from_dict(obj["id_n"], obj)
+                    this_tile.objects.append(Obj.from_dict(obj["id_n"], obj))
+
+                    if objects.get(obj["id_n"]) is None:
+                        objects[obj["id_n"]] = this_obj
+
+                self.grid[i][j] = this_tile
+
+        return objects
 
     def clear_grid(self):
         """

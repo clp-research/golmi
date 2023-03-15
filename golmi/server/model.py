@@ -106,9 +106,14 @@ class Model:
                 state, self.get_type_config(), self.config
             )
         elif isinstance(state, dict):
-            self.state = State.from_dict(
-                state, self.get_type_config(), self.config
-            )
+            if isinstance(state["objs"], list):
+                self.state = State.from_array_dict(
+                    state, self.get_type_config(), self.config
+                )
+            else:
+                self.state = State.from_dict(
+                    state, self.get_type_config(), self.config
+                )
         elif isinstance(state, State):
             self.state = state
             # replot objects and targets, just to be sure

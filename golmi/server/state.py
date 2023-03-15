@@ -316,3 +316,88 @@ class State:
         if include_grid_config:
             state_dict["grid_config"] = self.object_grid.get_grid_config().to_dict()
         return state_dict
+
+    def to_array_state(self, include_grid_config=False):
+        """
+        create a JSON-friendly representation of the current state
+        based on list representations of the grids to preserve objects
+        order if overlapping is allowed
+        """
+        state_dict = dict(
+            state_id=self.state_id,
+            objs=self.object_grid.to_list(),
+            targets=self.target_grid.to_list(),
+            grippers=self.get_gripper_dict()
+        )
+
+        if self.global_id:
+            state_dict["global_id"] = self.global_id
+
+        if include_grid_config is True:
+            state_dict["grid_config"] = self.object_grid.get_grid_config().to_dict()
+
+        return state_dict
+
+    @classmethod
+    def from_array_dict(cls, source_dict, type_config=None, grid_config: GridConfig=None):
+        """
+        @param source_dict  Dict containing State constructor parameters in array form.
+                            The keys "objs" and "grippers" are mandatory.
+                            Refer to the documentation for additional format
+                            instructions.
+        @param type_config  dict mapping type names to block matrices
+        @param grid_config dict to initialize the grids
+        @return new State instance with the given attributes
+        """
+        if not isinstance(source_dict.get("objs"), list) or \
+                not isinstance(source_dict.get("grippers"), dict):
+            raise ValueError(
+                "source_dict must contain the keys 'objs' and 'grippers' "
+                "mapping to dictionaries."
+            )
+
+        gc = None
+        if grid_config:
+            gc = grid_config
+        if "grid_config" in source_dict:
+            gc = GridConfig.from_dict(source_dict["grid_config"])
+        if not gc:
+            raise Exception("Either provide grid_config as a value in 'source_dict' or to 'from_dict' directly")
+
+        state = cls(
+            objs=dict(),
+            grippers=dict(),
+            targets=dict(),
+            grid_config=gc,
+            state_id=source_dict.get("state_id"),
+            global_id=source_dict.get("global_id")
+        )
+
+        state.object_grid.clear_grid()
+        state.target_grid.clear_grid()
+
+        # add objects directly to grid
+        objects = state.object_grid.from_list(source_dict.get("objs"))
+
+        # add targets directly to grid
+        targets = state.target_grid.from_list(source_dict.get("targets"))
+
+        # add grippers
+        grippers = dict()
+        for gr_name, gr_dict in source_dict["grippers"].items():
+            # get identifier or use gripper key (use str for consistency)
+            id_n = gr_dict.get("id_n") or str(gr_name)
+            new_gr = Gripper.from_dict(id_n, gr_dict)
+            grippers[id_n] = new_gr
+
+            # Not the nicest solution: Make sure any gripped object has
+            # its 'gripped' attribute set to True
+            if new_gr.gripped is not None:
+                objects[new_gr.gripped].gripped = True
+
+
+        state.objs = objects
+        state.targets = targets
+        state.grippers = grippers
+
+        return state

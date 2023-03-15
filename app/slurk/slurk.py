@@ -98,7 +98,4 @@ def get_array_state(room_id):
     obj_grid = model.state.object_grid
     target_grid = model.state.target_grid
 
-    return jsonify({
-        "objects": obj_grid.to_list(),
-        "targets": target_grid.to_list()
-    })
+    return jsonify(model.state.to_array_state())
