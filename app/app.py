@@ -210,21 +210,20 @@ def move(params):
                       param_is_integer(params["dx"]) and \
                       param_is_integer(params["dy"])
 
-        if model.state.grippers[params["id"]].gripped is None:
-            if good_params:
-                # continuous / looped action
-                if params.get("loop"):
-                    model.start_moving(
-                        str(params["id"]), params["dx"], params["dy"])
-                # one-time action
-                else:
-                    model.mover.apply_movement(
-                        model,
-                        "move",
-                        str(params["id"]),
-                        x_steps=params["dx"],
-                        y_steps=params["dy"]
-                    )
+        if good_params:
+            # continuous / looped action
+            if params.get("loop"):
+                model.start_moving(
+                    str(params["id"]), params["dx"], params["dy"])
+            # one-time action
+            else:
+                model.mover.apply_movement(
+                    model,
+                    "move",
+                    str(params["id"]),
+                    x_steps=params["dx"],
+                    y_steps=params["dy"]
+                )
 
 @socketio.on("stop_move")
 def stop_move(params):
