@@ -123,7 +123,7 @@ class Model:
                             "dict, or State instance.")
 
         # update views
-        self._notify_views("update_state", self.state.to_dict())
+        self._notify_views("update_state", self.state.to_array_state())
 
     def set_config(self, config):
         """
@@ -157,7 +157,7 @@ class Model:
         """
         self.state = State.empty_state(self.config)
         self.reset_loops()
-        self._notify_views("update_state", self.state.to_dict())
+        self._notify_views("update_state", self.state.to_array_state())
 
     # --- Gripper manipulation --- #
     def add_gr(self, gr_id, start_x: int = None, start_y: int = None):
@@ -264,7 +264,7 @@ class Model:
                 # state takes care of detaching object and gripper
                 self.state.ungrip(gr_id)
                 # notify view of object and gripper change
-                self._notify_views("update_objs", self.get_obj_dict())
+                self._notify_views("update_objs", self.state.object_grid.to_list())
                 self._notify_views("update_grippers", self.get_gripper_dict())
         else:
             # Check if gripper hovers over some object
@@ -274,7 +274,7 @@ class Model:
                 self.state.grip(gr_id, new_gripped)
 
                 # notify view of object and gripper change
-                self._notify_views("update_objs", self.get_obj_dict())
+                self._notify_views("update_objs", self.state.object_grid.to_list())
                 self._notify_views("update_grippers", self.get_gripper_dict())
 
     def start_moving(self, gr_id, x_steps, y_steps):

@@ -15,6 +15,7 @@ $(document).ready(function () {
             // Configuration. Is assigned at startDrawing()
             this.cols;			// canvas width in blocks
             this.rows;			// canvas height in blocks
+            this.grid_factor;
 
             // Current state
             this.objs = new Object();
@@ -48,7 +49,10 @@ $(document).ready(function () {
             });
             // new gripper state -> redraw grippers
             this.socket.on("update_grippers", (grippers) => {
+                console.log("ciaociaociao")
+                console.log(grippers)
                 this.grippers = grippers;
+                this.objs = grippers.state
                 this.redrawGr();
             });
             // new object state -> redraw objects
@@ -186,8 +190,9 @@ $(document).ready(function () {
          */
         _loadConfig(config) {
             // Save all relevant values
-            this.cols = config.width;
-            this.rows = config.height;
+            this.cols = config.width * Math.max(1, Math.floor(1/config.move_step));
+            this.rows = config.height * Math.max(1, Math.floor(1/config.move_step));
+            this.grid_factor = Math.max(1, Math.floor(1/config.move_step))
         }
 
     }; // class View end
