@@ -49,10 +49,9 @@ $(document).ready(function () {
             });
             // new gripper state -> redraw grippers
             this.socket.on("update_grippers", (grippers) => {
-                console.log("ciaociaociao")
-                console.log(grippers)
-                this.grippers = grippers;
-                this.objs = grippers.state
+                this.grippers = grippers.gr_dict;
+                this.objs = grippers.state.objs
+                this.redrawObjs();
                 this.redrawGr();
             });
             // new object state -> redraw objects

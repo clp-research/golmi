@@ -116,7 +116,7 @@ $(document).ready(function () {
             ctx.stroke();
 
             // add targets
-            this.plotArrayBoard(ctx, this.targets)
+            this.plotArrayBoard(ctx, this.targets, "cornsilk")
         }
 
         /**
@@ -139,13 +139,18 @@ $(document).ready(function () {
         }
 
 
-        plotArrayBoard(ctx, board){
+        plotArrayBoard(ctx, board, overwrite_color=null){
             for (let i=0; i<board.length; i++){
                 for (let j=0; j<board[i].length; j++){
                     if (board[i][j]){
                         for (let this_obj of board[i][j]){
-                            this._drawBlock(ctx, j, i, this_obj.color, this_obj.gripped);
-                            console.log(this_obj)
+                            // if element if gripped, overwrite the color to black
+                            let color = (this_obj.gripped) ? ("black") : (this_obj.color)
+
+                            // the color must be overwrittenb
+                            color = (overwrite_color !== null) ? overwrite_color : color
+
+                            this._drawBlock(ctx, j, i, color, this_obj.gripped);
 
                             // draw borders
                             if (this._isUpperBorder(board, i, j, this_obj)) {
@@ -183,8 +188,6 @@ $(document).ready(function () {
         drawGr() {
             let ctx = this.grCanvas.getContext("2d");
             ctx.beginPath()
-            console.log("--")
-            console.log(this.grippers)
             for (const [grId, gripper] of Object.entries(this.grippers)) {
                 // draw any gripped object first (i.e. 'below' the gripper)
                 // if (gripper.gripped) {

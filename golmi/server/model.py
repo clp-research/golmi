@@ -175,7 +175,13 @@ class Model:
         # if a new gripper was created, notify listeners
         if gr_id not in self.state.grippers:
             self.state.grippers[gr_id] = Gripper(gr_id, start_x, start_y)
-            self._notify_views("update_grippers", self.get_gripper_dict())
+            self._notify_views(
+                "update_grippers",
+                {
+                    "gr_dict": self.get_gripper_dict(),
+                    "state": self.state.to_array_state()
+                }
+            )
 
     def remove_gr(self, gr_id):
         """
@@ -184,7 +190,10 @@ class Model:
         """
         if gr_id in self.state.grippers:
             self.state.grippers.pop(gr_id)
-            self._notify_views("update_grippers", self.get_gripper_dict())
+            self._notify_views("update_grippers", {
+                    "gr_dict": self.get_gripper_dict(),
+                    "state": self.state.to_array_state()
+                })
 
     def start_gripping(self, gr_id):
         """
@@ -265,7 +274,10 @@ class Model:
                 self.state.ungrip(gr_id)
                 # notify view of object and gripper change
                 self._notify_views("update_objs", self.state.object_grid.to_list())
-                self._notify_views("update_grippers", self.get_gripper_dict())
+                self._notify_views("update_grippers", {
+                    "gr_dict": self.get_gripper_dict(),
+                    "state": self.state.to_array_state()
+                })
         else:
             # Check if gripper hovers over some object
             new_gripped = self._get_grippable(gr_id)
@@ -275,7 +287,10 @@ class Model:
 
                 # notify view of object and gripper change
                 self._notify_views("update_objs", self.state.object_grid.to_list())
-                self._notify_views("update_grippers", self.get_gripper_dict())
+                self._notify_views("update_grippers", {
+                    "gr_dict": self.get_gripper_dict(),
+                    "state": self.state.to_array_state()
+                })
 
     def start_moving(self, gr_id, x_steps, y_steps):
         """
