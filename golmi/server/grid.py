@@ -31,7 +31,7 @@ class Tile:
         return self.__repr__()
 
     def to_list(self):
-        return [obj.to_dict() for obj in self.objects]
+        return [obj.id_n for obj in self.objects]
 
 
 class Converter:
@@ -134,25 +134,30 @@ class Grid:
             config.prevent_overlap
         )
     
-    def to_list(self):
-        return [[tile.to_list() for tile in row] for row in self.grid]
-
-    def from_list(self, list_grid):
-        objects = dict()
-        for i, row in enumerate(list_grid):
+    def to_sparse_mapping(self):
+        grid = dict()
+        for i, row in enumerate(self.grid):
             for j, tile in enumerate(row):
-                this_tile = Tile(i, j)
+                if tile.objects:
+                    grid[f"{i}:{j}"] = tile.to_list()
 
-                for obj in tile:
-                    this_obj = Obj.from_dict(obj["id_n"], obj)
-                    this_tile.objects.append(Obj.from_dict(obj["id_n"], obj))
+        return grid
 
-                    if objects.get(obj["id_n"]) is None:
-                        objects[obj["id_n"]] = this_obj
+    def from_sparse_mapping(self, list_grid, object_mapping):
+        objects = dict()
+        self.clear_grid()
+        
+        for position, object_list in list_grid.items():
+            i, j = position.split(":")
+            i = int(i)
+            j = int(j)
 
-                self.grid[i][j] = this_tile
-
-        return objects
+            for object_id in object_list:
+                self.grid[i][j].objects.append(
+                    Obj.from_dict(
+                        object_id, object_mapping[object_id]
+                    )
+                )
 
     def clear_grid(self):
         """

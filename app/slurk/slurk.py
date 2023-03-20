@@ -89,13 +89,3 @@ def get_gripped_object(room_id):
 def get_state(room_id):
     model = room_manager.get_model_of_room(room_id)
     return jsonify(model.state.to_dict())
-
-
-@cross_origin
-@slurk.route("/<room_id>/array_state", methods=["GET"])
-def get_array_state(room_id):
-    model = room_manager.get_model_of_room(room_id)
-    obj_grid = model.state.object_grid
-    target_grid = model.state.target_grid
-
-    return jsonify(model.state.to_array_state())

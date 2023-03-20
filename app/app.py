@@ -113,7 +113,7 @@ def join(params):
     # inform client about room name, current config and state using their
     # private channel
     emit("update_config", room_manager.get_model_of_room(room_id).config.to_dict())
-    emit("update_state", room_manager.get_model_of_room(room_id).state.to_array_state())
+    emit("update_state", room_manager.get_model_of_room(room_id).state.to_dict())
 
 
 @socketio.on("disconnect")

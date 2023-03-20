@@ -18,9 +18,11 @@ $(document).ready(function () {
             this.grid_factor;
 
             // Current state
-            this.objs = new Object();
             this.grippers = new Object();
+            this.objs = new Object();
+            this.objs_grid = new Object();
             this.targets = new Object();
+            this.target_grid = new Object();
         }
 
         /**
@@ -35,6 +37,7 @@ $(document).ready(function () {
                     this.onUpdateState(state) // hook
                     this.grippers = state["grippers"];
                     this.objs = state["objs"];
+                    this.objs_grid = state["objs_grid"]
                     this.redrawGr();
                     this.redrawObjs();
                 } else {
@@ -44,28 +47,33 @@ $(document).ready(function () {
                 }
                 if (state["targets"]) {
                     this.targets = state["targets"];
+                    this.targets_grid = state["targets_grid"]
                     this.redrawBg();
                 }
             });
             // new gripper state -> redraw grippers
-            this.socket.on("update_grippers", (grippers) => {
-                this.grippers = grippers.gr_dict;
-                this.objs = grippers.state.objs
-                this.redrawObjs();
-                this.redrawGr();
-            });
+            // this.socket.on("update_grippers", (state) => {
+            //     console.log(state)
+            //     this.grippers = state["grippers"];
+            //     this.objs = state["objs"];
+            //     this.objs_grid = state["obj_grid"]
+            //     this.redrawObjs();
+            //     this.redrawGr();
+            // });
             // new object state -> redraw objects
-            this.socket.on("update_objs", (objs) => {
-                this.onUpdateObjects(objs); // hook
-                this.objs = objs;
-                this.redrawObjs();
-            });
+            // this.socket.on("update_objs", (objs) => {
+            //     this.onUpdateObjects(objs); // hook
+            //     this.objs = state["objs"];
+            //     this.objs_grid = state["obj_grid"]
+            //     this.redrawObjs();
+            // });
             // new target state -> redraw background
-            this.socket.on("update_targets", (targets) => {
-                this.onUpdateTargets(targets); // hook
-                this.targets = targets;
-                this.redrawBg();
-            });
+            // this.socket.on("update_targets", (targets) => {
+            //     this.onUpdateTargets(targets); // hook
+            //     this.targets = targets["targets"];
+            //     this.targets_grid = targets["targets_grid"]
+            //     this.redrawBg();
+            // });
             // new configuration -> save values and redraw everything
             this.socket.on("update_config", (config) => {
                 this._loadConfig(config);

@@ -221,9 +221,6 @@ class Mover:
 
             # send update to views
             model._notify_views(
-                "update_grippers",
-                {
-                    "gr_dict": model.get_gripper_dict(),
-                    "state": model.state.to_array_state()
-                }
+                "update_state",
+                model.state.to_dict()
             )

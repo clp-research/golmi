@@ -116,7 +116,9 @@ $(document).ready(function () {
             ctx.stroke();
 
             // add targets
-            this.plotArrayBoard(ctx, this.targets, "cornsilk")
+            console.log(this.targets_grid)
+            console.log(this.targets)
+            this.plotArrayBoard(ctx, this.targets_grid, this.targets, "cornsilk")
         }
 
         /**
@@ -135,38 +137,39 @@ $(document).ready(function () {
         drawObjs() {
             let ctx = this.objCanvas.getContext("2d");
             ctx.beginPath();
-            this.plotArrayBoard(ctx, this.objs)
+            this.plotArrayBoard(ctx, this.objs_grid, this.objs)
         }
 
 
-        plotArrayBoard(ctx, board, overwrite_color=null){
-            for (let i=0; i<board.length; i++){
-                for (let j=0; j<board[i].length; j++){
-                    if (board[i][j]){
-                        for (let this_obj of board[i][j]){
-                            // if element if gripped, overwrite the color to black
-                            let color = (this_obj.gripped) ? ("black") : (this_obj.color)
+        plotArrayBoard(ctx, board, obj_mapping, overwrite_color=null){
+            for (let [key, value] of Object.entries(board)) {
+                
+                let position = key.split(":")
+                let i = parseInt(position[0])
+                let j = parseInt(position[1])
 
-                            // the color must be overwrittenb
-                            color = (overwrite_color !== null) ? overwrite_color : color
+                for (let obj_idn of value){
+                    let this_obj = obj_mapping[obj_idn]                    
+                    let color = (this_obj.gripped) ? ("black") : (this_obj.color)
 
-                            this._drawBlock(ctx, j, i, color, this_obj.gripped);
+                    // the color must be overwrittenb
+                    color = (overwrite_color !== null) ? overwrite_color : color
 
-                            // draw borders
-                            if (this._isUpperBorder(board, i, j, this_obj)) {
-                                this._drawUpperBorder(ctx, j, i);
-                            }
-                            if (this._isLowerBorder(board, i, j, this_obj)) {
-                                this._drawLowerBorder(ctx, j, i);
-                            }
-                            if (this._isLeftBorder(board, i, j, this_obj)) {
-                                this._drawLeftBorder(ctx, j, i);
-                            }
-                            if (this._isRightBorder(board, i, j, this_obj)) {
-                                this._drawRightBorder(ctx, j, i);
-                            }                            
-                        }
+                    this._drawBlock(ctx, j, i, color, this_obj.gripped);
+
+                    // draw borders
+                    if (this._isUpperBorder(board, i, j, obj_idn)) {
+                        this._drawUpperBorder(ctx, j, i);
                     }
+                    if (this._isLowerBorder(board, i, j, obj_idn)) {
+                        this._drawLowerBorder(ctx, j, i);
+                    }
+                    if (this._isLeftBorder(board, i, j, obj_idn)) {
+                        this._drawLeftBorder(ctx, j, i);
+                    }
+                    if (this._isRightBorder(board, i, j, obj_idn)) {
+                        this._drawRightBorder(ctx, j, i);
+                    }   
                 }
             }
         }
@@ -327,57 +330,40 @@ $(document).ready(function () {
             return coord * this.blockSize;
         }
 
-        _isUpperBorder(matrix, row, column, this_obj) {
-            if (row === 0 || matrix[row-1][column].length === 0){
+        _isUpperBorder(sparse_matrix, row, column, this_obj_idn) {
+            if (row === 0 || (!(`${row-1}:${column}` in sparse_matrix))){
                 return true;
-            } else {
-                for (let other_obj of matrix[row-1][column]){
-                    if (JSON.stringify(other_obj) !== JSON.stringify(this_obj)){
-                        return true;
-                    }
-                }
+            } else if (!(sparse_matrix[`${row-1}:${column}`].includes(this_obj_idn))) {
+                return true
             }
             return false
         }
 
-        _isLowerBorder(matrix, row, column, this_obj) {
-            if (row === this.rows - 1 || matrix[row+1][column].length === 0){
+        _isLowerBorder(sparse_matrix, row, column, this_obj_idn) {
+            if (row === this.rows - 1 || (!(`${row+1}:${column}` in sparse_matrix))){
                 return true;
-            } else {
-                for (let other_obj of matrix[row+1][column]){
-                    if (JSON.stringify(other_obj) !== JSON.stringify(this_obj)){
-                        return true;
-                    }
-                }
+            } else if (!(sparse_matrix[`${row+1}:${column}`].includes(this_obj_idn))) {
+                return true
             }
             return false
         }
 
-        _isLeftBorder(matrix, row, column, this_obj) {
-            if (column === 0 || matrix[row][column-1].length === 0){
+        _isLeftBorder(sparse_matrix, row, column, this_obj_idn) {
+            if (column === 0 || (!(`${row}:${column-1}` in sparse_matrix))){
                 return true;
-            } else {
-                for (let other_obj of matrix[row][column-1]){
-                    if (JSON.stringify(other_obj) !== JSON.stringify(this_obj)){
-                        return true;
-                    }
-                }
+            } else if (!(sparse_matrix[`${row}:${column-1}`].includes(this_obj_idn))) {
+                return true
             }
             return false
         }
 
-        _isRightBorder(matrix, row, column, this_obj) {
-            if (column === this.cols - 1 || matrix[row][column + 1].length === 0){
+        _isRightBorder(sparse_matrix, row, column, this_obj_idn) {
+            if (column === this.cols - 1 || (!(`${row}:${column+1}` in sparse_matrix))){
                 return true;
-            } else {
-                for (let other_obj of matrix[row][column+1]){
-                    if (JSON.stringify(other_obj) !== JSON.stringify(this_obj)){
-                        return true;
-                    }
-                }
+            } else if (!(sparse_matrix[`${row}:${column+1}`].includes(this_obj_idn))) {
+                return true
             }
             return false
         }
-
     }; // class LayerView end
 }); // on document ready end
