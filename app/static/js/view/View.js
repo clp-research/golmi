@@ -33,23 +33,14 @@ $(document).ready(function () {
             // new state -> redraw object and gripper layer,
             // if targets are given, redraw background
             this.socket.on("update_state", (state) => {
-                if (state["grippers"] && state["objs"]) {
-                    this.onUpdateState(state) // hook
-                    this.grippers = state["grippers"];
-                    this.objs = state["objs"];
-                    this.objs_grid = state["objs_grid"]
-                    this.redrawGr();
-                    this.redrawObjs();
-                } else {
-                    console.log("Error: Received state from model does not " +
-                        "have the right format. " +
-                        "Expected keys 'grippers' and 'objs'.");
-                }
-                if (state["targets"]) {
-                    this.targets = state["targets"];
-                    this.targets_grid = state["targets_grid"]
-                    this.redrawBg();
-                }
+                this.onUpdateState(state) // hook
+                this.grippers = state["grippers"];
+                this.objs = state["objs"];
+                this.objs_grid = state["objs_grid"]
+                this.targets = state["targets"];
+                this.targets_grid = state["targets_grid"]
+                this.redraw();
+      
             });
             // new configuration -> save values and redraw everything
             this.socket.on("update_config", (config) => {
