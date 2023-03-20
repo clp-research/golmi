@@ -116,8 +116,6 @@ $(document).ready(function () {
             ctx.stroke();
 
             // add targets
-            console.log(this.targets_grid)
-            console.log(this.targets)
             this.plotArrayBoard(ctx, this.targets_grid, this.targets, "cornsilk")
         }
 
@@ -150,25 +148,25 @@ $(document).ready(function () {
 
                 for (let obj_idn of value){
                     let this_obj = obj_mapping[obj_idn]                    
-                    let color = (this_obj.gripped) ? ("black") : (this_obj.color)
+                    let highlight = (this_obj.gripped) ? ("black") : (false)
 
                     // the color must be overwrittenb
-                    color = (overwrite_color !== null) ? overwrite_color : color
+                    let color = (overwrite_color !== null) ? overwrite_color : this_obj.color
 
                     this._drawBlock(ctx, j, i, color, this_obj.gripped);
 
                     // draw borders
                     if (this._isUpperBorder(board, i, j, obj_idn)) {
-                        this._drawUpperBorder(ctx, j, i);
+                        this._drawUpperBorder(ctx, j, i, highlight);
                     }
                     if (this._isLowerBorder(board, i, j, obj_idn)) {
-                        this._drawLowerBorder(ctx, j, i);
+                        this._drawLowerBorder(ctx, j, i, highlight);
                     }
                     if (this._isLeftBorder(board, i, j, obj_idn)) {
-                        this._drawLeftBorder(ctx, j, i);
+                        this._drawLeftBorder(ctx, j, i, highlight);
                     }
                     if (this._isRightBorder(board, i, j, obj_idn)) {
-                        this._drawRightBorder(ctx, j, i);
+                        this._drawRightBorder(ctx, j, i, highlight);
                     }   
                 }
             }
