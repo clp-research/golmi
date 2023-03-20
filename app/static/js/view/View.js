@@ -22,7 +22,7 @@ $(document).ready(function () {
             this.objs = new Object();
             this.objs_grid = new Object();
             this.targets = new Object();
-            this.target_grid = new Object();
+            this.targets_grid = new Object();
         }
 
         /**
