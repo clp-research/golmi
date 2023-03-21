@@ -31,7 +31,7 @@ class Tile:
         return self.__repr__()
 
     def to_list(self):
-        return [obj.id_n for obj in self.objects]
+        return [str(obj.id_n) for obj in self.objects]
 
 
 class Converter:
