@@ -9,7 +9,7 @@ class Test(unittest.TestCase):
     """
     def test_rotate(self):
         o = Obj(
-            1, "L", 0, 0, 5, 5,
+            1, "L", 0, 0,
             block_matrix=[
                 [0, 1, 0, 0, 0],
                 [0, 1, 0, 0, 0],
@@ -49,7 +49,7 @@ class Test(unittest.TestCase):
 
     def test_flip(self):
         o = Obj(
-            1, "L", 0, 0, 5, 5,
+            1, "L", 0, 0,
             block_matrix=[
                 [0, 1, 0, 0, 0],
                 [0, 1, 0, 0, 0],
@@ -72,7 +72,7 @@ class Test(unittest.TestCase):
 
     def test_occupied(self):
         o = Obj(
-            1, "L", 0, 0, 5, 5,
+            1, "L", 0, 0,
             block_matrix=[
                 [0, 1, 0, 0, 0],
                 [0, 1, 0, 0, 0],
