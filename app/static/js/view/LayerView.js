@@ -1,5 +1,4 @@
 $(document).ready(function () {
-
     /**
      * Extends the generic View class by implementations of the drawing
      * functions.
@@ -116,32 +115,7 @@ $(document).ready(function () {
             ctx.stroke();
 
             // add targets
-            for (const target of Object.values(this.targets))	{
-                // for use cases where targets can be gripped: don't draw
-                // gripped targets on this layer, should be drawn on the
-                // gripper layer instead
-                if (target.gripped) { continue; }
-
-                let blockMatrix = target.block_matrix;
-
-                // call drawing helper functions with additional infos
-                let params = {
-                    x: target.x,
-                    y: target.y,
-                    color: "Cornsilk"
-                }
-                this._drawBlockObj(ctx, blockMatrix, params);
-            }
-        }
-
-        /**
-         * Redraw the background.
-         * In contrast to drawBg(), this function assumes the background has
-         * been drawn before and the old drawing needs to be removed first.
-         */
-        redrawBg() {
-            this.clearBg();
-            this.drawBg();
+            this.plotArrayBoard(ctx, this.targets_grid, this.targets, "cornsilk")
         }
 
         /**
@@ -150,31 +124,40 @@ $(document).ready(function () {
         drawObjs() {
             let ctx = this.objCanvas.getContext("2d");
             ctx.beginPath();
-            // draw each object
-            for (const obj of Object.values(this.objs))	{
-                // skip any gripped object here
-                if (obj.gripped) { continue; }
-
-                let blockMatrix = obj.block_matrix;
-
-                // call drawing helper functions with additional infos
-                let params = {
-                    x: obj.x,
-                    y: obj.y,
-                    color: obj.color
-                }
-                this._drawBlockObj(ctx, blockMatrix, params);
-            }
+            this.plotArrayBoard(ctx, this.objs_grid, this.objs)
         }
 
-        /**
-         * Redraw the (static) objects.
-         * In contrast to drawObjs(), this function assumes the objects have
-         * been drawn before and the old drawing needs to be removed first.
-         */
-        redrawObjs() {
-            this.clearObj();
-            this.drawObjs();
+
+        plotArrayBoard(ctx, board, obj_mapping, overwrite_color=null){
+            for (let [key, value] of Object.entries(board)) {
+                let position = key.split(":")
+                let i = parseInt(position[0])
+                let j = parseInt(position[1])
+
+                for (let obj_idn of value){
+                    let this_obj = obj_mapping[obj_idn]                    
+                    let highlight = (this_obj.gripped) ? ("black") : (false)
+
+                    // the color must be overwrittenb
+                    let color = (overwrite_color !== null) ? overwrite_color : this_obj.color
+
+                    this._drawBlock(ctx, j, i, color, this_obj.gripped);
+
+                    // draw borders
+                    if (this._isUpperBorder(board, i, j, obj_idn)) {
+                        this._drawUpperBorder(ctx, j, i, highlight);
+                    }
+                    if (this._isLowerBorder(board, i, j, obj_idn)) {
+                        this._drawLowerBorder(ctx, j, i, highlight);
+                    }
+                    if (this._isLeftBorder(board, i, j, obj_idn)) {
+                        this._drawLeftBorder(ctx, j, i, highlight);
+                    }
+                    if (this._isRightBorder(board, i, j, obj_idn)) {
+                        this._drawRightBorder(ctx, j, i, highlight);
+                    }   
+                }
+            }
         }
 
         /**
@@ -185,25 +168,9 @@ $(document).ready(function () {
             let ctx = this.grCanvas.getContext("2d");
             ctx.beginPath()
             for (const [grId, gripper] of Object.entries(this.grippers)) {
-                // draw any gripped object first (i.e. 'below' the gripper)
-                if (gripper.gripped) {
-                    for (const [grippedId, grippedObj] of Object.entries(gripper.gripped)) {
-                        let blockMatrix = grippedObj.block_matrix;
-
-                        let params = {
-                            x: grippedObj.x,
-                            y: grippedObj.y,
-                            color: grippedObj.color,
-                            highlight: "black" // highlight a gripped object
-                        }
-                        this._drawBlockObj(ctx,
-                                           blockMatrix,
-                                           params);
-                    }
-                }
-
                 // modify style depending on whether an object is gripped
                 let grSize = gripper.gripped ? 0.1 : 0.3;
+                grSize = grSize * this.grid_factor
 
                 // draw the gripper itself
                 // --- config ---
@@ -214,53 +181,20 @@ $(document).ready(function () {
                 // We draw a gripper from that corner to the bottom-right
                 ctx.beginPath();
                 // top-left to bottom-right
-                ctx.moveTo(this._toPxl(gripper.x - grSize), this._toPxl(gripper.y - grSize));
-                ctx.lineTo(this._toPxl(gripper.x + 1 + grSize), this._toPxl(gripper.y + 1 + grSize));
+
+                let x = gripper.x * this.grid_factor
+                let y = gripper.y * this.grid_factor
+
+                ctx.moveTo(this._toPxl(x - grSize), this._toPxl(y - grSize));
+                ctx.lineTo(this._toPxl(x + 1 + grSize), this._toPxl(y + 1 + grSize));
                 // bottom-left to top-right
-                ctx.moveTo(this._toPxl(gripper.x - grSize), this._toPxl(gripper.y + 1 + grSize));
-                ctx.lineTo(this._toPxl(gripper.x + 1 + grSize), this._toPxl(gripper.y - grSize));
+                ctx.moveTo(this._toPxl(x - grSize), this._toPxl(y + 1 + grSize));
+                ctx.lineTo(this._toPxl(x + 1 + grSize), this._toPxl(y - grSize));
                 ctx.stroke();
             }
         }
 
-        /**
-         * Redraw the gripper object and, if applicable, the gripped object.
-         * In contrast to drawGr(), this function expects the gripper has been
-         * drawn before and the old drawing needs to be removed first.
-         */
-        redrawGr() {
-            this.clearGr();
-            this.drawGr();
-        }
-
         // --- draw helper functions ---
-
-        _drawBlockObj(ctx, bMatrix, params) {
-            // Draw blocks
-            for (let r=0; r<bMatrix.length;r++) {
-                bMatrix[r].forEach((block, c) =>  {
-                    if (block) { // draw if matrix field contains a 1
-                        let x = params.x + c;
-                        let y = params.y + r;
-                        this._drawBlock(ctx, x, y, params.color);
-                        // draw object borders
-                        if (this._isUpperBorder(bMatrix, c, r)) {
-                            this._drawUpperBorder(ctx, x, y, params.highlight);
-                        }
-                        if (this._isLowerBorder(bMatrix, c, r)) {
-                            this._drawLowerBorder(ctx, x, y, params.highlight);
-                        }
-                        if (this._isLeftBorder(bMatrix, c, r)) {
-                            this._drawLeftBorder(ctx, x, y, params.highlight);
-                        }
-                        if (this._isRightBorder(bMatrix, c, r)) {
-                            this._drawRightBorder(ctx, x, y, params.highlight);
-                        }
-                    }
-                });
-            }
-        }
-
         _drawBlock(ctx, x, y, color, lineColor="grey", lineWidth=1) {
             // --- config ---
             ctx.fillStyle = color;
@@ -317,29 +251,65 @@ $(document).ready(function () {
             return coord * this.blockSize;
         }
 
-        _isUpperBorder(blockMatrix, column, row) {
-            // true if 'row' is the top row OR there is no block above
-            return row == 0 || blockMatrix[row-1][column] == 0;
+        _isUpperBorder(sparse_matrix, row, column, this_obj_idn) {
+            if (row === 0){
+                return true;
+
+            // cell above is empty
+            } else if (!(`${row-1}:${column}` in sparse_matrix)){
+                return true
+            
+            // cell above does not contain this object
+            } else if (!(sparse_matrix[`${row-1}:${column}`].includes(this_obj_idn))) {
+                return true
+            }
+            return false
         }
 
-        _isLowerBorder(blockMatrix, column, row) {
-            // true if 'row' is the bottom row OR there is no block below
-            return row == (blockMatrix.length-1) ||
-                blockMatrix[row+1][column] == 0;
+        _isLowerBorder(sparse_matrix, row, column, this_obj_idn) {
+            if (row === this.rows - 1){
+                return true
+            }
+
+            // cell below is empty
+            else if (!(`${row+1}:${column}` in sparse_matrix)){
+                return true
+                
+            // cell below does not contain this object
+            } else if (!(sparse_matrix[`${row+1}:${column}`].includes(this_obj_idn))) {
+                return true
+            }
+            return false
         }
 
-        _isLeftBorder(blockMatrix, column, row) {
-            // true if 'column' is the leftmost column OR there is no block
-            // to the left
-            return column == 0 || blockMatrix[row][column-1] == 0;
+        _isLeftBorder(sparse_matrix, row, column, this_obj_idn) {
+            if (column === 0){
+                return true
+
+            // cell on the left is empty
+            } else if (!(`${row}:${column-1}` in sparse_matrix)){
+                return true;
+
+            // cell on the left does not contain this object
+            } else if (!(sparse_matrix[`${row}:${column-1}`].includes(this_obj_idn))) {
+                return true
+            }
+            return false
         }
 
-        _isRightBorder(blockMatrix, column, row) {
-            // true if 'column' is the rightmost column OR there is no block
-            // to the right
-            return column == (blockMatrix[row].length-1) ||
-                blockMatrix[row][column+1] == 0;
-        }
+        _isRightBorder(sparse_matrix, row, column, this_obj_idn) {
+            if (column === this.cols - 1){
+                return true
 
+            // cell on the right is empty
+            } else if (!(`${row}:${column+1}` in sparse_matrix)){
+                return true
+            
+            // cell on the right does not contain this object
+            } else if (!(sparse_matrix[`${row}:${column+1}`].includes(this_obj_idn))) {
+                return true
+            }
+            return false
+        }
     }; // class LayerView end
 }); // on document ready end

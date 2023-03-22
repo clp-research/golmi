@@ -135,15 +135,12 @@ class Mover:
             - Model instance
             - movement type {"move", "flip", "rotate"}
             - gr_id: id of the gripper
-
         based on the movement type the function expects
         keyword arguments:
             - move:     - x_steps
                         - y_steps
-
             - rotate:   - direction
                         - rotation_step (optional)
-
             - flip:     does not require extra arguments
         """
         # extract config and state from model
@@ -221,6 +218,6 @@ class Mover:
 
             # send update to views
             model._notify_views(
-                "update_grippers",
-                model.get_gripper_dict()
+                "update_state",
+                model.state.to_dict()
             )

@@ -30,6 +30,9 @@ class Tile:
     def __str__(self):
         return self.__repr__()
 
+    def to_list(self):
+        return [str(obj.id_n) for obj in self.objects]
+
 
 class Converter:
     """
@@ -130,6 +133,31 @@ class Grid:
             config.move_step,
             config.prevent_overlap
         )
+    
+    def to_sparse_mapping(self):
+        grid = dict()
+        for i, row in enumerate(self.grid):
+            for j, tile in enumerate(row):
+                if tile.objects:
+                    grid[f"{i}:{j}"] = tile.to_list()
+
+        return grid
+
+    def from_sparse_mapping(self, list_grid, object_mapping):
+        objects = dict()
+        self.clear_grid()
+        
+        for position, object_list in list_grid.items():
+            i, j = position.split(":")
+            i = int(i)
+            j = int(j)
+
+            for object_id in object_list:
+                self.grid[i][j].objects.append(
+                    Obj.from_dict(
+                        object_id, object_mapping[object_id]
+                    )
+                )
 
     def clear_grid(self):
         """
@@ -151,7 +179,6 @@ class Grid:
         grid can be accessed:
             -as a normal 2D-array with int as indeces -> matrix[y][x]
             -by giving a dictionary dict = {"x": x, "y": y}
-
         expects converted coordinates
         """
         if isinstance(i, (int, float)):

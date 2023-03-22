@@ -15,11 +15,14 @@ $(document).ready(function () {
             // Configuration. Is assigned at startDrawing()
             this.cols;			// canvas width in blocks
             this.rows;			// canvas height in blocks
+            this.grid_factor;
 
             // Current state
-            this.objs = new Object();
             this.grippers = new Object();
+            this.objs = new Object();
+            this.objs_grid = new Object();
             this.targets = new Object();
+            this.targets_grid = new Object();
         }
 
         /**
@@ -30,38 +33,14 @@ $(document).ready(function () {
             // new state -> redraw object and gripper layer,
             // if targets are given, redraw background
             this.socket.on("update_state", (state) => {
-                if (state["grippers"] && state["objs"]) {
-                    this.onUpdateState(state) // hook
-                    this.grippers = state["grippers"];
-                    this.objs = state["objs"];
-                    this.redrawGr();
-                    this.redrawObjs();
-                } else {
-                    console.log("Error: Received state from model does not " +
-                        "have the right format. " +
-                        "Expected keys 'grippers' and 'objs'.");
-                }
-                if (state["targets"]) {
-                    this.targets = state["targets"];
-                    this.redrawBg();
-                }
-            });
-            // new gripper state -> redraw grippers
-            this.socket.on("update_grippers", (grippers) => {
-                this.grippers = grippers;
-                this.redrawGr();
-            });
-            // new object state -> redraw objects
-            this.socket.on("update_objs", (objs) => {
-                this.onUpdateObjects(objs); // hook
-                this.objs = objs;
-                this.redrawObjs();
-            });
-            // new target state -> redraw background
-            this.socket.on("update_targets", (targets) => {
-                this.onUpdateTargets(targets); // hook
-                this.targets = targets;
-                this.redrawBg();
+                this.onUpdateState(state) // hook
+                this.grippers = state["grippers"];
+                this.objs = state["objs"];
+                this.objs_grid = state["objs_grid"]
+                this.targets = state["targets"];
+                this.targets_grid = state["targets_grid"]
+                this.redraw();
+      
             });
             // new configuration -> save values and redraw everything
             this.socket.on("update_config", (config) => {
@@ -186,8 +165,9 @@ $(document).ready(function () {
          */
         _loadConfig(config) {
             // Save all relevant values
-            this.cols = config.width;
-            this.rows = config.height;
+            this.cols = config.width * Math.max(1, Math.floor(1/config.move_step));
+            this.rows = config.height * Math.max(1, Math.floor(1/config.move_step));
+            this.grid_factor = Math.max(1, Math.floor(1/config.move_step))
         }
 
     }; // class View end

@@ -210,7 +210,7 @@ class State:
             objs = dict()
             for obj_name, obj_dict in source_dict["objs"].items():
                 # get identifier or use object key (use str for consistency)
-                id_n = obj_dict.get("id_n") or str(obj_name)
+                id_n = str(obj_dict.get("id_n")) or str(obj_name)
 
                 new_object = Obj.from_dict(
                     id_n, obj_dict, type_config
@@ -249,13 +249,32 @@ class State:
                 "does not have the right format.\n"
                 "Please refer to the documentation."
             )
-        state_id = None
-        if "state_id" in source_dict:
-            state_id = source_dict["state_id"]
-        global_id = None
-        if "global_id" in source_dict:
-            global_id = source_dict["global_id"]
-        return cls(objs, grippers, targets, gc, state_id, global_id)
+
+        state =  cls(
+            objs=objs,
+            grippers=grippers,
+            targets=targets,
+            grid_config=gc,
+            state_id=source_dict.get("state_id"),
+            global_id=source_dict.get("global_id")
+        )
+
+        state.object_grid.clear_grid()
+        state.target_grid.clear_grid()
+
+        # add objects directly to grid
+        state.object_grid.from_sparse_mapping(
+            source_dict["objs_grid"],
+            source_dict["objs"]
+        )
+
+        # add targets directly to grid
+        state.target_grid.from_sparse_mapping(
+            source_dict["targets_grid"],
+            source_dict["targets"]
+        )
+
+        return state
 
     def remove_object(self, obj, object_is_target=False):
         """
@@ -303,16 +322,23 @@ class State:
 
     def to_dict(self, include_grid_config=False):
         """
-        Create a JSON-friendly representation of the current state
-        @return dict containing current grippers and objects
+        create a JSON-friendly representation of the current state
+        based on list representations of the grids to preserve objects
+        order if overlapping is allowed
         """
-        state_dict = dict()
-        state_dict["state_id"] = self.state_id
+        state_dict = dict(
+            state_id=self.state_id,
+            objs=self.get_obj_dict(),
+            objs_grid=self.object_grid.to_sparse_mapping(),
+            targets=self.get_target_dict(),
+            targets_grid=self.target_grid.to_sparse_mapping(),
+            grippers=self.get_gripper_dict()
+        )
+
         if self.global_id:
             state_dict["global_id"] = self.global_id
-        state_dict["grippers"] = self.get_gripper_dict()
-        state_dict["objs"] = self.get_obj_dict()
-        state_dict["targets"] = self.get_target_dict()
-        if include_grid_config:
+
+        if include_grid_config is True:
             state_dict["grid_config"] = self.object_grid.get_grid_config().to_dict()
+
         return state_dict

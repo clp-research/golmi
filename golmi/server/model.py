@@ -170,7 +170,7 @@ class Model:
         # if a new gripper was created, notify listeners
         if gr_id not in self.state.grippers:
             self.state.grippers[gr_id] = Gripper(gr_id, start_x, start_y)
-            self._notify_views("update_grippers", self.get_gripper_dict())
+            self._notify_views("update_state", self.state.to_dict())
 
     def remove_gr(self, gr_id):
         """
@@ -179,7 +179,7 @@ class Model:
         """
         if gr_id in self.state.grippers:
             self.state.grippers.pop(gr_id)
-            self._notify_views("update_grippers", self.get_gripper_dict())
+            self._notify_views("update_state", self.state.to_dict())
 
     def start_gripping(self, gr_id):
         """
@@ -259,8 +259,7 @@ class Model:
                 # state takes care of detaching object and gripper
                 self.state.ungrip(gr_id)
                 # notify view of object and gripper change
-                self._notify_views("update_objs", self.get_obj_dict())
-                self._notify_views("update_grippers", self.get_gripper_dict())
+                self._notify_views("update_state", self.state.to_dict())
         else:
             # Check if gripper hovers over some object
             new_gripped = self._get_grippable(gr_id)
@@ -269,8 +268,7 @@ class Model:
                 self.state.grip(gr_id, new_gripped)
 
                 # notify view of object and gripper change
-                self._notify_views("update_objs", self.get_obj_dict())
-                self._notify_views("update_grippers", self.get_gripper_dict())
+                self._notify_views("update_state", self.state.to_dict())
 
     def start_moving(self, gr_id, x_steps, y_steps):
         """
@@ -379,7 +377,6 @@ class Model:
         """
         Spawn a greenthread.GreenThread instance that executes
         fn until stop_loop is called.
-
         @param action_type	str, one of the action types defined by the config
         @param gripper      id of the gripper to perform the action with
         @param fn           function to loop
