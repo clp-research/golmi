@@ -1,3 +1,6 @@
+# ABOUT THIS BRANCH
+This branch derives from the slurk branch and also implements the new state format based on sparse grid representation
+
 # GOLMI
 ## - General Objects in Language-driven Manipulation Interfaces -
 
