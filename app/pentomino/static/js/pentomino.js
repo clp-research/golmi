@@ -13,7 +13,9 @@ $(document).ready(function () {
     const CUSTOM_CONFIG = {
         "move_step": 0.5,
         "width": 25,
-        "height": 25
+        "height": 25,
+        "prevent_overlap": true,
+        "snap_to_grid": false
     };
 
     // --- create a socket --- //

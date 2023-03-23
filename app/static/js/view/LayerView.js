@@ -129,6 +129,8 @@ $(document).ready(function () {
 
 
         plotArrayBoard(ctx, board, obj_mapping, overwrite_color=null){
+            // first plot the objects without borders
+            // to avoid artifacts
             for (let [key, value] of Object.entries(board)) {
                 let position = key.split(":")
                 let i = parseInt(position[0])
@@ -142,8 +144,19 @@ $(document).ready(function () {
                     let color = (overwrite_color !== null) ? overwrite_color : this_obj.color
 
                     this._drawBlock(ctx, j, i, color, this_obj.gripped);
+                }
+            }
 
-                    // draw borders
+            // only plot borders
+            for (let [key, value] of Object.entries(board)) {
+                let position = key.split(":")
+                let i = parseInt(position[0])
+                let j = parseInt(position[1])
+
+                for (let obj_idn of value){
+                    let this_obj = obj_mapping[obj_idn]                    
+                    let highlight = (this_obj.gripped) ? ("black") : (false)
+
                     if (this._isUpperBorder(board, i, j, obj_idn)) {
                         this._drawUpperBorder(ctx, j, i, highlight);
                     }
@@ -155,7 +168,7 @@ $(document).ready(function () {
                     }
                     if (this._isRightBorder(board, i, j, obj_idn)) {
                         this._drawRightBorder(ctx, j, i, highlight);
-                    }   
+                    }
                 }
             }
         }
@@ -307,13 +320,13 @@ $(document).ready(function () {
             let other_cell = sparse_matrix[other_cell_coord]
             let this_cell = sparse_matrix[this_cell_coord]
 
-
             // cell above is empty
             if (!(other_cell_coord in sparse_matrix)){
                 return true
             }
 
-            if (other_cell.includes(this_obj_idn) && other_cell[other_cell.length - 1] == this_obj_idn){
+            // other cell contains this object and it's the one on top
+            if (other_cell.includes(this_obj_idn) && other_cell[other_cell.length - 1] === this_obj_idn){
                 return false
             }
 
@@ -324,6 +337,7 @@ $(document).ready(function () {
 
             // cell above does not contain this object
             if (!(other_cell.includes(this_obj_idn))) {
+                // this object is the one on top of its cell
                 if (this_cell[this_cell.length - 1] === this_obj_idn){
                     return true
                 }
