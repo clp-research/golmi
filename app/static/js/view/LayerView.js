@@ -254,16 +254,14 @@ $(document).ready(function () {
         _isUpperBorder(sparse_matrix, row, column, this_obj_idn) {
             if (row === 0){
                 return true;
-
-            // cell above is empty
-            } else if (!(`${row-1}:${column}` in sparse_matrix)){
-                return true
-            
-            // cell above does not contain this object
-            } else if (!(sparse_matrix[`${row-1}:${column}`].includes(this_obj_idn))) {
-                return true
             }
-            return false
+
+            return this._borderCheck(
+                sparse_matrix,
+                `${row}:${column}`,
+                `${row-1}:${column}`,
+                this_obj_idn
+            )
         }
 
         _isLowerBorder(sparse_matrix, row, column, this_obj_idn) {
@@ -271,43 +269,64 @@ $(document).ready(function () {
                 return true
             }
 
-            // cell below is empty
-            else if (!(`${row+1}:${column}` in sparse_matrix)){
-                return true
-                
-            // cell below does not contain this object
-            } else if (!(sparse_matrix[`${row+1}:${column}`].includes(this_obj_idn))) {
-                return true
-            }
-            return false
+            return this._borderCheck(
+                sparse_matrix,
+                `${row}:${column}`,
+                `${row+1}:${column}`,
+                this_obj_idn
+            )
         }
 
         _isLeftBorder(sparse_matrix, row, column, this_obj_idn) {
             if (column === 0){
                 return true
-
-            // cell on the left is empty
-            } else if (!(`${row}:${column-1}` in sparse_matrix)){
-                return true;
-
-            // cell on the left does not contain this object
-            } else if (!(sparse_matrix[`${row}:${column-1}`].includes(this_obj_idn))) {
-                return true
             }
-            return false
+
+            return this._borderCheck(
+                sparse_matrix,
+                `${row}:${column}`,
+                `${row}:${column-1}`,
+                this_obj_idn
+            )
         }
 
         _isRightBorder(sparse_matrix, row, column, this_obj_idn) {
             if (column === this.cols - 1){
                 return true
+            }
 
-            // cell on the right is empty
-            } else if (!(`${row}:${column+1}` in sparse_matrix)){
+            return this._borderCheck(
+                sparse_matrix,
+                `${row}:${column}`,
+                `${row}:${column+1}`,
+                this_obj_idn
+            )
+        }
+
+        _borderCheck(sparse_matrix, this_cell_coord, other_cell_coord, this_obj_idn) {
+            let other_cell = sparse_matrix[other_cell_coord]
+            let this_cell = sparse_matrix[this_cell_coord]
+
+
+            // cell above is empty
+            if (!(other_cell_coord in sparse_matrix)){
                 return true
-            
-            // cell on the right does not contain this object
-            } else if (!(sparse_matrix[`${row}:${column+1}`].includes(this_obj_idn))) {
+            }
+
+            if (other_cell.includes(this_obj_idn) && other_cell[other_cell.length - 1] == this_obj_idn){
+                return false
+            }
+
+            // this object is not the last one in this cell
+            if (this_cell.length > 1 && this_cell[this_cell.length - 1] === this_obj_idn){
                 return true
+            }
+
+            // cell above does not contain this object
+            if (!(other_cell.includes(this_obj_idn))) {
+                if (this_cell[this_cell.length - 1] === this_obj_idn){
+                    return true
+                }
             }
             return false
         }
