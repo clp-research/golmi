@@ -249,6 +249,7 @@ class State:
                 "does not have the right format.\n"
                 "Please refer to the documentation."
             )
+<<<<<<< HEAD
         state_id = None
         if "state_id" in source_dict:
             state_id = source_dict["state_id"]
@@ -256,6 +257,17 @@ class State:
         if "global_id" in source_dict:
             global_id = source_dict["global_id"]
         state =  cls(objs, grippers, targets, gc, state_id, global_id)
+=======
+
+        state =  cls(
+            objs=objs,
+            grippers=grippers,
+            targets=targets,
+            grid_config=gc,
+            state_id=source_dict.get("state_id"),
+            global_id=source_dict.get("global_id")
+        )
+>>>>>>> grid_state
 
         state.object_grid.clear_grid()
         state.target_grid.clear_grid()

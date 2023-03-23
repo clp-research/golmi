@@ -377,7 +377,6 @@ class Model:
         """
         Spawn a greenthread.GreenThread instance that executes
         fn until stop_loop is called.
-
         @param action_type	str, one of the action types defined by the config
         @param gripper      id of the gripper to perform the action with
         @param fn           function to loop

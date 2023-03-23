@@ -179,7 +179,6 @@ class Grid:
         grid can be accessed:
             -as a normal 2D-array with int as indeces -> matrix[y][x]
             -by giving a dictionary dict = {"x": x, "y": y}
-
         expects converted coordinates
         """
         if isinstance(i, (int, float)):
