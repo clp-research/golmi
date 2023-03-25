@@ -139,12 +139,13 @@ class Model:
                             "dict, or Config instance")
 
         # create grids
-        self.object_grid = Grid.create_from_config(self.config)
-        self.target_grid = Grid.create_from_config(self.config)
+        self.state.object_grid = Grid.create_from_config(self.config)
+        self.state.target_grid = Grid.create_from_config(self.config)
 
         # in case the available actions changed, reset the looped actions
         self.reset_loops()
         self._notify_views("update_config", self.config.to_dict())
+        self._notify_views("update_state", self.state.to_dict())
 
     def reset(self):
         """

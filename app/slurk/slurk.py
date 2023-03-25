@@ -1,5 +1,5 @@
 from flask_cors import cross_origin
-from flask import render_template, Blueprint, jsonify
+from flask import render_template, Blueprint, jsonify, request
 
 from app.app import app, socketio, room_manager
 
@@ -104,4 +104,18 @@ def get_gripped_object(room_id):
 @slurk.route("/<room_id>/state", methods=["GET"])
 def get_state(room_id):
     model = room_manager.get_model_of_room(room_id)
-    return jsonify(model.state.to_dict())
+    return jsonify(model.state.to_dict(include_grid_config=True))
+
+
+@cross_origin
+@slurk.route("/<room_id>/object", methods=["POST"])
+def add_object(room_id):
+    model = room_manager.get_model_of_room(room_id)
+    model.state.add_object(request.json)
+
+    model._notify_views(
+        "update_state",
+        model.state.to_dict()
+    )
+
+    return {"event": "object added"}
