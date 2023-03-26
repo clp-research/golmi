@@ -145,7 +145,6 @@ class Model:
         # in case the available actions changed, reset the looped actions
         self.reset_loops()
         self._notify_views("update_config", self.config.to_dict())
-        self._notify_views("update_state", self.state.to_dict())
 
     def reset(self):
         """
