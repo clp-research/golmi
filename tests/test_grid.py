@@ -11,7 +11,7 @@ class Test(unittest.TestCase):
     def test_prevent_overlap(self):
         g = Grid(width=5, height=5, step=0.5, prevent_overlap=True)
         o1 = Obj(
-            1, "L", 0, 0, 5, 5,
+            1, "L", 0, 0,
             block_matrix=[
                 [0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0],
@@ -22,7 +22,7 @@ class Test(unittest.TestCase):
         )
 
         o2 = Obj(
-            2, "L", 0, 0, 5, 5,
+            2, "L", 0, 0,
             block_matrix=[
                 [0, 0, 0, 0, 0],
                 [0, 1, 0, 0, 0],
@@ -42,7 +42,7 @@ class Test(unittest.TestCase):
     def test_allow_overlap(self):
         g = Grid(width=5, height=5, step=0.5, prevent_overlap=False)
         o1 = Obj(
-            1, "L", 0, 0, 5, 5,
+            1, "L", 0, 0,
             block_matrix=[
                 [0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0],
@@ -53,7 +53,7 @@ class Test(unittest.TestCase):
         )
 
         o2 = Obj(
-            2, "L", 0, 0, 5, 5,
+            2, "L", 0, 0,
             block_matrix=[
                 [0, 0, 0, 0, 0],
                 [0, 1, 0, 0, 0],
@@ -73,7 +73,7 @@ class Test(unittest.TestCase):
     def test_add_object(self):
         g = Grid(width=5, height=5, step=0.5, prevent_overlap=False)
         o1 = Obj(
-            1, "L", 0, 0, 5, 5,
+            1, "L", 0, 0,
             block_matrix=[
                 [0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0],
@@ -100,7 +100,7 @@ class Test(unittest.TestCase):
     def test_remove_object(self):
         g = Grid(width=5, height=5, step=0.5, prevent_overlap=False)
         o1 = Obj(
-            1, "L", 0, 0, 5, 5,
+            1, "L", 0, 0,
             block_matrix=[
                 [0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0],
