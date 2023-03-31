@@ -282,6 +282,8 @@ class State:
         @param obj  the object to remove
         @param object_is_target if True the object is a target
         """
+        if isinstance(obj, dict):
+            obj = Obj.from_dict(obj["id_n"], obj)
         if object_is_target:
             dictionary = self.targets
             grid = self.target_grid

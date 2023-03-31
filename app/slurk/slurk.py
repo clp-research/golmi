@@ -118,4 +118,24 @@ def add_object(room_id):
         model.state.to_dict()
     )
 
-    return {"event": "object added"}
+    return request.json
+
+
+@cross_origin
+@slurk.route("/<room_id>/object", methods=["DELETE"])
+def remove_object(room_id):
+    model = room_manager.get_model_of_room(room_id)
+
+    if "mouse" in model.state.grippers:
+        model.remove_gr("mouse")
+        for obj in model.state.objs.values():
+            obj.gripped = False
+
+    model.state.remove_object(request.json)
+
+    model._notify_views(
+        "update_state",
+        model.state.to_dict()
+    )
+
+    return request.json

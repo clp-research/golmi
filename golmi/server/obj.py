@@ -19,6 +19,9 @@ class Obj:
         self.block_matrix = block_matrix
         self.gripped = gripped
 
+    def __eq__(self, other):
+        return str(self.id_n) == str(other.id_n)
+
     def __repr__(self):
         return f"Object({self.type})"
 
