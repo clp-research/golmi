@@ -2,6 +2,7 @@ from flask_cors import cross_origin
 from flask import render_template, Blueprint, jsonify, request
 
 from app.app import app, socketio, room_manager
+from golmi.server.obj import Obj
 
 from app import DEFAULT_CONFIG_FILE
 
@@ -111,14 +112,23 @@ def get_state(room_id):
 @slurk.route("/<room_id>/object", methods=["POST"])
 def add_object(room_id):
     model = room_manager.get_model_of_room(room_id)
-    model.state.add_object(request.json)
+    object_grid = model.state.object_grid
+    obj_dict = request.json
 
-    model._notify_views(
-        "update_state",
-        model.state.to_dict()
+    obj = Obj.from_dict(obj_dict["id_n"], obj_dict)
+
+    if object_grid.is_legal_position(obj.occupied(), None):
+        model.state.add_object(obj)
+        model._notify_views(
+            "update_state",
+            model.state.to_dict()
+        )
+        return request.json
+
+    return dict(
+        status="unsuccesfull",
+        error="invalid position"
     )
-
-    return request.json
 
 
 @cross_origin
