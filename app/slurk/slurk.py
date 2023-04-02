@@ -35,11 +35,11 @@ def __translate(x, y, granularity):
 
 
 @cross_origin
-@slurk.route("/remove_mouse_gripper/<room_id>", methods=["GET"])
-def remove_mouse_gripper(room_id):
+@slurk.route("/gripper/<room_id>/<gripper_id>", methods=["DELETE"])
+def remove_mouse_gripper(room_id, gripper_id):
     model = room_manager.get_model_of_room(room_id)
-    if "mouse" in model.state.grippers:
-        model.remove_gr("mouse")
+    if gripper_id in model.state.grippers:
+        model.remove_gr(gripper_id)
         for obj in model.state.objs.values():
             obj.gripped = False
 
