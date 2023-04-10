@@ -143,7 +143,7 @@ class Generator:
             )
 
             if target_grid.is_legal_position(
-                    target_obj.occupied(), index):
+                    target_obj.occupied(), target_obj):
                 target_grid.add_obj(target_obj)
                 break
 
@@ -203,7 +203,7 @@ class Generator:
             )
 
             # if object does not overlap, add it
-            if object_grid.is_legal_position(obj.occupied(), None):
+            if object_grid.is_legal_position(obj.occupied(), obj):
                 index = str(len(objects))
                 obj.id_n = index
                 object_grid.add_obj(obj)
