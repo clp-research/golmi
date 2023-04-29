@@ -364,7 +364,8 @@ class Board:
     def add_piece_from_symbol(self, piece_symbol: SymbolicPiece, max_attempts=100):
         for attempt in range(max_attempts):  # re-create with potentially different coords
             piece = Piece.from_symbol(len(self.pieces), piece_symbol, self.board_width, self.board_height)
-            if self.grid.is_legal_position(piece.piece_obj.occupied(), piece.piece_id):
+
+            if self.grid.is_legal_position(piece.piece_obj.occupied(), piece.piece_obj):
                 self.add_piece(piece)
                 return True
         print(f"Max attempts reached, cannot add piece from {piece_symbol}")
