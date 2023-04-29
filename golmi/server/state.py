@@ -309,8 +309,9 @@ class State:
             dictionary = self.objs
             grid = self.object_grid
 
-        dictionary[obj.id_n] = obj
-        grid.add_obj(obj)
+        if grid.is_legal_position(obj.occupied(), obj):
+            dictionary[obj.id_n] = obj
+            grid.add_obj(obj)
 
     def get_tile(self, x, y, obj_is_target=False):
         """
