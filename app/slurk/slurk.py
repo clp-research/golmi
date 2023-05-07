@@ -137,10 +137,9 @@ def get_clicked_cell(room_id, x, y, blocksize):
     tile = model.state.get_tile(x, y)
     if tile.objects:
         objs = [item.to_dict() for item in tile.objects]
-        
         return jsonify(objs)
 
-    return jsonify(list)
+    return jsonify(list())
 
 
 @cross_origin
