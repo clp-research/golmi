@@ -196,16 +196,16 @@ def object_by_id(room_id):
     object_grid = model.state.object_grid
     obj_dict = request.json
 
-    obj = Obj.from_dict(obj_dict["id_n"], obj_dict)
+    this_obj = Obj.from_dict(obj_dict["id_n"], obj_dict)
 
     if request.method == "POST":
-        model.state.add_object(obj)
+        model.state.add_object(this_obj)
     elif request.method == "DELETE":
         if "mouse" in model.state.grippers:
             model.remove_gr("mouse")
             for obj in model.state.objs.values():
                 obj.gripped = False
-        model.state.remove_object(obj)
+        model.state.remove_object(this_obj)
 
     model._notify_views(
         "update_state",
