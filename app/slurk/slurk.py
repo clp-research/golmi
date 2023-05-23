@@ -35,19 +35,32 @@ def __translate(x, y, granularity):
 
 
 @cross_origin
-@slurk.route("/gripper/<room_id>/<gripper_id>", methods=["DELETE"])
+@slurk.route("/gripper/<room_id>/<gripper_id>", methods=["GET", "DELETE"])
 def remove_gripper(room_id, gripper_id):
     model = room_manager.get_model_of_room(room_id)
-    if gripper_id in model.state.grippers:
-        model.remove_gr(gripper_id)
-        for obj in model.state.objs.values():
-            obj.gripped = False
+    gripper_dict = model.get_gripper_dict()
+    if request.method == "DELETE":
+        if gripper_id in gripper_dict:
+            model.remove_gr(gripper_id)
+            
+            # ungrip gripped objects
+            gripped_objs = gripper_dict[gripper_id]["gripped"]
+            if gripped_objs is not None:
+                for obj_id, obj in model.state.objs.items():
+                    if obj_id in gripped_objs:
+                        obj.gripped = False
 
-    model._notify_views(
-        "update_state",
-        model.state.to_dict()
-    )
-    return dict(status="removed")
+            model._notify_views(
+                "update_state",
+                model.state.to_dict()
+            )
+
+        this_gripper = gripper_dict.get(gripper_id)
+
+    elif request.method == "GET":
+        this_gripper = gripper_dict.get(gripper_id)
+        
+    return dict() if this_gripper is None else this_gripper
 
 
 @cross_origin
