@@ -36,7 +36,7 @@ def __translate(x, y, granularity):
 
 @cross_origin
 @slurk.route("/gripper/<room_id>/<gripper_id>", methods=["GET", "DELETE"])
-def remove_gripper(room_id, gripper_id):
+def gripper_by_id(room_id, gripper_id):
     model = room_manager.get_model_of_room(room_id)
     gripper_dict = model.get_gripper_dict()
     if request.method == "DELETE":
