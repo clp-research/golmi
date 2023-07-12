@@ -35,7 +35,7 @@ def __translate(x, y, granularity):
 
 
 @cross_origin
-@slurk.route("/gripper/<room_id>/<gripper_id>", methods=["GET", "DELETE"])
+@slurk.route("/gripper/<room_id>/<gripper_id>", methods=["GET", "DELETE", "POST"])
 def gripper_by_id(room_id, gripper_id):
     model = room_manager.get_model_of_room(room_id)
     gripper_dict = model.get_gripper_dict()
@@ -59,6 +59,24 @@ def gripper_by_id(room_id, gripper_id):
 
     elif request.method == "GET":
         this_gripper = gripper_dict.get(gripper_id)
+
+    elif request.method == "POST":
+        x = request.json["x"]
+        y = request.json["y"]
+        blocksize = request.json["block_size"]
+
+        x, y = __translate(float(x), float(y), float(blocksize))
+        tile = model.state.get_tile(x, y)
+
+        if tile.objects:
+            model.add_gr(gripper_id, x, y)
+            gripper_dict = model.get_gripper_dict()
+            this_gripper = gripper_dict.get(gripper_id)
+
+            model._notify_views(
+                "update_state",
+                model.state.to_dict()
+            )
         
     return dict() if this_gripper is None else this_gripper
 
