@@ -42,7 +42,7 @@ def gripper_by_id(room_id, gripper_id):
     if request.method == "DELETE":
         if gripper_id in gripper_dict:
             model.remove_gr(gripper_id)
-            
+
             # ungrip gripped objects
             gripped_objs = gripper_dict[gripper_id]["gripped"]
             if gripped_objs is not None:
@@ -77,7 +77,7 @@ def gripper_by_id(room_id, gripper_id):
                 "update_state",
                 model.state.to_dict()
             )
-        
+
     return dict() if this_gripper is None else this_gripper
 
 
@@ -88,7 +88,6 @@ def reset_gripper(room_id, gripper_id):
     if gripper_id in model.state.grippers:
         for obj in model.state.objs.values():
             obj.gripped = False
-
 
     x = model.config.width / 2
     y = model.config.height / 2
